@@ -1,0 +1,15 @@
+{
+  "name": "Representation Bias",
+  "title": "representation-bias",
+  "description": "Representation bias occurs when certain populations are inadequately represented in training data, either through insufficient numbers or inappropriate categorisation. This leads to AI models that perform poorly for underrepresented groups, failing to generalise effectively. The bias often reflects broader issues of data collection methods that systematically exclude or mischaracterise certain communities.",
+  "example": "Representation bias could arise in a symptom checking application that has been trained on data collected exclusively through smartphone use or other online interaction. This dataset would likely underrepresent groups, such as elderly people who may lack access to a smartphone or connectivity.",
+  "prompts": [
+    "How have you measured and evaluated the representativeness of the dataset to ensure that the sample is adequate?",
+    "Have you consulted stakeholder groups to verify that your dataset is representative?",
+    "What data collection methods might systematically exclude certain populations from your dataset?"
+  ],
+  "category": "social-bias",
+  "caption": "When certain populations are inadequately represented in training data, leading to poor model performance for those groups.",
+  "id": 10,
+  "icon": "representation-bias-icon"
+}

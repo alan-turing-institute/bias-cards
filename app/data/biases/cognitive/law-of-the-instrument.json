@@ -1,0 +1,15 @@
+{
+  "name": "Law of the Instrument (Maslow’s Hammer)",
+  "title": "law-of-the-instrument",
+  "description": "Known as 'Maslow's Hammer', this bias describes over-reliance on familiar tools or methods. In AI development, teams may default to techniques they know well rather than selecting the most appropriate approach. This can lead to misapplying complex ML solutions to simple problems, or forcing AI into situations where traditional methods would be more effective.",
+  "example": "If an organisation develops a system to parse natural language, and successfully deploys it for one task, but then uses it in a new project without considering whether it is the right tool, they are falling prey to this bias.",
+  "prompts": [
+    "Have you considered simpler alternatives before defaulting to AI/ML solutions for this problem?",
+    "If you're repurposing an existing technology, have you properly evaluated whether it's fit-for-purpose for the new task?",
+    "What evidence do you have that your chosen approach is better than alternatives, rather than just more familiar?"
+  ],
+  "category": "cognitive-bias",
+  "caption": "This bias is best captured by the popular phrase ‘If all you have is a hammer, everything looks like a nail.",
+  "id": 5,
+  "icon": "law-of-the-instrument-icon"
+}

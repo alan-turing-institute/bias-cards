@@ -1,0 +1,15 @@
+{
+  "name": "Availability Bias",
+  "title": "availability-bias",
+  "description": "The tendency to make judgements or decisions based on the information that is most readily available (e.g., more easily recalled). When this information is recalled on multiple occasions, the bias can be reinforced through repetition—known as a ‘cascade.’ This bias can cause issues for project teams throughout the project lifecycle where decisions are influenced by available or oft-repeated information (e.g., hypothesis testing during data analysis).",
+  "example": "If a team uses a dataset that they already have access to, even though it is not actually the best data for their problem, this is a form of availability bias. However, this is different from the form of availability bias that may affect people when recalling certain facts throughout a project’s lifecycle. Here, availability refers to the individual’s ability to recall information, rather than to an ability to access data.",
+  "prompts": [
+    "Have you considered alternative sources, references, datasets, and methods that can help minimise gravitating towards readily available or memorable information?",
+    "Are your design decisions based on comprehensive research or just the most recent or memorable examples you've encountered?",
+    "How might recent high-profile AI failures or successes be unduly influencing your team's approach?"
+  ],
+  "category": "cognitive-bias",
+  "caption": "The tendency to make judgements or decisions based on information that is most readily available or easily recalled.",
+  "id": 3,
+  "icon": "availability-bias-icon"
+}

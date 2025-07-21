@@ -1,0 +1,15 @@
+{
+  "name": "Human-in-the-Loop",
+  "category": "mitigation-technique",
+  "title": "human-in-the-loop",
+  "id": 29,
+  "caption": "Ensure humans maintain decision-making authority whilst AI systems provide recommendations and automate routine tasks.",
+  "description": "Human-in-the-loop systems maintain human agency and oversight in AI-driven processes, particularly for high-stakes decisions. This approach combines AI efficiency with human judgment, ensuring accountability and enabling bias detection that automated systems might miss. Humans can catch edge cases, apply contextual knowledge, and provide ethical oversight that purely algorithmic approaches cannot deliver.",
+  "prompts": [
+    "At what critical decision points in your system should human oversight be mandatory?",
+    "How will you ensure human reviewers have sufficient information and time to make meaningful decisions?",
+    "What training and support do human reviewers need to identify and address AI bias?"
+  ],
+  "example": "A resume screening AI flags top candidates for human reviewers rather than making final hiring decisions. Recruiters receive explanations of why each candidate was recommended and can override AI decisions. The system tracks override patterns to identify potential biases - if humans consistently reject AI-recommended candidates from certain universities, this triggers bias investigation and model refinement.",
+  "icon": "human-in-the-loop-icon"
+}

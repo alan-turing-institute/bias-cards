@@ -1,0 +1,15 @@
+{
+  "name": "Training-Serving Skew",
+  "title": "training-serving-skew",
+  "description": "Training-serving skew occurs when models are deployed on populations or data distributions that differ significantly from training data. This mismatch can arise from temporal changes, geographical differences, or demographic shifts between training and deployment contexts. The resulting distribution drift causes models to make poor predictions as they encounter input patterns outside their learned experience, leading to degraded performance and unreliable outcomes.",
+  "example": "A content moderation AI trained on social media posts from 2020 struggles with posts from 2023, failing to recognise new slang, emoji usage, and cultural references. The model was trained during the pandemic when online behaviour patterns were different, causing it to misclassify legitimate content as harmful and miss actual policy violations that use contemporary language patterns.",
+  "prompts": [
+    "How have you assessed whether your deployment population matches your training data distribution?",
+    "What monitoring systems do you have in place to detect distribution drift over time?",
+    "Have you established processes for retraining models when serving populations change significantly?"
+  ],
+  "category": "statistical-bias",
+  "caption": "This bias occurs when the model is deployed on individuals whose data are not similar to or representative of the individuals whose data were used to train, test, and validate the model.",
+  "id": 24,
+  "icon": "training-serving-skew-icon"
+}

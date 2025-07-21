@@ -1,0 +1,15 @@
+{
+  "name": "Decision-Automation Bias",
+  "title": "decision-automation-bias",
+  "description": "Decision-automation bias occurs when users become over-reliant on automated systems, losing critical judgement through excessive trust. This can manifest as complacency in spotting system errors or blind deference to AI recommendations. Over time, users may lose professional skills and judgement, accepting system outputs without question even when contradicted by other evidence.",
+  "example": "An immigration officer is using facial recognition software, which purportedly claims to detect instances of lying during asylum claim interviews. Over time, the officer stops relying on their own faculties, and leans too heavily on the predictions of this system, despite visual cues that contradict the facial recognition system’s predictions.",
+  "prompts": [
+    "Have you considered user requirements such as transparency or interpretability when designing your model?",
+    "Does the intended context of use demand a greater need for interpretability, and how may this affect the model’s accuracy (e.g. reducing model complexity)?",
+    "Could long-term use of your model or system have a detrimental effect on the professional judgement of users (e.g. leading to deskilling)?"
+  ],
+  "category": "cognitive-bias",
+  "caption": "This bias arises when users of automated decision-support systems become hampered in their critical judgement as a result of their faith in the efficacy of the system.",
+  "id": 7,
+  "icon": "decision-automation-bias-icon"
+}

@@ -1,0 +1,15 @@
+{
+  "name": "Measurement Bias",
+  "title": "measurement-bias",
+  "description": "Measurement bias arises when data collection methods systematically mismeasure or fail to capture important aspects of what they claim to represent. This includes using flawed proxies, inappropriate measurement scales, or collection processes that work differently across populations. The bias often reflects deeper issues about whose perspectives shaped the measurement design.",
+  "example": "A recidivism risk model that uses prior arrests or criminal records of relatives as proxies to predict future criminality may surface measurement bias insofar as patterns of arrest can reflect discriminatory tendencies to over-police certain protected social groups or biased assessments on the part of arresting officers.",
+  "prompts": [
+    "Are there multiple scales that could be used to measure your features?",
+    "Is there reasonable disagreement about which of these scales is preferred?",
+    "If so, how has this disagreement been addressed?"
+  ],
+  "category": "statistical-bias",
+  "caption": "Measurement bias occurs when the measurement method used to collect data and define the features or labels used by a model is flawed or fails to capture relevant information about the objects or subjects being studied.",
+  "id": 19,
+  "icon": "measurement-bias-icon"
+}

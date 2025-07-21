@@ -1,0 +1,15 @@
+{
+  "name": "Confounding",
+  "title": "confounding",
+  "description": "Confounding occurs when unmeasured variables simultaneously influence both input features and target outcomes, creating spurious correlations that mislead ML models. These hidden factors cause models to learn false causal relationships, leading to poor generalisation and biased predictions. Confounding is particularly problematic in observational data where controlled experimental conditions cannot eliminate alternative explanations for observed patterns.",
+  "example": "A hiring algorithm trained on historical data shows that employees from prestigious universities perform better. However, this correlation is confounded by socioeconomic status—affluent candidates often attend elite universities and have better career support networks. The model incorrectly attributes success to university prestige rather than the true confounding factor, leading to biased hiring decisions that perpetuate inequality.",
+  "prompts": [
+    "What domain knowledge have you applied to identify potential confounding variables in your dataset?",
+    "Have you used causal inference methods to distinguish correlation from causation in your model?",
+    "How might unmeasured variables be influencing the relationships your model has learned?"
+  ],
+  "category": "statistical-bias",
+  "caption": "Confounding is a well-known causal concept in statistics, and commonly arises in observational studies.",
+  "id": 23,
+  "icon": "confounding-icon"
+}

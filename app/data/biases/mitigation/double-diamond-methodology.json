@@ -1,0 +1,15 @@
+{
+  "name": "Double Diamond Methodology",
+  "category": "mitigation-technique",
+  "title": "double-diamond-methodology",
+  "id": 36,
+  "caption": "A four-phase design process for creative problem-solving and exploring multiple perspectives.",
+  "description": "The Double Diamond methodology applies structured divergent and convergent thinking to bias mitigation. The four phases are: Discover (explore bias sources broadly), Define (focus on priority bias issues), Develop (generate multiple mitigation strategies), and Deliver (implement and test solutions). This approach ensures comprehensive bias exploration while maintaining focus on actionable solutions, preventing teams from overlooking important bias considerations.",
+  "prompts": [
+    "How can you use the divergent thinking phases to explore multiple bias perspectives across stakeholder groups?",
+    "What criteria will you use in the convergent phases to prioritise bias mitigations?",
+    "How will you gather feedback to iterate on your bias mitigation solutions?"
+  ],
+  "example": "An AI recruitment team uses the Double Diamond to address hiring bias. In Discover, they interview diverse candidates, recruiters, and hiring managers to understand bias experiences. In Define, they prioritise addressing CV screening bias and interview scheduling inequities. In Develop, they prototype blind CV reviews and flexible interview formats. In Deliver, they pilot the new process with one department, gathering feedback to refine the approach.",
+  "icon": "double-diamond-methodology-icon"
+}

@@ -1,0 +1,15 @@
+{
+  "name": "Label Bias",
+  "title": "label-bias",
+  "description": "Label bias occurs when the same label or feature carries different meanings across different groups or contexts. This mismatch between designers' intended measurements and diverse populations' lived experiences can lead to discriminatory outcomes. What seems like objective categorisation often reflects the perspectives of those creating the labels rather than those being categorised.",
+  "example": "A loan risk model uses 'job stability' as a key feature, measuring it by years at current employer. This disadvantages gig economy workers or those in seasonal employment who may have stable income through multiple sources. The label fails to capture alternative forms of financial stability, systematically marking certain working patterns as 'high risk'.",
+  "prompts": [
+    "How have you identified problematic labels (or features), which may be imperfect proxies, within your dataset?",
+    "Does your target variable have multiple meanings or interpretations?",
+    "Are labels used across the project lifecycle and have they been clearly defined?"
+  ],
+  "category": "social-bias",
+  "caption": "A label (or feature) used within an algorithmic model may not mean the same thing for all data subjects.",
+  "id": 11,
+  "icon": "label-bias-icon"
+}

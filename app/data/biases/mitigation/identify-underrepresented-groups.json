@@ -1,0 +1,15 @@
+{
+  "name": "Identify Underrepresented Groups",
+  "category": "mitigation-technique",
+  "title": "identify-underrepresented-groups",
+  "id": 30,
+  "caption": "Analyse demographic gaps in consultation with communities to identify underrepresented groups.",
+  "description": "This technique involves systematic analysis of dataset demographics compared to target populations, identifying groups that are absent or inadequately represented. It requires community engagement to understand representation gaps that statistics alone might miss, including intersectional identities and marginalised communities. The process helps prevent models from being optimised only for majority groups.",
+  "prompts": [
+    "Which demographic groups might be missing or underrepresented in your dataset compared to your target population?",
+    "How will you engage with communities to identify representation gaps that aren't apparent from demographic statistics?",
+    "What intersectional identities might be particularly underrepresented in your data?"
+  ],
+  "example": "A voice recognition system performs poorly for users with speech impediments and non-native speakers. The team conducts demographic analysis and discovers their training data lacks representation from disability communities and recent immigrants. They partner with advocacy groups and language centres to identify specific underrepresented speech patterns and recruit participants for more inclusive data collection.",
+  "icon": "identify-underrepresented-groups-icon"
+}

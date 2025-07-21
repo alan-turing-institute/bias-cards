@@ -1,0 +1,15 @@
+{
+  "name": "Employ Model Interpretability",
+  "category": "mitigation-technique",
+  "title": "employ-model-interpretability",
+  "id": 39,
+  "caption": "Use interpretability methods during data analysis, model testing and validation, and system governance.",
+  "description": "Model interpretability techniques make AI decision-making transparent and auditable, enabling bias detection and mitigation. Methods include feature importance analysis, SHAP values, LIME explanations, and attention visualisation. These approaches help identify when models rely on protected attributes, reveal unexpected correlations, and provide evidence for bias remediation efforts. Interpretability supports both technical validation and stakeholder communication about model behaviour.",
+  "prompts": [
+    "Which interpretability methods are most appropriate for your model type and use case?",
+    "How will you communicate model decisions and potential biases to non-technical stakeholders?",
+    "What interpretability insights will trigger model retraining or bias mitigation actions?"
+  ],
+  "example": "A credit scoring model's SHAP analysis reveals it heavily weights postcodes, indirectly discriminating against minority communities in certain areas. The interpretability analysis shows the model learned historical redlining patterns, prompting the team to remove location-based features and retrain with fairness constraints. The transparent analysis also helps explain decisions to rejected applicants and regulators.",
+  "icon": "employ-model-interpretability-icon"
+}

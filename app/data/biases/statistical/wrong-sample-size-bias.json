@@ -1,0 +1,15 @@
+{
+  "name": "Wrong Sample Size Bias",
+  "title": "wrong-sample-size-bias",
+  "description": "Wrong sample size bias occurs when datasets are too small to capture population variability or too large, yielding statistically significant but practically irrelevant results. In ML contexts, this includes the curse of dimensionality where high-dimensional feature spaces require exponentially more data for reliable performance. Sample size mismatches can lead to overfitting, poor generalisation, and misleading model confidence.",
+  "example": "A fraud detection system trained on only 1,000 transactions shows excellent performance in testing but fails dramatically in production. The small training set couldn't capture the full diversity of legitimate transactions, leading to thousands of false positives that block customers' cards. The model appeared accurate but lacked sufficient data to represent real-world transaction patterns.",
+  "prompts": [
+    "Have you performed power analysis to determine appropriate sample sizes for your use case?",
+    "How does your dataset size compare to the dimensionality of your feature space?",
+    "What validation approaches have you used to assess whether your sample adequately represents the target population?"
+  ],
+  "category": "statistical-bias",
+  "caption": "Using the wrong sample size for the study can lead to chance findings that fail to adequately represent the variability of the underlying data distribution, in the case of small samples, or findings that are statistically significant but not relevant or actionable, in the case of larger samples.",
+  "id": 20,
+  "icon": "wrong-sample-size-bias-icon"
+}

@@ -1,0 +1,15 @@
+{
+  "name": "Annotation Bias",
+  "title": "annotation-bias",
+  "description": "Annotation bias arises when human annotators introduce subjective judgements or errors whilst labelling data. This can stem from inadequate training, fatigue, cultural backgrounds, or personal biases. Poor working conditions, tight deadlines, and lack of diversity amongst annotators can amplify these issues, resulting in systematically biased training data that reflects annotators' perspectives rather than objective truth.",
+  "example": "A content moderation dataset is labelled by annotators from one cultural background who consistently mark certain forms of expression as 'offensive' based on their cultural norms. When the AI is deployed globally, it inappropriately censors legitimate discourse from other cultures, reflecting the annotators' biases rather than universal standards.",
+  "prompts": [
+    "Who carried out the annotation of your dataset and what are their backgrounds?",
+    "Were there processes in place to ensure that multiple annotators followed the same standards (e.g. inter-rater reliability)?",
+    "How might annotators' working conditions, training, or cultural perspectives have influenced their labelling decisions?"
+  ],
+  "category": "social-bias",
+  "caption": "Annotation bias occurs when annotators incorporate subjective perceptions or error into the work of annotating data.",
+  "id": 12,
+  "icon": "annotation-bias-icon"
+}

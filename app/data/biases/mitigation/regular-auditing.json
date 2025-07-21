@@ -1,0 +1,15 @@
+{
+  "name": "Regular Auditing",
+  "category": "mitigation-technique",
+  "title": "regular-auditing",
+  "id": 38,
+  "caption": "Conduct periodic audits focusing on transparency, data quality, model performance, and equitable impact.",
+  "description": "Regular auditing establishes systematic, ongoing review processes to monitor AI systems for emerging biases and performance drift. Audits examine data quality, model behaviour, user satisfaction, and equitable outcomes across different demographic groups. This proactive approach enables early detection of bias issues and ensures continuous improvement of fairness throughout the system lifecycle.",
+  "prompts": [
+    "How frequently should comprehensive bias audits be conducted based on your system's risk level?",
+    "What specific bias indicators and fairness metrics will you monitor over time?",
+    "Who should conduct these audits to ensure independence and expertise in bias detection?"
+  ],
+  "example": "A financial services company conducts quarterly audits of their credit scoring AI, examining approval rates, default predictions, and customer satisfaction across demographic groups. Six-month audits reveal the model's performance has degraded for recent immigrants due to changing economic conditions. The audit triggers model retraining and policy updates to address the emerging bias.",
+  "icon": "regular-auditing-icon"
+}

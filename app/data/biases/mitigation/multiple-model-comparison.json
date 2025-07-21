@@ -1,0 +1,15 @@
+{
+  "name": "Multiple Model Comparison",
+  "category": "mitigation-technique",
+  "title": "multiple-model-comparison",
+  "id": 34,
+  "caption": "Train and test multiple models to assess performance differences and identify the least biased approach.",
+  "description": "This technique involves training multiple models using different algorithms, architectures, or preprocessing approaches to compare their bias profiles and fairness characteristics. By evaluating diverse model types, teams can identify approaches that better balance accuracy with fairness across different demographic groups. The comparison process reveals which algorithmic choices contribute to bias and informs model selection decisions.",
+  "prompts": [
+    "Which alternative model architectures and algorithms should you test for fairness comparison?",
+    "What criteria will you use to balance accuracy and fairness when selecting the final model?",
+    "How will you ensure your model comparison includes relevant bias metrics for your use case?"
+  ],
+  "example": "A loan approval system compares logistic regression, random forest, and neural network models. While the neural network achieves highest overall accuracy, the random forest shows more equitable performance across ethnic groups. The logistic regression provides better interpretability for explaining decisions to applicants. The team selects the random forest model, accepting slightly lower accuracy for significantly improved fairness outcomes.",
+  "icon": "multiple-model-comparison-icon"
+}

@@ -1,0 +1,15 @@
+{
+  "name": "Chronological Bias",
+  "title": "chronological-bias",
+  "description": "Chronological bias arises when individuals in the dataset are added at different times, and where this chronological difference results in individuals being subjected to different methods or criteria of data extraction based on the time their data were recorded.",
+  "example": "An example of chronological bias could be where a dataset used to build a predictive risk model in children’s social care has data that spans over several years, in which large-scale care reforms, policy changes, adjustments in relevant statutes (such as changes to legal thresholds or definitions) have occurred. As such, there may also have been changes in data recording methods that could create major inconsistencies in the data points extracted from person to person.",
+  "prompts": [
+    "Have you worked with domain experts to map the data journey and identify systematic variations between groups of data subjects or objects?",
+    "Is there a wide variation in terms of when your data were recorded?",
+    "How have data collection methods, definitions, or standards changed over the timespan of your dataset?"
+  ],
+  "category": "social-bias",
+  "caption": "When data collected at different times reflects changing methods, standards, or contexts, creating inconsistencies.",
+  "id": 13,
+  "icon": "chronological-bias-icon"
+}

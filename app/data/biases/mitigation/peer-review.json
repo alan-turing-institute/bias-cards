@@ -1,0 +1,15 @@
+{
+  "name": "Peer Review",
+  "category": "mitigation-technique",
+  "title": "peer-review",
+  "id": 25,
+  "caption": "Targeted review by committees, red teams, or external groups to identify and evaluate bias-related gaps.",
+  "description": "Peer review involves systematic examination of AI systems by independent experts, committees, or red teams to identify biases and ethical issues that development teams might miss. This process can be internal or external and provides critical scrutiny of assumptions, methodology, and potential impacts. Diverse review panels bring different perspectives that help uncover blind spots in bias assessment.",
+  "prompts": [
+    "Who should be involved in the peer review process to provide diverse perspectives on bias?",
+    "What specific aspects of bias and fairness should reviewers focus on in their evaluation?",
+    "How will you incorporate reviewer feedback to address identified bias issues?"
+  ],
+  "example": "A recruitment AI undergoes peer review by a panel including HR professionals, diversity experts, employment lawyers, and affected community representatives. The reviewers identify that the system's 'cultural fit' scoring disproportionately penalises candidates from different ethnic backgrounds. Their recommendations lead to removing subjective culture metrics and implementing more objective skills-based assessments.",
+  "icon": "peer-review-icon"
+}

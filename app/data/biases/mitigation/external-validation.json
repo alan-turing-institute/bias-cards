@@ -1,0 +1,15 @@
+{
+  "name": "External Validation",
+  "category": "mitigation-technique",
+  "title": "external-validation",
+  "id": 35,
+  "caption": "Go beyond internal validation by testing your model on entirely new datasets from different environments.",
+  "description": "External validation tests model performance and fairness using independent datasets from different populations, time periods, or geographical regions. This approach reveals biases that internal validation might miss, particularly those related to distribution shift and overfitting to specific populations. Collaborating with external organisations provides fresh perspectives and validates generalisability across diverse real-world conditions.",
+  "prompts": [
+    "What external datasets can validate your model's fairness across different populations?",
+    "How will you handle distribution shifts when external validation reveals performance gaps?",
+    "Which organisations or research groups could provide independent validation of your model?"
+  ],
+  "example": "A medical diagnostic AI developed in London hospitals shows excellent performance internally but struggles when tested on patient data from rural clinics and international hospitals. External validation reveals the model overfitted to urban demographics and specific equipment types. This prompts data collection partnerships with diverse healthcare settings to improve model robustness.",
+  "icon": "external-validation-icon"
+}

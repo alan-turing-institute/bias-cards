@@ -1,0 +1,15 @@
+{
+  "name": "Optimism Bias",
+  "title": "optimism-bias",
+  "description": "Also known as the planning fallacy, optimism bias can lead project teams to under-estimate the amount of time required to adequately implement a new system or plan. In the context of the project lifecycle, this bias may arise during project planning, but can create downstream issues when implementing a model during the ‘system implementation’ stage, due to a failure to recognise possible system engineering barriers.",
+  "example": "During project scoping, a project management team incorrectly assume that it will only take three months to design, develop, and deploy a new algorithmic system, because a previous (and similar) project took this long. However, despite the success of the previous project, their assessment this time turns out to be an underestimate because they did not consult with their developers to fully understand important differences between the two projects.",
+  "prompts": [
+    "Have you and your team been realistic with what can be achieved within the time allocated to the project?",
+    "Are you able to be more flexible with your time and resources, particularly where stakeholder engagement is involved?",
+    "What evidence from similar projects supports your timeline estimates, and what factors might make this project different?"
+  ],
+  "category": "cognitive-bias",
+  "caption": "Also known as the planning fallacy, optimism bias can lead project teams to under-estimate the amount of time required to adequately implement a new system or plan.",
+  "id": 6,
+  "icon": "optimism-bias-icon"
+}

@@ -1,0 +1,15 @@
+{
+  "name": "Evaluation Bias",
+  "title": "evaluation-bias",
+  "description": "Evaluation bias emerges when performance metrics or benchmark datasets fail to adequately assess how models will perform across diverse real-world populations. This occurs when evaluation frameworks prioritise aggregate accuracy over fairness metrics or use benchmarks that overrepresent certain demographics. The bias masks differential performance across subgroups, leading to models that appear successful but fail vulnerable populations.",
+  "example": "A medical diagnostic AI achieves 95% accuracy on a standard benchmark but performs poorly for elderly patients and ethnic minorities who are underrepresented in the evaluation dataset. The model passes validation using conventional metrics, but real-world deployment reveals significant disparities in diagnostic accuracy across demographic groups that weren't captured by the evaluation framework.",
+  "prompts": [
+    "Do your evaluation metrics capture performance disparities across different demographic groups?",
+    "How representative are your benchmark datasets of the populations your model will serve?",
+    "Have you considered fairness-aware metrics alongside traditional accuracy measures?"
+  ],
+  "category": "statistical-bias",
+  "caption": "Evaluation bias occurs during model iteration and evaluation, from the application of performance metrics that are insufficient given the intended use of the model and the composition of the dataset on which it is trained.",
+  "id": 22,
+  "icon": "evaluation-bias-icon"
+}

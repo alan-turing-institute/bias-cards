@@ -1,0 +1,15 @@
+{
+  "name": "Participatory Design Workshops",
+  "category": "mitigation-technique",
+  "title": "participatory-design-workshops",
+  "id": 27,
+  "caption": "Involve stakeholders in the design process to co-create solutions and ensure usability and acceptance.",
+  "description": "Participatory design workshops engage affected communities and stakeholders directly in AI system design decisions. This collaborative approach helps identify bias sources that designers might overlook, ensures solutions address real user needs, and builds trust through inclusive development processes. By involving diverse voices early in design, teams can prevent biases rather than trying to fix them later.",
+  "prompts": [
+    "Which communities and stakeholder groups should be centrally involved in your design process?",
+    "How will you ensure workshops are accessible and inclusive for participants with different abilities and backgrounds?",
+    "What decision-making power will participants have in shaping the final system design?"
+  ],
+  "example": "A public benefits eligibility AI system involves benefit recipients, social workers, and community advocates in design workshops. Participants reveal that current application processes exclude people without reliable internet access. The workshops result in designing offline application options and simplified interfaces. The collaborative process also identifies biased assumptions about 'typical' applicant behaviour, leading to more inclusive system design.",
+  "icon": "participatory-design-workshops-icon"
+}

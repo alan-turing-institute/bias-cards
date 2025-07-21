@@ -1,0 +1,15 @@
+{
+  "name": "De-Agentification Bias",
+  "title": "de-agentification-bias",
+  "description": "De-agentification bias occurs when marginalised groups are systematically excluded from participating in AI development and deployment decisions. These communities often lack the resources, representation, or power to influence systems that significantly affect them. This exclusion perpetuates technological solutions that fail to address their needs or actively harm their interests.",
+  "example": "An example is the choice to design, develop, or deploy a system for monitoring historically marginalised communities, such as refugees and religious minorities. Such communities are often not represented in key decisions concerning the adoption and use of such systems though they may be significantly affected by them.",
+  "prompts": [
+    "Have you considered consulting, engaging, and working with protected and marginalised groups as part of your project?",
+    "How have their perspectives and experiences been considered?",
+    "What power imbalances might prevent affected communities from challenging or influencing your system?"
+  ],
+  "category": "social-bias",
+  "caption": "When marginalised groups are systematically excluded from participating in AI development and deployment decisions.",
+  "id": 17,
+  "icon": "de-agentification-bias-icon"
+}

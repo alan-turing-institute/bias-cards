@@ -1,0 +1,15 @@
+{
+  "name": "Implementation Bias",
+  "title": "implementation-bias",
+  "description": "Implementation bias occurs when AI systems are deployed in ways that differ from their original design intent, creating unintended consequences. System features or interfaces can create 'choice architectures' that nudge users towards certain behaviours. This bias often emerges through mission creep, where systems designed for one purpose are repurposed without proper consideration of new contexts.",
+  "example": "A workplace productivity AI designed to help employees manage tasks is later used by management for performance monitoring. The system's dashboard, originally meant to show personal productivity insights, becomes a surveillance tool that creates stress and changes workplace dynamics in ways never intended by the original designers.",
+  "prompts": [
+    "Has your system been repurposed from another project or team?",
+    "If so, is the system fit-for-purpose?",
+    "Does the use of the system now differ from how it was previously used?"
+  ],
+  "category": "social-bias",
+  "caption": "When AI systems are deployed in ways that differ from their original design intent, creating unintended consequences.",
+  "id": 15,
+  "icon": "implementation-bias-icon"
+}

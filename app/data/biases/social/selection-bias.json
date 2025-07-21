@@ -1,0 +1,15 @@
+{
+  "name": "Selection Bias",
+  "title": "selection-bias",
+  "description": "Selection bias occurs when certain data points are systematically more or less likely to be included in a dataset. This happens when factors like geographic location, socioeconomic status, or access to technology influence who participates in data collection. The resulting dataset fails to represent the full population, leading to models that perform poorly for excluded groups.",
+  "example": "A health monitoring app collects data only from users who own smartphones and have reliable internet. The resulting AI model performs well for affluent, urban populations but fails to detect health patterns in rural or economically disadvantaged communities who lack consistent technology access, despite these groups often having greater health needs.",
+  "prompts": [
+    "Have you examined the different stakeholders that are included or not included within the data and datasets being considered?",
+    "Are there stakeholder groups you can consult with to help minimise the likelihood of you and your team missing key stakeholder considerations?",
+    "What barriers might prevent certain populations from being included in your data collection process?"
+  ],
+  "category": "social-bias",
+  "caption": "Selection bias is a term used for a range of biases that affect the selection or inclusion of data points within a dataset.",
+  "id": 14,
+  "icon": "selection-bias-icon"
+}

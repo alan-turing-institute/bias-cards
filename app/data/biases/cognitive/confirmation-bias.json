@@ -1,0 +1,15 @@
+{
+  "name": "Confirmation Bias",
+  "title": "confirmation-bias",
+  "description": "Confirmation bias is the tendency to search for, gather, or interpret information that confirms pre-existing beliefs whilst dismissing contradictory evidence. In AI projects, this can lead teams to favour data, models, or results that align with their assumptions, potentially overlooking important limitations or biases in their systems.",
+  "example": "A team developing a CV screening algorithm believes their model is unbiased because it achieves high accuracy. They focus on metrics that support this view whilst ignoring evidence that the model disproportionately rejects candidates from certain universities or postcodes, dismissing these patterns as coincidental rather than investigating potential discrimination.",
+  "prompts": [
+    "What mechanisms do you have in place within your team that can help ensure a diversity of viewpoints that may mitigate the effects of confirmation bias?",
+    "How do you actively seek out evidence that might contradict your assumptions about your model's performance or fairness?",
+    "When was the last time your team changed direction based on unexpected or unwelcome findings?"
+  ],
+  "category": "cognitive-bias",
+  "caption": "The tendency to search for, gather, or interpret information that confirms pre-existing beliefs whilst dismissing contradictory evidence.",
+  "id": 1,
+  "icon": "confirmation-bias-icon"
+}

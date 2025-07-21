@@ -1,0 +1,15 @@
+{
+  "name": "Stakeholder Engagement",
+  "category": "mitigation-technique",
+  "title": "stakeholder-engagement",
+  "id": 28,
+  "caption": "Carry out meaningful engagement to consult or partner with affected communities and stakeholders.",
+  "description": "Stakeholder engagement involves systematic consultation and collaboration with individuals and communities affected by AI systems. Methods include community forums, surveys, interviews, citizen panels, and ongoing dialogue throughout development and deployment. This approach ensures diverse voices inform system design and helps identify biases that might not be apparent to development teams.",
+  "prompts": [
+    "Which stakeholder groups are most directly affected by your system and should be prioritised for engagement?",
+    "How will you ensure meaningful participation rather than tokenistic consultation from all stakeholders?",
+    "What ongoing engagement processes will maintain stakeholder input after system deployment?"
+  ],
+  "example": "A predictive policing system engages with community leaders, civil rights organisations, and residents from high-crime areas through regular forums. Participants raise concerns about over-policing of minority neighbourhoods, leading to algorithm adjustments that balance crime prevention with community trust. Ongoing engagement reveals deployment impacts and informs continuous system improvements.",
+  "icon": "stakeholder-engagement-icon"
+}

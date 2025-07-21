@@ -1,0 +1,15 @@
+{
+  "name": "Self-Assessment Bias",
+  "title": "self-assessment-bias",
+  "description": "Self-assessment bias occurs when individuals or teams overestimate their own abilities, knowledge, or performance whilst being overly critical of others. In AI development, this can lead teams to underestimate the complexity of tasks, overlook their knowledge gaps, or dismiss the need for external expertise, potentially resulting in flawed systems or inadequate safeguards against bias and error.",
+  "example": "Consider a project team that is carrying out an assessment about whether they have sufficient skills and resources to develop fair and explainable ML algorithms. Self-assessment bias could create a situation where the team are unlikely to acknowledge or notice gaps in their skills, which may significantly affect their ability to deliver a responsible product.",
+  "prompts": [
+    "As part of the planning for your project, have you considered things that may go wrong or have a negative impact?",
+    "Are you able to be more flexible with your timeline to accommodate for identifying and addressing gaps of knowledge and skills within your team?",
+    "Have you and your project team considered obtaining constructive criticism and suggestions from others?"
+  ],
+  "category": "cognitive-bias",
+  "caption": "A tendency to evaluate one’s abilities in more favourable terms than others, or to be more critical of others than oneself.",
+  "id": 2,
+  "icon": "self-assessment-bias-icon"
+}

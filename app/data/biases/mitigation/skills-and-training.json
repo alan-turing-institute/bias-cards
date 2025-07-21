@@ -1,0 +1,15 @@
+{
+  "name": "Skills and Training",
+  "category": "mitigation-technique",
+  "title": "skills-and-training",
+  "id": 31,
+  "caption": "Organise training events to upskill team members on bias detection, fairness principles, and inclusive design.",
+  "description": "Skills and training programmes build team capabilities in recognising, measuring, and mitigating AI bias. Training covers topics like fairness metrics, inclusive design principles, bias testing methodologies, and ethical decision-making. Regular upskilling ensures teams stay current with evolving best practices and can effectively implement bias mitigation strategies throughout the AI lifecycle.",
+  "prompts": [
+    "What specific bias-related skills gaps exist in your team that training should address?",
+    "How will you measure the effectiveness of training programmes in improving bias mitigation practices?",
+    "What ongoing learning opportunities will keep your team updated on emerging bias issues and solutions?"
+  ],
+  "example": "An AI development team undergoes quarterly bias training covering unconscious bias recognition, fairness metric interpretation, and inclusive user research methods. Training includes hands-on workshops where team members practice identifying bias in real datasets. Post-training assessments show improved detection of representation gaps and more consistent application of fairness evaluation techniques across projects.",
+  "icon": "skills-and-training-icon"
+}

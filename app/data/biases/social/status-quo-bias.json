@@ -1,0 +1,15 @@
+{
+  "name": "Status Quo Bias",
+  "title": "status-quo-bias",
+  "description": "Status quo bias is the preference for maintaining current systems and processes, even when better alternatives exist. This resistance to change can prevent adoption of more effective AI solutions or the decommissioning of outdated systems. Institutional inertia, risk aversion, and comfort with familiar methods often reinforce this bias, leading organisations to persist with suboptimal approaches.",
+  "example": "A financial institution continues using a decades-old credit scoring system despite evidence that newer ML models would reduce bias and improve accuracy. Decision-makers cite 'regulatory compliance' and 'proven track record' whilst ignoring that the old system perpetuates historical discrimination patterns that newer, fairer alternatives could address.",
+  "prompts": [
+    "Have you assessed how your team members feel about the use or lack of use of technology in your project?",
+    "Is this different to how things have usually been done within your team?",
+    "Are you able to consult with someone outside of your team to see if your project as well as the proposed problem and solution are appropriate?"
+  ],
+  "category": "social-bias",
+  "caption": "The preference for maintaining current systems and processes, even when better alternatives exist.",
+  "id": 16,
+  "icon": "status-quo-bias-icon"
+}

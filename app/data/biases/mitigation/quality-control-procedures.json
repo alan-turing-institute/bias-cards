@@ -1,0 +1,15 @@
+{
+  "name": "Quality Control Procedures",
+  "category": "mitigation-technique",
+  "title": "quality-control-procedures",
+  "id": 40,
+  "caption": "Conduct regular assessments against established quality control procedures to identify bias issues early.",
+  "description": "Quality control procedures integrate bias detection into systematic assessment frameworks that monitor data quality, annotation consistency, and model outputs. These procedures identify issues like annotation bias from time-pressured workers, data entry errors, and drift in model behaviour. By embedding bias checks into routine QC workflows, teams can catch and address bias issues before they impact users.",
+  "prompts": [
+    "What specific quality metrics and thresholds will flag potential bias issues in your system?",
+    "How will you integrate bias detection into existing quality control workflows and processes?",
+    "What corrective actions will be triggered when quality control procedures identify bias concerns?"
+  ],
+  "example": "A content moderation system implements QC procedures that randomly sample 5% of decisions for human review, stratified across demographic groups. Quality checks reveal that the AI flags posts mentioning certain cultural practices as potentially harmful 3x more often than similar posts about majority culture activities. This triggers investigation and retraining to address cultural bias in the moderation algorithms.",
+  "icon": "quality-control-procedures-icon"
+}

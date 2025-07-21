@@ -1,0 +1,15 @@
+{
+  "name": "Historical Bias",
+  "title": "historical-bias",
+  "description": "Historical bias reflects pre-existing societal inequalities embedded in data before any AI development begins. Even with responsible data practices, AI systems can perpetuate or amplify past discrimination patterns. This occurs when training data captures historical injustices, causing technically accurate models to reinforce systemic inequalities rather than promoting fairness.",
+  "example": "A recruitment AI trained on a company's hiring data from the past decade learns to favour CVs from certain universities and postcodes, reflecting historical hiring biases. Despite being 'accurate' in predicting past hiring decisions, the model perpetuates exclusion of qualified candidates from underrepresented backgrounds.",
+  "prompts": [
+    "Which groups and communities will be affected by the use of your model or system?",
+    "Are there groups or communities that will be excluded from your model or experience barriers to using your system?",
+    "Is there a risk of worsening or perpetuating socioeconomic inequalities in the development and deployment of your model?"
+  ],
+  "category": "social-bias",
+  "caption": "Historical biases exist prior to the inception of any AI project, and they can exist even where data are responsibly sampled, collected, and processed.",
+  "id": 9,
+  "icon": "historical-bias-icon"
+}

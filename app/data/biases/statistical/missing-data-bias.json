@@ -1,0 +1,15 @@
+{
+  "name": "Missing Data Bias",
+  "title": "missing-data-bias",
+  "description": "Missing data bias occurs when data is absent in non-random patterns that are informative about the underlying phenomenon. This missingness often reflects social factors like stigma, access barriers, or power dynamics. When models treat missing data as random or simply exclude it, they fail to recognise that the absence itself carries important information about systematic inequalities.",
+  "example": "A mental health app has incomplete mood tracking data for users experiencing severe depression, as they're less likely to log entries during their worst periods. The AI model trained on this data underestimates depression severity because the most critical data points—when users are too unwell to engage—are systematically missing.",
+  "prompts": [
+    "How have you dealt with and recorded your handling of missing data (e.g. choice of imputation or augmentation method)?",
+    "Have you consulted with domain experts to help you identify possible explanations for the missing data and whether they may be informative?",
+    "What social or structural factors might cause certain groups to have more missing data than others?"
+  ],
+  "category": "statistical-bias",
+  "caption": "When data is absent in non-random patterns that are informative about the underlying phenomenon.",
+  "id": 18,
+  "icon": "missing-data-bias-icon"
+}

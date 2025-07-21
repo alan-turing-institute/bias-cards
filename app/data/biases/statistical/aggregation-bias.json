@@ -1,0 +1,15 @@
+{
+  "name": "Aggregation Bias",
+  "title": "aggregation-bias",
+  "description": "Aggregation bias occurs when models apply uniform decision rules across diverse subgroups despite meaningful differences in how features relate to outcomes. This one-size-fits-all approach ignores subgroup-specific patterns, leading to reduced performance for minority groups. The bias emerges when datasets are analysed as homogeneous populations, masking important variations that require tailored modelling approaches for equitable outcomes.",
+  "example": "A loan approval AI trained on aggregated data performs well overall but systematically underperforms for young applicants and immigrants. The model learned patterns primarily from established customers with long credit histories, missing the different risk indicators relevant for these groups. Separate models or stratified approaches would better capture how creditworthiness manifests differently across demographic groups.",
+  "prompts": [
+    "Have you assessed model performance separately for different demographic or contextual subgroups?",
+    "Are there meaningful differences in how features relate to outcomes across different populations in your dataset?",
+    "Would stratified models or subgroup-specific approaches improve fairness and performance for underrepresented groups?"
+  ],
+  "category": "statistical-bias",
+  "caption": "Aggregation bias arises when a “one-size-fits-all” approach is taken to the outputs of a trained algorithmic model even where variations in subgroup characteristics mean that mapping functions from inputs to outputs are not consistent across subgroups.",
+  "id": 21,
+  "icon": "aggregation-bias-icon"
+}

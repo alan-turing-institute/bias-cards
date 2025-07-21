@@ -1,0 +1,15 @@
+{
+  "name": "Open Documentation",
+  "category": "mitigation-technique",
+  "title": "open-documentation",
+  "id": 37,
+  "caption": "Document actions and decisions throughout your project to support transparency and accountability.",
+  "description": "Open documentation creates transparent records of AI development decisions, including data sources, model choices, evaluation methods, and bias mitigation efforts. This practice enables external scrutiny, supports reproducibility, and helps users understand system limitations. Comprehensive documentation also facilitates knowledge sharing and helps future projects learn from bias mitigation successes and failures.",
+  "prompts": [
+    "What aspects of your project are most critical to document for bias transparency and accountability?",
+    "How will you make technical documentation accessible to diverse audiences including affected communities?",
+    "What ongoing documentation processes will track bias mitigation efforts over time?"
+  ],
+  "example": "A healthcare AI team publishes model cards documenting their diagnostic system's training data demographics, performance across patient groups, known limitations, and bias testing results. They maintain public repositories with code, evaluation scripts, and detailed methodology. This transparency enables healthcare providers to make informed deployment decisions and helps researchers replicate and improve upon their bias mitigation approaches.",
+  "icon": "open-documentation-icon"
+}

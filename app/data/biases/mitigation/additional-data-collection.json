@@ -1,0 +1,15 @@
+{
+  "name": "Additional Data Collection",
+  "category": "mitigation-technique",
+  "title": "additional-data-collection",
+  "id": 26,
+  "caption": "Return to the data extraction stage to carry out additional data collection or reconsider methods of data extraction.",
+  "description": "This technique involves returning to the data collection phase when existing datasets prove inadequate or biased. It includes gathering more representative samples, filling demographic gaps, and adopting more inclusive collection methods. The approach recognises that many AI biases stem from insufficient or skewed training data, making additional collection a fundamental mitigation strategy for improving model fairness and performance.",
+  "prompts": [
+    "What specific data gaps have you identified that need to be addressed?",
+    "How will new data collection methods be more inclusive than previous approaches?",
+    "What resources and timeline are needed for meaningful additional data collection?"
+  ],
+  "example": "A facial recognition system performs poorly for elderly users and people with darker skin tones. The team returns to data collection, partnering with senior centres and diverse community groups to gather more representative training images. They also revise their collection protocols to ensure better lighting conditions and age diversity, resulting in significantly improved accuracy across all demographic groups.",
+  "icon": "additional-data-collection-icon"
+}

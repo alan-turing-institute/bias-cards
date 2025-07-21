@@ -1,0 +1,15 @@
+{
+  "name": "Automation-Distrust Bias",
+  "title": "automation-distrust-bias",
+  "description": "Automation-distrust bias occurs when users reject or underutilise AI systems due to excessive scepticism or preference for human judgement. This can stem from general distrust of technology, overvaluing human intuition, or concerns about AI's lack of moral reasoning. Such bias may prevent organisations from benefiting from evidence-based AI insights that could improve decision-making.",
+  "example": "A hospital refuses to pilot an AI diagnostic tool that has shown excellent results in clinical trials, with doctors citing concerns about 'replacing human expertise'. Their reluctance prevents them from using a system that could help catch rare conditions they might miss, ultimately providing worse patient outcomes than hospitals that thoughtfully integrate AI support.",
+  "prompts": [
+    "Have you engaged the intended users of your system early on in project planning to identify barriers and co-design solutions that would increase the level of trust they have in your system?",
+    "Is there information you could provide to help reduce any concerns users would have about how your model or system operates?",
+    "How can you demonstrate the value of AI assistance whilst respecting legitimate concerns about maintaining human expertise and oversight?"
+  ],
+  "category": "cognitive-bias",
+  "caption": "When users reject or underutilise AI systems due to excessive scepticism or preference for human judgement.",
+  "id": 8,
+  "icon": "automation-distrust-bias-icon"
+}
