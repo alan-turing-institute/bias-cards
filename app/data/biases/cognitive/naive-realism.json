@@ -1,15 +1,15 @@
 {
-	"name": "Naive Realism",
-	"title": "naive-realism",
-	"description": "Naive realism is the tendency to believe we see the world objectively, without recognising how our experiences and beliefs shape our perceptions. In AI development, this can lead teams to treat socially constructed concepts as objective facts, embedding cultural assumptions into models whilst believing they are creating neutral, universal systems.",
-	"example": "A team building a creditworthiness model treats factors like 'financial responsibility' as objective measures, using payment history and account balances. They fail to recognise how these metrics reflect systemic inequalities, cultural differences in financial practices, and varying access to traditional banking services across communities.",
-	"prompts": [
-		"Have you identified non-quantifiable or difficult-to-measure qualitative factors that may contribute to and affect your model or decision-making process?",
-		"How are these documented and accounted for?",
-		"Which concepts in your model might be culturally specific rather than universally applicable?"
-	],
-	"category": "cognitive-bias",
-	"caption": "The tendency to believe we see the world objectively, without recognising how our experiences shape our perceptions.",
-	"id": 4,
-	"icon": "naive-realism-icon"
+  "name": "Naive Realism",
+  "title": "naive-realism",
+  "description": "Naive realism is the tendency to believe we see the world objectively, without recognising how our experiences and beliefs shape our perceptions. In AI development, this can lead teams to treat socially constructed concepts as objective facts, embedding cultural assumptions into models whilst believing they are creating neutral, universal systems.",
+  "example": "A team building a creditworthiness model treats factors like 'financial responsibility' as objective measures, using payment history and account balances. They fail to recognise how these metrics reflect systemic inequalities, cultural differences in financial practices, and varying access to traditional banking services across communities.",
+  "prompts": [
+    "Have you identified non-quantifiable or difficult-to-measure qualitative factors that may contribute to and affect your model or decision-making process?",
+    "How are these documented and accounted for?",
+    "Which concepts in your model might be culturally specific rather than universally applicable?"
+  ],
+  "category": "cognitive-bias",
+  "caption": "The tendency to believe we see the world objectively, without recognising how our experiences shape our perceptions.",
+  "id": 4,
+  "icon": "naive-realism-icon"
 }

@@ -14,7 +14,7 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 
-export default function Home() {
+export default function Page() {
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -29,11 +29,13 @@ export default function Home() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">Bias Cards</BreadcrumbLink>
+                  <BreadcrumbLink href="#">
+                    Building Your Application
+                  </BreadcrumbLink>
                 </BreadcrumbItem>
                 <BreadcrumbSeparator className="hidden md:block" />
                 <BreadcrumbItem>
-                  <BreadcrumbPage>Welcome</BreadcrumbPage>
+                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
@@ -41,26 +43,11 @@ export default function Home() {
         </header>
         <div className="flex flex-1 flex-col gap-4 p-4 pt-0">
           <div className="grid auto-rows-min gap-4 md:grid-cols-3">
-            <div className="flex aspect-video items-center justify-center rounded-xl bg-muted/50">
-              <h3 className="font-medium text-lg">Explore Bias Cards</h3>
-            </div>
-            <div className="flex aspect-video items-center justify-center rounded-xl bg-muted/50">
-              <h3 className="font-medium text-lg">Project Lifecycle</h3>
-            </div>
-            <div className="flex aspect-video items-center justify-center rounded-xl bg-muted/50">
-              <h3 className="font-medium text-lg">Activity Workspace</h3>
-            </div>
+            <div className="aspect-video rounded-xl bg-muted/50" />
+            <div className="aspect-video rounded-xl bg-muted/50" />
+            <div className="aspect-video rounded-xl bg-muted/50" />
           </div>
-          <div className="flex min-h-[100vh] flex-1 items-center justify-center rounded-xl bg-muted/50 md:min-h-min">
-            <div className="text-center">
-              <h1 className="mb-4 font-bold text-4xl">Welcome to Bias Cards</h1>
-              <p className="max-w-2xl text-muted-foreground text-xl">
-                An interactive educational tool for exploring machine learning
-                biases, mapping them to project lifecycle stages, and applying
-                effective mitigation strategies.
-              </p>
-            </div>
-          </div>
+          <div className="min-h-[100vh] flex-1 rounded-xl bg-muted/50 md:min-h-min" />
         </div>
       </SidebarInset>
     </SidebarProvider>
