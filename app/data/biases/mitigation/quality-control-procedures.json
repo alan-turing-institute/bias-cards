@@ -2,7 +2,7 @@
   "name": "Quality Control Procedures",
   "category": "mitigation-technique",
   "title": "quality-control-procedures",
-  "id": 40,
+  "id": 16,
   "caption": "Conduct regular assessments against established quality control procedures to identify bias issues early.",
   "description": "Quality control procedures integrate bias detection into systematic assessment frameworks that monitor data quality, annotation consistency, and model outputs. These procedures identify issues like annotation bias from time-pressured workers, data entry errors, and drift in model behaviour. By embedding bias checks into routine QC workflows, teams can catch and address bias issues before they impact users.",
   "prompts": [

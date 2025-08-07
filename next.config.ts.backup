@@ -1,0 +1,19 @@
+import type { NextConfig } from 'next';
+
+const isProd = process.env.NODE_ENV === 'production';
+
+const nextConfig: NextConfig = {
+  // Only use static export in production
+  ...(isProd && { output: 'export' }),
+  basePath: isProd ? '/bias-cards' : '',
+  assetPrefix: isProd ? '/bias-cards/' : '',
+  trailingSlash: true,
+  images: {
+    unoptimized: true,
+  },
+  experimental: {
+    serverExternalPackages: ['fstream', 'unzipper'],
+  },
+};
+
+export default nextConfig;

@@ -2,7 +2,7 @@
   "name": "Stakeholder Engagement",
   "category": "mitigation-technique",
   "title": "stakeholder-engagement",
-  "id": 28,
+  "id": 4,
   "caption": "Carry out meaningful engagement to consult or partner with affected communities and stakeholders.",
   "description": "Stakeholder engagement involves systematic consultation and collaboration with individuals and communities affected by AI systems. Methods include community forums, surveys, interviews, citizen panels, and ongoing dialogue throughout development and deployment. This approach ensures diverse voices inform system design and helps identify biases that might not be apparent to development teams.",
   "prompts": [

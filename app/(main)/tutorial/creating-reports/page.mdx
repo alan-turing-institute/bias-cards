@@ -1,0 +1,374 @@
+import {
+  MDXPageLayout,
+  generateMetadataFromFrontmatter,
+} from '@/components/layout/mdx-page-layout';
+import { Callout } from '@/components/mdx/callout';
+import { FileText, Download, Settings, Share2 } from 'lucide-react';
+import { IconHeading } from '@/components/mdx/icon-heading';
+
+export const frontmatter = {
+  title: 'Creating Reports',
+  description: 'Generate professional documentation from your bias assessments',
+  breadcrumbs: [
+    { label: 'Home', href: '/' },
+    { label: 'Tutorial', href: '/tutorial' },
+    { label: 'Creating Reports', href: '/tutorial/creating-reports' }
+  ],
+  tableOfContents: true
+};
+
+export const metadata = generateMetadataFromFrontmatter(frontmatter);
+
+export default function CreatingReportsPage({ children }) {
+  return <MDXPageLayout frontmatter={frontmatter}>{children}</MDXPageLayout>;
+}
+
+## Why Generate Reports?
+
+Reports transform your interactive bias assessment into shareable, professional documentation. They serve multiple purposes:
+
+- **Documentation** - Formal record of bias considerations
+- **Compliance** - Evidence of responsible AI practices
+- **Communication** - Share findings with stakeholders
+- **Audit Trail** - Track decisions and changes over time
+- **Knowledge Sharing** - Help others learn from your experience
+
+<Callout type="info">
+  Reports can be generated at any point in your project, not just at the end. Regular reporting helps track progress and changes.
+</Callout>
+
+## Report Types
+
+Bias Cards offers several report formats, each suited for different audiences and purposes:
+
+<IconHeading icon={FileText} level={3}>
+  Executive Summary
+</IconHeading>
+
+**Best for**: Leadership, non-technical stakeholders
+**Includes**: High-level findings, risk summary, key recommendations
+**Format**: 2-3 pages, visual emphasis
+
+<IconHeading icon={FileText} level={3}>
+  Technical Report
+</IconHeading>
+
+**Best for**: Development teams, technical reviewers
+**Includes**: Detailed bias analysis, mitigation strategies, implementation notes
+**Format**: Comprehensive, with technical appendices
+
+<IconHeading icon={FileText} level={3}>
+  Compliance Documentation
+</IconHeading>
+
+**Best for**: Legal, regulatory, audit purposes
+**Includes**: Methodology, evidence, mitigation measures, accountability framework
+**Format**: Structured according to regulatory requirements
+
+<IconHeading icon={FileText} level={3}>
+  Educational Report
+</IconHeading>
+
+**Best for**: Training, knowledge sharing, case studies
+**Includes**: Context, examples, lessons learned, best practices
+**Format**: Narrative style with explanations
+
+## Generating a Report
+
+### Step-by-Step Process
+
+1. **Complete Your Assessment**
+   - Ensure all relevant biases are mapped
+   - Add rationales and notes
+   - Update severity ratings
+
+2. **Navigate to Reports**
+   - From your workspace, click "Generate Report"
+   - Or go to [Reports](/reports) directly
+
+3. **Select Report Type**
+   - Choose template based on audience
+   - Or create custom report
+
+4. **Configure Settings**
+   - Set detail level
+   - Choose sections to include
+   - Add custom branding (if applicable)
+
+5. **Review and Export**
+   - Preview the report
+   - Make final adjustments
+   - Export in desired format
+
+### Export Formats
+
+<div className="grid gap-4 mt-4 md:grid-cols-2">
+  <div className="border rounded-lg p-4">
+    <h4 className="font-semibold mb-2">📄 PDF</h4>
+    <p className="text-sm text-muted-foreground">Professional, ready to share, preserves formatting</p>
+  </div>
+  <div className="border rounded-lg p-4">
+    <h4 className="font-semibold mb-2">📝 Word/DOCX</h4>
+    <p className="text-sm text-muted-foreground">Editable, customizable, template-based</p>
+  </div>
+  <div className="border rounded-lg p-4">
+    <h4 className="font-semibold mb-2">📊 Excel/CSV</h4>
+    <p className="text-sm text-muted-foreground">Data analysis, metrics tracking, integration</p>
+  </div>
+  <div className="border rounded-lg p-4">
+    <h4 className="font-semibold mb-2">🔗 Markdown</h4>
+    <p className="text-sm text-muted-foreground">Version control, documentation systems, wikis</p>
+  </div>
+</div>
+
+## Report Customization
+
+### Content Selection
+
+Choose which sections to include:
+
+- **Executive Summary** - Always recommended
+- **Methodology** - How assessment was conducted
+- **Bias Inventory** - Complete list with details
+- **Lifecycle Mapping** - Visual representation
+- **Risk Analysis** - Severity and likelihood matrices
+- **Mitigation Plan** - Strategies and timeline
+- **Appendices** - Supporting documentation
+
+### Visual Elements
+
+Reports can include:
+- **Heat maps** showing bias concentration
+- **Risk matrices** for prioritization
+- **Timeline charts** for mitigation planning
+- **Comparison graphs** for before/after scenarios
+
+### Branding Options
+
+For organizational use:
+- Add company logo
+- Use brand colors
+- Include custom headers/footers
+- Add confidentiality notices
+
+<Callout type="success">
+  Well-formatted reports with clear visuals are more likely to be read and acted upon by stakeholders.
+</Callout>
+
+## Report Templates
+
+### Using Pre-built Templates
+
+Bias Cards provides templates for common scenarios:
+
+#### Regulatory Compliance Template
+```
+1. Executive Summary
+2. Regulatory Context
+3. Assessment Methodology
+4. Identified Risks
+5. Mitigation Measures
+6. Monitoring Plan
+7. Accountability Framework
+8. Appendices
+```
+
+#### Project Documentation Template
+```
+1. Project Overview
+2. Bias Assessment Scope
+3. Findings by Lifecycle Stage
+4. Risk Prioritization
+5. Mitigation Strategies
+6. Implementation Timeline
+7. Success Metrics
+```
+
+#### Stakeholder Communication Template
+```
+1. Key Messages
+2. What We Found
+3. Why It Matters
+4. What We're Doing
+5. Expected Outcomes
+6. Next Steps
+```
+
+### Creating Custom Templates
+
+For recurring needs, create your own templates:
+
+1. Start with a base template
+2. Modify sections and formatting
+3. Save as custom template
+4. Reuse across projects
+
+## Best Practices
+
+### Content Guidelines
+
+<IconHeading icon={Settings} level={3}>
+  Writing Effective Reports
+</IconHeading>
+
+**Be Clear and Concise**
+- Use plain language for non-technical sections
+- Define technical terms
+- Provide context for findings
+- Use examples to illustrate points
+
+**Be Comprehensive but Focused**
+- Include all relevant information
+- Avoid unnecessary detail
+- Prioritize by importance
+- Use appendices for supporting data
+
+**Be Actionable**
+- Provide specific recommendations
+- Include implementation guidance
+- Set realistic timelines
+- Define success metrics
+
+### Timing and Frequency
+
+**When to Generate Reports**:
+- **Project Kickoff** - Initial risk assessment
+- **Major Milestones** - Progress updates
+- **Pre-deployment** - Final assessment
+- **Post-deployment** - Monitoring reports
+- **Incidents** - Issue investigation
+- **Regular Intervals** - Quarterly/annual reviews
+
+## Advanced Features
+
+### Version Control
+
+Track report evolution:
+- **Version numbering** - Automatic versioning
+- **Change tracking** - Highlight modifications
+- **Comparison views** - Side-by-side changes
+- **Audit trail** - Who changed what when
+
+### Collaborative Review
+
+Before finalizing:
+1. **Share draft** with reviewers
+2. **Collect feedback** via comments
+3. **Track revisions** systematically
+4. **Approve formally** with sign-offs
+
+### Integration Options
+
+Connect reports with:
+- **Project management tools** (Jira, Asana)
+- **Documentation systems** (Confluence, SharePoint)
+- **Compliance platforms** (GRC tools)
+- **Version control** (Git, SVN)
+
+## Common Report Sections Explained
+
+### Executive Summary
+Should answer:
+- What biases were identified?
+- What are the main risks?
+- What actions are recommended?
+- What resources are needed?
+
+### Risk Analysis
+Should include:
+- Risk matrix (likelihood vs. impact)
+- Top risks ranked by severity
+- Potential consequences
+- Mitigation priorities
+
+### Mitigation Plan
+Should detail:
+- Specific strategies for each bias
+- Implementation steps
+- Resource requirements
+- Success metrics
+- Timeline
+
+### Monitoring Framework
+Should establish:
+- Key indicators to track
+- Monitoring frequency
+- Responsibility assignments
+- Escalation procedures
+
+## Quality Checklist
+
+Before sharing your report, verify:
+
+<Callout type="info" title="Report Quality Checklist">
+  ✅ All identified biases are documented
+  ✅ Rationales are clear and complete
+  ✅ Mitigation strategies are specific
+  ✅ Language is appropriate for audience
+  ✅ Visuals enhance understanding
+  ✅ Recommendations are actionable
+  ✅ Contact information is included
+  ✅ Report is properly versioned
+  ✅ Confidentiality level is marked
+  ✅ Executive summary is compelling
+</Callout>
+
+## Practical Exercise
+
+Create a practice report:
+
+1. **Use your workspace** from the previous tutorial
+2. **Generate an Executive Summary** report
+3. **Customize** by:
+   - Adding a risk matrix
+   - Including top 3 recommendations
+   - Setting 30-day action items
+4. **Export as PDF** and review
+5. **Identify** three improvements you would make
+
+## Troubleshooting
+
+### Common Issues
+
+**Report generation fails**
+- Check workspace is saved
+- Verify all required fields
+- Try different browser
+- Contact support if persists
+
+**Formatting problems**
+- Use standard fonts
+- Avoid special characters
+- Check image formats
+- Preview before export
+
+**Missing content**
+- Ensure workspace is complete
+- Check section selection
+- Verify filter settings
+- Review template requirements
+
+## Next Steps
+
+Congratulations! You now know how to create professional reports from your bias assessments. 
+
+### Continue Learning
+
+- Explore advanced features and integrations
+- Learn about team collaboration
+- Discover automation options
+- Join the community for tips and best practices
+
+<IconHeading icon={Share2} level={3}>
+  Share Your Experience
+</IconHeading>
+
+Help improve Bias Cards by:
+- Sharing report templates that work well
+- Suggesting new report features
+- Contributing case studies
+- Providing feedback on usability
+
+---
+
+Remember: Reports are communication tools. Always consider your audience and purpose when generating documentation. The best report is one that leads to positive action.

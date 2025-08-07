@@ -2,7 +2,7 @@
   "name": "Data Augmentation",
   "category": "mitigation-technique",
   "title": "data-augmentation",
-  "id": 32,
+  "id": 8,
   "caption": "Augment your dataset using techniques appropriate to the objective, such as synthetic data generation or transformation.",
   "description": "Data augmentation expands training datasets through systematic modifications and synthetic data generation to address sparsity and imbalances. Techniques include rotation, cropping, and noise addition for images, paraphrasing for text, and generative models for creating synthetic samples. This approach helps models generalise better and reduces bias towards overrepresented groups by balancing dataset composition.",
   "prompts": [

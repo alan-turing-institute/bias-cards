@@ -2,7 +2,7 @@
   "name": "Open Documentation",
   "category": "mitigation-technique",
   "title": "open-documentation",
-  "id": 37,
+  "id": 13,
   "caption": "Document actions and decisions throughout your project to support transparency and accountability.",
   "description": "Open documentation creates transparent records of AI development decisions, including data sources, model choices, evaluation methods, and bias mitigation efforts. This practice enables external scrutiny, supports reproducibility, and helps users understand system limitations. Comprehensive documentation also facilitates knowledge sharing and helps future projects learn from bias mitigation successes and failures.",
   "prompts": [

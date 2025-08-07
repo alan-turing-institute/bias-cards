@@ -1,88 +1,121 @@
 'use client';
 
-import {
-  Folder,
-  Forward,
-  type LucideIcon,
-  MoreHorizontal,
-  Trash2,
-} from 'lucide-react';
+import { ChevronRight, type LucideIcon } from 'lucide-react';
+import Link from 'next/link';
 
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarMenu,
-  SidebarMenuAction,
   SidebarMenuButton,
   SidebarMenuItem,
-  useSidebar,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
 } from '@/components/ui/sidebar';
 
 export function NavProjects({
   projects,
+  label = 'Projects',
 }: {
   projects: {
     name: string;
     url: string;
     icon: LucideIcon;
+    isActive?: boolean;
+    onboardingId?: string;
+    items?: {
+      title: string;
+      url: string;
+      onboardingId?: string;
+    }[];
   }[];
+  label?: string;
 }) {
-  const { isMobile } = useSidebar();
-
   return (
     <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-      <SidebarGroupLabel>Projects</SidebarGroupLabel>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
       <SidebarMenu>
-        {projects.map((item) => (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton asChild>
-              <a href={item.url}>
-                <item.icon />
-                <span>{item.name}</span>
-              </a>
-            </SidebarMenuButton>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <SidebarMenuAction showOnHover>
-                  <MoreHorizontal />
-                  <span className="sr-only">More</span>
-                </SidebarMenuAction>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent
-                align={isMobile ? 'end' : 'start'}
-                className="w-48 rounded-lg"
-                side={isMobile ? 'bottom' : 'right'}
+        {projects.map((item) => {
+          // If the item has sub-items, render as collapsible
+          if (item.items && item.items.length > 0) {
+            return (
+              <Collapsible
+                asChild
+                className="group/collapsible"
+                defaultOpen={item.isActive}
+                key={item.name}
               >
-                <DropdownMenuItem>
-                  <Folder className="text-muted-foreground" />
-                  <span>View Project</span>
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Forward className="text-muted-foreground" />
-                  <span>Share Project</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <Trash2 className="text-muted-foreground" />
-                  <span>Delete Project</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </SidebarMenuItem>
-        ))}
-        <SidebarMenuItem>
-          <SidebarMenuButton className="text-sidebar-foreground/70">
-            <MoreHorizontal className="text-sidebar-foreground/70" />
-            <span>More</span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <div className="flex items-center">
+                    <CollapsibleTrigger asChild>
+                      <SidebarMenuButton
+                        className="group-data-[collapsible=icon]:hidden"
+                        tooltip={item.name}
+                        {...(item.onboardingId && {
+                          'data-onboarding': item.onboardingId,
+                        })}
+                      >
+                        {item.icon && <item.icon />}
+                        <span>{item.name}</span>
+                        <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                      </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    {/* Icon-only link for collapsed state */}
+                    <SidebarMenuButton
+                      asChild
+                      className="hidden group-data-[collapsible=icon]:flex"
+                      tooltip={item.name}
+                    >
+                      <Link href={item.url}>{item.icon && <item.icon />}</Link>
+                    </SidebarMenuButton>
+                  </div>
+                  <CollapsibleContent>
+                    <SidebarMenuSub>
+                      {item.items.map((subItem) => (
+                        <SidebarMenuSubItem key={subItem.title}>
+                          <SidebarMenuSubButton
+                            asChild
+                            {...(subItem.onboardingId && {
+                              'data-onboarding': subItem.onboardingId,
+                            })}
+                          >
+                            <Link href={subItem.url}>
+                              <span>{subItem.title}</span>
+                            </Link>
+                          </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                      ))}
+                    </SidebarMenuSub>
+                  </CollapsibleContent>
+                </SidebarMenuItem>
+              </Collapsible>
+            );
+          }
+
+          // If no sub-items, render as simple link
+          return (
+            <SidebarMenuItem key={item.name}>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.name}
+                {...(item.onboardingId && {
+                  'data-onboarding': item.onboardingId,
+                })}
+              >
+                <Link href={item.url}>
+                  <item.icon />
+                  <span>{item.name}</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        })}
       </SidebarMenu>
     </SidebarGroup>
   );

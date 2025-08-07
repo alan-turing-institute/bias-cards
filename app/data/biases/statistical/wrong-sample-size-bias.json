@@ -10,6 +10,6 @@
   ],
   "category": "statistical-bias",
   "caption": "Using the wrong sample size for the study can lead to chance findings that fail to adequately represent the variability of the underlying data distribution, in the case of small samples, or findings that are statistically significant but not relevant or actionable, in the case of larger samples.",
-  "id": 20,
+  "id": 3,
   "icon": "wrong-sample-size-bias-icon"
 }

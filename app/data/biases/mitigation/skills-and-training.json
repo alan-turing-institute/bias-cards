@@ -2,7 +2,7 @@
   "name": "Skills and Training",
   "category": "mitigation-technique",
   "title": "skills-and-training",
-  "id": 31,
+  "id": 7,
   "caption": "Organise training events to upskill team members on bias detection, fairness principles, and inclusive design.",
   "description": "Skills and training programmes build team capabilities in recognising, measuring, and mitigating AI bias. Training covers topics like fairness metrics, inclusive design principles, bias testing methodologies, and ethical decision-making. Regular upskilling ensures teams stay current with evolving best practices and can effectively implement bias mitigation strategies throughout the AI lifecycle.",
   "prompts": [

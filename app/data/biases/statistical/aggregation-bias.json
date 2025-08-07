@@ -10,6 +10,6 @@
   ],
   "category": "statistical-bias",
   "caption": "Aggregation bias arises when a “one-size-fits-all” approach is taken to the outputs of a trained algorithmic model even where variations in subgroup characteristics mean that mapping functions from inputs to outputs are not consistent across subgroups.",
-  "id": 21,
+  "id": 4,
   "icon": "aggregation-bias-icon"
 }

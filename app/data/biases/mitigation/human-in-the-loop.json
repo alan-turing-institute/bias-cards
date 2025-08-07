@@ -2,7 +2,7 @@
   "name": "Human-in-the-Loop",
   "category": "mitigation-technique",
   "title": "human-in-the-loop",
-  "id": 29,
+  "id": 5,
   "caption": "Ensure humans maintain decision-making authority whilst AI systems provide recommendations and automate routine tasks.",
   "description": "Human-in-the-loop systems maintain human agency and oversight in AI-driven processes, particularly for high-stakes decisions. This approach combines AI efficiency with human judgment, ensuring accountability and enabling bias detection that automated systems might miss. Humans can catch edge cases, apply contextual knowledge, and provide ethical oversight that purely algorithmic approaches cannot deliver.",
   "prompts": [

@@ -2,7 +2,7 @@
   "name": "Identify Underrepresented Groups",
   "category": "mitigation-technique",
   "title": "identify-underrepresented-groups",
-  "id": 30,
+  "id": 6,
   "caption": "Analyse demographic gaps in consultation with communities to identify underrepresented groups.",
   "description": "This technique involves systematic analysis of dataset demographics compared to target populations, identifying groups that are absent or inadequately represented. It requires community engagement to understand representation gaps that statistics alone might miss, including intersectional identities and marginalised communities. The process helps prevent models from being optimised only for majority groups.",
   "prompts": [

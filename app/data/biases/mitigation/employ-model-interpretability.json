@@ -2,7 +2,7 @@
   "name": "Employ Model Interpretability",
   "category": "mitigation-technique",
   "title": "employ-model-interpretability",
-  "id": 39,
+  "id": 15,
   "caption": "Use interpretability methods during data analysis, model testing and validation, and system governance.",
   "description": "Model interpretability techniques make AI decision-making transparent and auditable, enabling bias detection and mitigation. Methods include feature importance analysis, SHAP values, LIME explanations, and attention visualisation. These approaches help identify when models rely on protected attributes, reveal unexpected correlations, and provide evidence for bias remediation efforts. Interpretability supports both technical validation and stakeholder communication about model behaviour.",
   "prompts": [

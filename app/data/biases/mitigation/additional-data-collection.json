@@ -2,7 +2,7 @@
   "name": "Additional Data Collection",
   "category": "mitigation-technique",
   "title": "additional-data-collection",
-  "id": 26,
+  "id": 2,
   "caption": "Return to the data extraction stage to carry out additional data collection or reconsider methods of data extraction.",
   "description": "This technique involves returning to the data collection phase when existing datasets prove inadequate or biased. It includes gathering more representative samples, filling demographic gaps, and adopting more inclusive collection methods. The approach recognises that many AI biases stem from insufficient or skewed training data, making additional collection a fundamental mitigation strategy for improving model fairness and performance.",
   "prompts": [

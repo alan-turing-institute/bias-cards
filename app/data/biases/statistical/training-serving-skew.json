@@ -10,6 +10,6 @@
   ],
   "category": "statistical-bias",
   "caption": "This bias occurs when the model is deployed on individuals whose data are not similar to or representative of the individuals whose data were used to train, test, and validate the model.",
-  "id": 24,
+  "id": 7,
   "icon": "training-serving-skew-icon"
 }

@@ -2,7 +2,7 @@
   "name": "Participatory Design Workshops",
   "category": "mitigation-technique",
   "title": "participatory-design-workshops",
-  "id": 27,
+  "id": 3,
   "caption": "Involve stakeholders in the design process to co-create solutions and ensure usability and acceptance.",
   "description": "Participatory design workshops engage affected communities and stakeholders directly in AI system design decisions. This collaborative approach helps identify bias sources that designers might overlook, ensures solutions address real user needs, and builds trust through inclusive development processes. By involving diverse voices early in design, teams can prevent biases rather than trying to fix them later.",
   "prompts": [

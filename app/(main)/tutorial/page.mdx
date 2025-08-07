@@ -1,0 +1,101 @@
+import {
+  MDXPageLayout,
+  generateMetadataFromFrontmatter,
+} from '@/components/layout/mdx-page-layout';
+import { Callout } from '@/components/mdx/callout';
+import { LinkCard } from '@/components/mdx/link-card';
+import { Rocket, BookOpen, Lightbulb, FileText } from 'lucide-react';
+
+export const frontmatter = {
+  title: 'Getting Started',
+  description:
+    'Learn how to effectively use Bias Cards to identify and mitigate bias in your ML projects',
+  breadcrumbs: [
+    { label: 'Home', href: '/' },
+    { label: 'Tutorial', href: '/tutorial' },
+  ],
+  tableOfContents: true,
+};
+
+export const metadata = generateMetadataFromFrontmatter(frontmatter);
+
+export default function TutorialPage({ children }) {
+  return <MDXPageLayout frontmatter={frontmatter}>{children}</MDXPageLayout>;
+}
+
+<Callout variant="info" title="Tutorial Structure">
+  This tutorial is organised into several sections. You can follow them in order
+  or jump to the topics most relevant to your needs.
+</Callout>
+
+## What You'll Learn
+
+By completing this tutorial, you will:
+
+- gain an understanding of the three bias categories: social, statistical, and cognitive;
+- learn how to navigate the bias library effectively;
+- explore how to complete the bias identification and evaluation activity, which will have you mapping biases to project lifecycle stages; and
+- learn how to generate professional reports for documentation and to help you implement bias mitigation techniques in your project.
+
+## Prerequisites
+
+No special technical knowledge is required to use the Bias Cards app. However, you'll get the most value if you have:
+
+- a basic understanding of machine learning and artificial intelligence concepts;
+- a specific ML project in mind to assess; and
+- a general understanding of cognitive, statistical, and social biases.
+
+## Who is this app for?
+
+### For Researchers
+
+The Bias Cards app can help you with:
+
+- Comprehensive bias categorisation
+- Literature connections to topics in bias descriptions
+- Report generation to support publications
+
+### For Practitioners
+
+The Bias Cards app can help you:
+
+- Identify practical mitigation strategies
+- Evaluate the impact of possible biases in a project or system
+- Conduct team reflection and deliberation workshops
+
+### For Educators
+
+The Bias Cards app can help you:
+
+- Design activity templates for teaching
+- Create structured case studies for students
+- Set report generation for assignments
+
+## Tutorial Sections
+
+<div className="grid gap-4 mt-6 md:grid-cols-2">
+  <LinkCard
+    href="/tutorial/understanding-biases"
+    title="Understanding Biases"
+    description="Learn about cognitive, social, and statistical biases"
+    icon={BookOpen}
+  />
+  <LinkCard
+    href="/tutorial/using-workspace"
+    title="Using the Workspace"
+    description="Master the interactive bias mapping tools"
+    icon={Lightbulb}
+  />
+  <LinkCard
+    href="/tutorial/creating-reports"
+    title="Creating Reports"
+    description="Generate and customize assessment documentation"
+    icon={FileText}
+  />
+  <LinkCard
+    href="/tutorial/advanced-features"
+    title="Advanced Features"
+    description="Explore templates, collaboration, and more"
+    icon={Rocket}
+  />
+</div>

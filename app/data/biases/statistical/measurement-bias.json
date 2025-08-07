@@ -10,6 +10,6 @@
   ],
   "category": "statistical-bias",
   "caption": "Measurement bias occurs when the measurement method used to collect data and define the features or labels used by a model is flawed or fails to capture relevant information about the objects or subjects being studied.",
-  "id": 19,
+  "id": 2,
   "icon": "measurement-bias-icon"
 }

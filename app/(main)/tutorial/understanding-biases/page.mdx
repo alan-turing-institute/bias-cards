@@ -1,0 +1,171 @@
+import {
+  MDXPageLayout,
+  generateMetadataFromFrontmatter,
+} from '@/components/layout/mdx-page-layout';
+import { Callout } from '@/components/mdx/callout';
+import { LinkCard } from '@/components/mdx/link-card';
+import {
+  Brain,
+  Users,
+  BarChart,
+  School,
+  AlertTriangle,
+  Shield,
+  ArrowRight,
+} from 'lucide-react';
+import { IconHeading } from '@/components/mdx/icon-heading';
+
+export const frontmatter = {
+  title: 'Understanding Biases',
+  description:
+    'Learn about the three categories of bias and how they affect machine learning systems',
+  breadcrumbs: [
+    { label: 'Home', href: '/' },
+    { label: 'Tutorial', href: '/tutorial' },
+    { label: 'Understanding Biases', href: '/tutorial/understanding-biases' },
+  ],
+  tableOfContents: true,
+};
+
+export const metadata = generateMetadataFromFrontmatter(frontmatter);
+
+export default function UnderstandingBiasesPage({ children }) {
+  return <MDXPageLayout frontmatter={frontmatter}>{children}</MDXPageLayout>;
+}
+
+<Callout variant="info" title="Learning Objectives">
+  By the end of this section, you'll be able to:
+
+- Distinguish between social, statistical, and cognitive biases
+- Identify how each type manifests in ML systems
+- Understand the interconnections between bias types
+- Apply this knowledge when using the Bias Cards workspace
+
+</Callout>
+
+## Introduction
+
+Bias in machine learning and AI systems is a multi-faceted challenge that requires careful consideration throughout the project lifecycle. Understanding the different types of bias, and how they manifest in technical systems, is essential for developing fair and effective solutions.
+
+This guide explores three fundamental categories of bias that affect ML projects: social, statistical, and cognitive. Each type presents unique challenges and requires specific mitigation strategies.
+
+Understanding these bias categories provides the foundation for using the Bias Cards effectively. Each bias card in our library is categorised by type and includes specific examples and mitigation strategies.
+
+## The Three Categories of Bias
+
+### Social Bias
+
+Social bias refers to systematic and unfair assumptions, prejudices, or stereotypes that exist within society and become embedded in our data and systems. These biases often reflect historical inequalities and can perpetuate discrimination when encoded into ML models.
+
+In machine learning contexts, social bias typically manifests through:
+
+- **Training data** that reflects societal prejudices
+- **Feature selection** that proxies for protected characteristics
+- **Evaluation metrics** that don't account for fairness across groups
+- **Deployment contexts** that amplify existing inequalities
+
+<Callout variant="info" title="Illustrative Examples">
+
+Consider a CV screening algorithm trained on historical hiring data. If past hiring decisions reflected gender bias, the model learns to associate certain roles with specific genders, perpetuating discrimination even when gender information is removed.
+
+Facial recognition systems demonstrate another critical example. When trained predominantly on lighter-skinned faces, these systems show significantly higher error rates for darker-skinned individuals, creating disparate impacts in security and authentication applications.
+
+</Callout>
+
+To successfully identify social bias in your project is challenging, but can be made easier by engaging domain experts and stakeholders. Where this is not possible, you should ask yourself:
+
+- Who is represented in your training data, and who is missing?
+- What historical inequalities might be reflected in your dataset?
+- How might your system's outputs affect different demographic groups?
+- Are you measuring fairness across relevant protected characteristics?
+
+### Statistical Bias
+
+Statistical bias represents a systematic distortion in data collection, analysis, or modelling that causes results to deviate from the true underlying patterns. Unlike social bias, statistical bias is primarily a technical issue, though it can intersect with social concerns.
+
+There are six key features[^oebm] of statistical bias:
+
+1. **Systematicity**: The distortion follows a pattern rather than being random
+2. **Truth**: There exists an objective correct value being estimated
+3. **Error**: A measurable deviation from this truth
+4. **Deviation**: The direction and magnitude can be quantified
+5. **Affected Elements**: Specific data points or features are impacted
+6. **Direction**: The bias consistently skews results in a particular way
+
+[^oebm]: https://catalogofbias.org/2018/06/15/a-word-about-evidence-6-bias-a-proposed-definition/
+
+<Callout variant="info" title="Common Statistical Biases in ML">
+
+- **Training-Serving Skew** occurs when your model is trained on data that differs systematically from production data. For instance, a recommendation system trained on desktop user behaviour may perform poorly for mobile users due to different interaction patterns.
+- **Selection Bias** emerges when your training data isn't representative of your target population. A medical diagnosis model trained only on data from urban hospitals may fail in rural healthcare settings.
+- **Survivorship Bias** happens when you only observe successful outcomes. Training a business success predictor only on companies that survived five years ignores all the failed companies, leading to overoptimistic predictions.
+
+</Callout>
+
+### Cognitive Bias
+
+Cognitive biases are systematic patterns in human thinking that lead to irrational judgements and decision-making. These psychological tendencies, extensively studied by Kahneman and Tversky, affect how project teams design, build, and evaluate ML systems.
+
+Cognitive biases are amplified in group settings through cascade effects. For instance, when senior team members express strong opinions early, confirmation bias can spread through the team, making diverse perspectives crucial for balanced decision-making.
+
+Other biases that can affect ML/AI development include:
+
+- **Confirmation Bias** leads teams to seek evidence supporting their hypotheses while overlooking contradictory data. A team convinced their model works well might cherry-pick successful test cases.
+- **Availability Bias** causes over-reliance on easily recalled information. After reading about a spectacular model failure, teams might over-engineer solutions for rare edge cases while ignoring common issues.
+- **Anchoring Bias** occurs when initial information unduly influences subsequent decisions. Early performance metrics might anchor expectations, preventing teams from recognising when fundamental approaches need rethinking.
+
+<Callout variant="info" title=" The Linda Problem: A Classic Example">
+
+Consider this description:
+
+> "Linda is 31 years old, single, outspoken, and very bright. She studied philosophy at university and was deeply concerned with discrimination and social justice.""
+
+Which is more probable?
+
+1. Linda is a bank teller
+2. Linda is a bank teller and active in the feminist movement
+
+Most people choose option 2, but this violates basic probability—the conjunction of two events cannot be more probable than either event alone. This **conjunction fallacy** demonstrates how our intuitions can mislead us.
+
+</Callout>
+
+## How Biases Interconnect
+
+The three bias categories don't exist in isolation—they interact and amplify each other throughout the ML lifecycle.
+
+### Cascade Effects
+
+A cognitive bias during problem formulation can lead to statistical biases in data collection, which then encode social biases into the model. For example:
+
+1. **Availability bias** leads a team to use an easily accessible dataset
+2. This creates **selection bias** as the data isn't representative
+3. The unrepresentative data contains **social biases** from its original context
+4. The deployed model perpetuates and amplifies these social inequalities
+
+### Compounding Through the Lifecycle
+
+- **Planning Stage**: Cognitive biases shape initial assumptions
+- **Data Collection**: Statistical biases affect sampling strategies
+- **Feature Engineering**: Social biases influence what's considered relevant
+- **Model Training**: All three types interact in complex ways
+- **Evaluation**: Cognitive biases affect interpretation of results
+- **Deployment**: Social impacts become apparent in real-world use
+
+## Next Steps
+
+Now that you understand the three categories of bias, you're ready to apply this knowledge practically.
+
+<div className="grid gap-4 mt-6 md:grid-cols-2">
+  <LinkCard
+    href="/dashboard"
+    title="Try the Bias Assessment Activity"
+    description="Start mapping biases to your project's lifecycle"
+    icon={ArrowRight}
+  />
+  <LinkCard
+    href="/tutorial/activity"
+    title="Learn More"
+    description="See a demo of the 5-stage activity using a hypothetical example"
+    icon={School}
+  />
+</div>

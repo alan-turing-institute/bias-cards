@@ -1,0 +1,228 @@
+import {
+  MDXPageLayout,
+  generateMetadataFromFrontmatter,
+} from '@/components/layout/mdx-page-layout';
+import { Callout } from '@/components/mdx/callout';
+import { LinkCard } from '@/components/mdx/link-card';
+import { TutorialCarousel } from '@/components/tutorial/tutorial-carousel';
+import {
+  Stage3Carousel,
+  Stage4Carousel,
+  Stage5Carousel,
+} from '@/components/tutorial/stage-carousels';
+import { Lightbulb, Save, Users, FileText } from 'lucide-react';
+
+export const frontmatter = {
+  title: 'Using the Activity Workflow',
+  description:
+    'Learn how to use the interactive workspace for mapping biases to your project lifecycle',
+  breadcrumbs: [
+    { label: 'Home', href: '/' },
+    { label: 'Tutorial', href: '/tutorial' },
+    { label: 'Using the Workspace', href: '/tutorial/using-workspace' },
+  ],
+  tableOfContents: true,
+};
+
+export const metadata = generateMetadataFromFrontmatter(frontmatter);
+
+export default function UsingWorkspacePage({ children }) {
+  return <MDXPageLayout frontmatter={frontmatter}>{children}</MDXPageLayout>;
+}
+
+## Introduction to the Activity Workspace
+
+The activity workspace is where you'll spend most of your time in Bias Cards. It's an interactive environment where you can map biases to your specific project's lifecycle stages, add notes, and build a comprehensive bias assessment.
+
+The activity consists of five stages:
+
+1. Preliminary risk assessment
+2. Lifecycle assignment
+3. Documentation of rationale
+4. Selecting bias mitigation techniques
+5. Implementation planning
+
+This tutorial will walk you through each of these stages, explaining what is involved.
+
+<Callout type="warning">
+  The Workspace uses drag-and-drop functionality. Make sure you're using a
+  modern browser for the best experience.
+</Callout>
+
+## Getting Started
+
+### Creating a New Activity
+
+1. Navigate to the [Dashboard](/dashboard)
+2. Click **"New Activity"**
+3. Fill in the basic information:
+
+- Title of your assessment (e.g. project title)
+- Description (i.e. additional information about the project)
+- Domain/Sector
+
+## Completing the 5 stages
+
+### Stage 1: Preliminary risk assessment
+
+In this first stage, you'll categorise bias cards based on their potential impact on your project. Think carefully about your specific context—a bias that's high-risk for an emergency department AI might be low-risk for a different application.
+
+<TutorialCarousel
+  slides={[
+    {
+      id: 1,
+      title: 'Initial View',
+      image: '/tutorial/stage1/01-initial-view.png',
+      caption:
+        'Stage 1 begins with an empty workspace showing four risk categories. The progress bar indicates you need to categorise at least 10 bias cards to proceed. Each category has a distinct colour and description to guide your assessment.',
+    },
+    {
+      id: 2,
+      title: 'Bias Card Library',
+      image: '/tutorial/stage1/02-bias-card-library.png',
+      caption:
+        'Click "View All Bias Cards" to open the library drawer. Cards are organised by type (Cognitive, Social, Statistical) with clear descriptions to help you understand each bias. Use the search function to quickly find specific biases relevant to your project.',
+    },
+    {
+      id: 3,
+      title: 'Categorising High Risk Biases',
+      image: '/tutorial/stage1/03-high-risk.png',
+      caption:
+        'Drag cards to the High Risk category for biases that could significantly impact your project. Consider factors like patient safety, system reliability, and regulatory compliance when making these critical assessments.',
+    },
+    {
+      id: 4,
+      title: 'Adding Medium and Low Risk Biases',
+      image: '/tutorial/stage1/04-medium-low-risks.png',
+      caption:
+        'Cards can be assigned to multiple risk categories to help you prioritise those that are likely to have the greatest impact on your project. This proportional approach to risk assessment will help you and your team balance time demands with careful reflection and deliberation.',
+    },
+    {
+      id: 5,
+      title: 'Needs Discussion',
+      image: '/tutorial/stage1/05-needs-discussion.png',
+      caption:
+        'Use the "Needs Discussion" category for biases where the risk level is unclear or requires team input. This acknowledges that some assessments benefit from collaborative expertise and prevents hasty categorisation decisions.',
+    },
+    {
+      id: 6,
+      title: 'Completed Assessment',
+      image: '/tutorial/stage1/06-completed.png',
+      caption:
+        'Once you\'ve categorised the minimum required biases, you can proceed to Stage 2. The system prompts you to confirm whether uncategorised cards should be marked as "ignored", ensuring conscious decisions about assessment scope.',
+    },
+  ]}
+/>
+
+<Callout type="tip">
+  **Key tips for Stage 1:**
+  - Start with biases you're most familiar with
+  - Consider both technical and human factors
+  - Use the "Needs Discussion" category for uncertain cases
+  - Remember you need to categorise at least 10 cards to proceed
+</Callout>
+
+### Stage 2: Lifecycle assignment
+
+Now you'll map your categorised biases to specific stages in the ML project lifecycle. This helps identify when biases are most likely to emerge and affect your system.
+
+<TutorialCarousel
+  slides={[
+    {
+      id: 1,
+      title: 'Initial View',
+      image: '/tutorial/stage2/01-initial-view.png',
+      caption:
+        'Stage 2 presents the ML project lifecycle divided into phases. Your goal is to map categorised biases to specific lifecycle stages where they\'re most likely to emerge, creating a comprehensive view of bias risks throughout your project.',
+    },
+    {
+      id: 2,
+      title: 'Categorised Bias Library',
+      image: '/tutorial/stage2/02-categorised-bias-library.png',
+      caption:
+        'Access your previously categorised biases from the side panel. Cards maintain their risk-level colour coding, helping you prioritise high-risk biases when mapping them to lifecycle stages.',
+    },
+    {
+      id: 3,
+      title: 'Adding Multiple Cards',
+      image: '/tutorial/stage2/03-adding-multiple-cards.png',
+      caption:
+        'Multiple biases can affect the same lifecycle stage, reflecting the complex nature of bias in ML projects. The progress indicator helps track your mapping completion whilst encouraging thorough consideration.',
+    },
+    {
+      id: 4,
+      title: 'Project Lifecycle Stages',
+      image: '/tutorial/stage2/04-project-lifecycle-stages.png',
+      caption:
+        'The complete lifecycle view spans from project design through system deployment. This comprehensive mapping ensures you consider bias risks throughout the entire ML project journey, not just during development.',
+    },
+    {
+      id: 5,
+      title: 'Information Modal',
+      image: '/tutorial/stage2/05-information-modal.png',
+      caption:
+        'Click any bias card to explore detailed information, including practical examples and discussion prompts. This deeper understanding helps inform your mapping decisions and prepares you for mitigation planning.',
+    },
+  ]}
+/>
+
+<Callout type="info">
+  **Understanding the lifecycle phases:**
+  - **Project Design:** Planning, problem formulation, and data procurement
+  - **Model Development:** Data analysis, preprocessing, and model training
+  - **System Deployment:** Implementation, monitoring, and maintenance
+</Callout>
+
+### Stage 3: Documentation of rationale
+
+Document your reasoning for each bias assessment and mapping. This creates an audit trail and helps team members understand your decision-making process.
+
+<Stage3Carousel />
+
+<Callout type="tip">
+  **Writing effective rationales:**
+  - Be specific to your use case (e.g., emergency department context)
+  - Include real examples where possible
+  - Consider both immediate and long-term impacts
+  - Think about edge cases and vulnerable populations
+</Callout>
+
+### Stage 4: Selecting bias mitigation techniques
+
+Choose appropriate mitigation strategies for each identified bias. Focus on high-risk biases first and consider resource constraints when selecting techniques.
+
+<Stage4Carousel />
+
+<Callout type="warning">
+  **Mitigation considerations:**
+  - Some strategies require significant resources or expertise
+  - Multiple strategies may be needed for high-risk biases
+  - Consider dependencies between different mitigation approaches
+  - Ensure strategies are feasible within your project constraints
+</Callout>
+
+### Stage 5: Implementation planning
+
+Transform your mitigation strategies into an actionable implementation plan with clear timelines, responsibilities, and success metrics.
+
+<Stage5Carousel />
+
+<Callout type="success">
+  **Creating an effective plan:**
+  - Set realistic timelines based on available resources
+  - Assign clear ownership for each mitigation strategy
+  - Define measurable success criteria
+  - Build in regular review points to assess progress
+  - Consider phased implementation for complex strategies
+</Callout>
+
+## Next Steps
+
+Now that you know how to use the workspace to carry out the bias assessment activity, learn how to generate professional documentation.
+
+<LinkCard
+  href="/tutorial/creating-reports"
+  title="Next: Creating Reports"
+  description="Transform your activity into a professional documentation"
+  icon={FileText}
+/>

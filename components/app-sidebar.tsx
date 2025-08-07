@@ -1,20 +1,22 @@
 'use client';
 
 import {
-  BarChart3,
+  BookOpen,
   Brain,
-  FileText,
-  GalleryVerticalEnd,
+  Info,
+  LayoutDashboard,
   Lightbulb,
-  Shield,
-  Users,
   Workflow,
 } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useTheme } from 'next-themes';
 import type { ComponentProps } from 'react';
+import { useEffect, useState } from 'react';
 
 import { NavMain } from '@/components/nav-main';
 import { NavProjects } from '@/components/nav-projects';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { NavUser } from '@/components/nav-user';
 import {
   Sidebar,
   SidebarContent,
@@ -26,14 +28,15 @@ import {
   SidebarRail,
 } from '@/components/ui/sidebar';
 
-// Bias cards navigation data
+// Navigation data with Resources and Activity sections
 const data = {
-  navMain: [
+  resources: [
     {
       title: 'Bias Cards',
       url: '/cards',
       icon: Brain,
       isActive: true,
+      onboardingId: 'bias-cards-nav',
       items: [
         {
           title: 'Cognitive Biases',
@@ -47,28 +50,10 @@ const data = {
           title: 'Statistical Biases',
           url: '/cards/statistical',
         },
-      ],
-    },
-    {
-      title: 'Mitigation Strategies',
-      url: '/mitigation',
-      icon: Shield,
-      items: [
         {
-          title: 'Data Collection',
-          url: '/mitigation/data',
-        },
-        {
-          title: 'Model Development',
-          url: '/mitigation/model',
-        },
-        {
-          title: 'Validation & Testing',
-          url: '/mitigation/validation',
-        },
-        {
-          title: 'Deployment & Monitoring',
-          url: '/mitigation/deployment',
+          title: 'Mitigation Strategies',
+          url: '/cards/mitigation',
+          onboardingId: 'mitigation-nav',
         },
       ],
     },
@@ -76,100 +61,126 @@ const data = {
       title: 'Project Lifecycle',
       url: '/lifecycle',
       icon: Workflow,
+      onboardingId: 'lifecycle-nav',
+    },
+    {
+      title: 'Tutorial',
+      url: '/tutorial',
+      icon: BookOpen,
+      onboardingId: 'tutorial-nav',
       items: [
         {
-          title: 'Planning & Problem Definition',
-          url: '/lifecycle/planning',
+          title: 'Getting Started',
+          url: '/tutorial',
         },
         {
-          title: 'Data Collection & Preparation',
-          url: '/lifecycle/data',
+          title: 'Understanding Biases',
+          url: '/tutorial/understanding-biases',
         },
         {
-          title: 'Model Development',
-          url: '/lifecycle/model',
+          title: 'Bias Assessment Activity',
+          url: '/tutorial/activity',
         },
         {
-          title: 'Testing & Validation',
-          url: '/lifecycle/testing',
-        },
-        {
-          title: 'Deployment & Monitoring',
-          url: '/lifecycle/deployment',
+          title: 'Creating Reports',
+          url: '/tutorial/creating-reports',
         },
       ],
     },
     {
-      title: 'Activity Workspace',
-      url: '/workspace',
-      icon: Lightbulb,
-      items: [
-        {
-          title: 'New Activity',
-          url: '/workspace/new',
-        },
-        {
-          title: 'Saved Activities',
-          url: '/workspace/saved',
-        },
-        {
-          title: 'Templates',
-          url: '/workspace/templates',
-        },
-      ],
+      title: 'About',
+      url: '/about',
+      icon: Info,
+      onboardingId: 'about-nav',
     },
   ],
-  projects: [
+  activity: [
     {
-      name: 'Generate Report',
-      url: '/report',
-      icon: FileText,
+      name: 'Dashboards',
+      url: '/dashboard',
+      icon: LayoutDashboard,
+      isActive: true,
+      onboardingId: 'dashboards-nav',
+      items: [
+        {
+          title: 'Activities',
+          url: '/dashboard',
+        },
+        {
+          title: 'Reports',
+          url: '/reports',
+          onboardingId: 'reports-nav',
+        },
+      ],
     },
     {
-      name: 'Data Analytics',
-      url: '/analytics',
-      icon: BarChart3,
+      name: 'Workspace',
+      url: '/workspace',
+      icon: Lightbulb,
+      onboardingId: 'workspace-nav',
     },
-    {
-      name: 'Team Collaboration',
-      url: '/team',
-      icon: Users,
-    },
+    // {
+    //   name: 'Team Space',
+    //   url: '/team',
+    //   icon: Users,
+    // },
   ],
 };
 
 export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
+  const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Use light logo by default, switch to dark logo when theme is dark
+  const logoSrc =
+    mounted && theme === 'dark' ? '/logo-dark.png' : '/logo-light.png';
+
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton asChild size="lg">
-              <div>
-                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-                  <GalleryVerticalEnd className="size-4" />
+            <SidebarMenuButton
+              asChild
+              className="hover:bg-transparent focus-visible:ring-0 active:bg-transparent data-[active=true]:bg-transparent data-[state=open]:bg-transparent data-[state=open]:hover:bg-transparent"
+              size="lg"
+            >
+              <Link
+                className="flex items-center justify-center group-data-[collapsible=icon]:justify-center"
+                href="/"
+              >
+                <div className="relative flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg">
+                  <Image
+                    alt="Bias Cards Logo"
+                    className="object-cover"
+                    height={32}
+                    src={logoSrc}
+                    width={32}
+                  />
                 </div>
-                <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-semibold text-primary">
+                <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
+                  <span className="truncate font-semibold text-base text-primary">
                     Bias Cards
                   </span>
-                  <span className="truncate text-xs">ML Education Tool</span>
+                  <span className="truncate text-xs">
+                    A Turing Commons Resource
+                  </span>
                 </div>
-              </div>
+              </Link>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
       </SidebarHeader>
       <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        <NavMain items={data.resources} label="Resources" />
+        <NavProjects label="Activity" projects={data.activity} />
       </SidebarContent>
       <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <ThemeToggle />
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <NavUser />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

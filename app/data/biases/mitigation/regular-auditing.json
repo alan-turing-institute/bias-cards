@@ -2,7 +2,7 @@
   "name": "Regular Auditing",
   "category": "mitigation-technique",
   "title": "regular-auditing",
-  "id": 38,
+  "id": 14,
   "caption": "Conduct periodic audits focusing on transparency, data quality, model performance, and equitable impact.",
   "description": "Regular auditing establishes systematic, ongoing review processes to monitor AI systems for emerging biases and performance drift. Audits examine data quality, model behaviour, user satisfaction, and equitable outcomes across different demographic groups. This proactive approach enables early detection of bias issues and ensures continuous improvement of fairness throughout the system lifecycle.",
   "prompts": [

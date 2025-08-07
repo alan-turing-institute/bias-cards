@@ -10,6 +10,6 @@
   ],
   "category": "statistical-bias",
   "caption": "When data is absent in non-random patterns that are informative about the underlying phenomenon.",
-  "id": 18,
+  "id": 1,
   "icon": "missing-data-bias-icon"
 }

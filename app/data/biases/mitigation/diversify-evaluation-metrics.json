@@ -2,7 +2,7 @@
   "name": "Diversify Evaluation Metrics",
   "category": "mitigation-technique",
   "title": "diversify-evaluation-metrics",
-  "id": 33,
+  "id": 9,
   "caption": "Use additional evaluation metrics to determine whether model performance applies equally across all subgroups.",
   "description": "This technique expands evaluation beyond standard accuracy metrics to include fairness measures such as equalized odds, demographic parity, and calibration across subgroups. It involves conducting intersectional analysis of multiple demographic characteristics to uncover hidden biases. By measuring performance disparities across different populations, teams can identify and address systematic inequities in model behaviour.",
   "prompts": [

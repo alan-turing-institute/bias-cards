@@ -2,7 +2,7 @@
   "name": "Multiple Model Comparison",
   "category": "mitigation-technique",
   "title": "multiple-model-comparison",
-  "id": 34,
+  "id": 10,
   "caption": "Train and test multiple models to assess performance differences and identify the least biased approach.",
   "description": "This technique involves training multiple models using different algorithms, architectures, or preprocessing approaches to compare their bias profiles and fairness characteristics. By evaluating diverse model types, teams can identify approaches that better balance accuracy with fairness across different demographic groups. The comparison process reveals which algorithmic choices contribute to bias and informs model selection decisions.",
   "prompts": [

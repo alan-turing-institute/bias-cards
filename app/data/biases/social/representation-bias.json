@@ -10,6 +10,6 @@
   ],
   "category": "social-bias",
   "caption": "When certain populations are inadequately represented in training data, leading to poor model performance for those groups.",
-  "id": 10,
+  "id": 2,
   "icon": "representation-bias-icon"
 }

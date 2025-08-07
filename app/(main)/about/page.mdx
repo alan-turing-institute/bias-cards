@@ -1,0 +1,83 @@
+import {
+  MDXPageLayout,
+  generateMetadataFromFrontmatter,
+} from '@/components/layout/mdx-page-layout';
+import { Github, ExternalLink, Users, Target } from 'lucide-react';
+import { LinkCard } from '@/components/mdx/link-card';
+import { Callout } from '@/components/mdx/callout';
+
+export const frontmatter = {
+  title: 'About Bias Cards',
+  description:
+    'Learn about the Bias Cards project and its goal to help researchers and practitioners identify and mitigate bias',
+  breadcrumbs: [
+    { label: 'Home', href: '/' },
+    { label: 'About', href: '/about' },
+  ],
+  tableOfContents: true,
+};
+
+export const metadata = generateMetadataFromFrontmatter(frontmatter);
+
+export default function AboutPage({ children }) {
+  return <MDXPageLayout frontmatter={frontmatter}>{children}</MDXPageLayout>;
+}
+
+## Our Goal
+
+Bias Cards is an educational tool designed to help researchers and practitioners identify, understand, and mitigate various forms of bias throughout a project's lifecycle. Specifically, we hope to make bias awareness and mitigation strategies accessible to everyone working with AI and machine learning systems.
+
+This project is part of the [Turing Commons](https://ala-turing-institute.github.io/turing-commons) initiative—a strategic skills project at the Alan Turing Institute. The Turing Commons provides free and open-source educational resources to help bridge the gap between technical AI development and ethical considerations.
+
+## How It Works
+
+### 🗂️ Bias Card Library
+
+Bias Cards provides a comprehensive library of biases, categorised into three main types:
+
+1. **Cognitive Biases**: biases that affect the judgment and decision-making of members of a research or development project
+2. **Social Biases**: biases arising from societal structures and historical inequities that can be amplified by data-driven technologies
+3. **Statistical Biases**: formal biases in data and modelling techniques
+
+Each card in our library includes:
+
+- **Clear descriptions** with real-world context
+- **Practical examples** showing how the bias manifests
+- **Reflection prompts** to help identify the bias in your work
+
+### 🔄 Project Lifecycle Model
+
+Our tool maps biases to specific stages of a project's lifecycle. Each project will, invariably, have a different set of stages and composition. Therefore, the project lifecycle model we provide can be treated as a heuristic model to structure reflection and deliberation, rather than a prescriptive model for governing a project or organisation.
+
+### 🧩 Structured Activity and Report generation
+
+{/* Add a short paragraph or two about the 5-stage activity and the report generation process */}
+
+## Contributing
+
+We welcome contributions to improve and expand the Bias Cards library. Whether you're a researcher, practitioner, or educator, your insights can help make AI development more responsible and inclusive.
+
+### Ways to Contribute
+
+- **Submit new bias examples** from your field experience
+- **Improve card descriptions** for clarity and accessibility
+- **Suggest mitigation strategies** that have worked in practice
+- **Report issues** or bugs you encounter
+- **Share feedback** on how we can improve the tool
+
+All contributions are managed through our GitHub repository:
+
+<LinkCard
+  href="https://github.com/alan-turing-institute/bias-cards"
+  title="GitHub Repository"
+  description="View the source code and contribute to the project"
+  icon={Github}
+  external
+/>
+
+## Contact
+
+For questions, feedback, or collaboration opportunities, please reach out through:
+
+- GitHub Issues for technical questions
+- Email [cburr@turing.ac.uk](mailto:cburr@turing.ac.uk)
