@@ -221,7 +221,7 @@ class BrowserStorageManager implements StorageManager {
       return null;
     }
 
-    return this.deserializeWorkspace(savedWorkspace);
+    return this.deserializeWorkspace(savedWorkspace as SavedWorkspace);
   }
 
   async deleteSession(sessionId: string): Promise<void> {

@@ -784,7 +784,13 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
 
           switch (action.type) {
             case 'ASSIGN_CARD': {
-              const { assignmentId, cardId, stage, annotation } = action.data;
+              const { assignmentId, cardId, stage, annotation } =
+                action.data as {
+                  assignmentId: string;
+                  cardId: string;
+                  stage: LifecycleStage;
+                  annotation?: string;
+                };
               set((state) => ({
                 stageAssignments: [
                   ...state.stageAssignments,
@@ -798,7 +804,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
               break;
             }
             case 'REMOVE_CARD': {
-              const { cardId } = action.data;
+              const { cardId } = action.data as { cardId: string };
               set((state) => ({
                 stageAssignments: state.stageAssignments.filter(
                   (a) => a.cardId !== cardId
@@ -811,7 +817,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
               break;
             }
             case 'REMOVE_ASSIGNMENT': {
-              const { assignmentId } = action.data;
+              const { assignmentId } = action.data as { assignmentId: string };
               set((state) => ({
                 stageAssignments: state.stageAssignments.filter(
                   (a) => a.id !== assignmentId
@@ -825,7 +831,12 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
             }
             case 'CREATE_PAIR': {
               const { biasId, mitigationId, annotation, effectivenessRating } =
-                action.data;
+                action.data as {
+                  biasId: string;
+                  mitigationId: string;
+                  annotation?: string;
+                  effectivenessRating?: number;
+                };
               set((state) => ({
                 cardPairs: [
                   ...state.cardPairs,
@@ -845,7 +856,10 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
               break;
             }
             case 'REMOVE_PAIR': {
-              const { biasId, mitigationId } = action.data;
+              const { biasId, mitigationId } = action.data as {
+                biasId: string;
+                mitigationId: string;
+              };
               set((state) => ({
                 cardPairs: state.cardPairs.filter(
                   (p) =>
@@ -859,7 +873,11 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
               break;
             }
             case 'UPDATE_PAIR': {
-              const { biasId, mitigationId, updates } = action.data;
+              const { biasId, mitigationId, updates } = action.data as {
+                biasId: string;
+                mitigationId: string;
+                updates: Record<string, unknown>;
+              };
               set((state) => ({
                 cardPairs: state.cardPairs.map((p) =>
                   p.biasId === biasId && p.mitigationId === mitigationId
@@ -873,10 +891,27 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
               }));
               break;
             }
+            case 'UPDATE_ANNOTATION': {
+              const { cardId, annotation } = action.data as {
+                cardId: string;
+                annotation: string;
+              };
+              set((state) => ({
+                customAnnotations: {
+                  ...state.customAnnotations,
+                  [cardId]: annotation,
+                },
+                lastModified: timestamp,
+                history: addToHistory
+                  ? addActionToHistory(state.history, action)
+                  : state.history,
+              }));
+              break;
+            }
             default: {
-              // Exhaustive check
-              const _exhaustiveCheck: never = action;
-              throw new Error(`Unknown action type: ${_exhaustiveCheck}`);
+              // Exhaustive check - this should never be reached
+              const unknownAction = action as { type: string };
+              throw new Error(`Unknown action type: ${unknownAction.type}`);
             }
           }
         },

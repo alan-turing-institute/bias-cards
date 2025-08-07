@@ -257,6 +257,29 @@ export default function DashboardPage() {
   const exportActivity = useActivityStore((state) => state.exportActivity);
   const reports = useReportsStore((state) => state.reports);
 
+  // Convert Report[] to ReportSummary[]
+  const reportSummaries: ReportSummary[] = reports.map((report) => ({
+    id: report.id,
+    activityId: report.activityId,
+    title: report.projectInfo.title,
+    status: report.metadata.status,
+    createdAt: report.metadata.createdAt,
+    lastModified: report.metadata.lastModified,
+    version: report.metadata.version,
+    owner: report.permissions.owner,
+    domain: report.projectInfo.domain,
+    tags: report.metadata.tags,
+    biasCount: report.analysis.biasIdentification.reduce(
+      (acc, stage) => acc + stage.biases.length,
+      0
+    ),
+    mitigationCount: report.analysis.mitigationStrategies.length,
+    completionPercentage:
+      report.tracking.healthMetrics?.implementationProgress || 0,
+    hasUnreadUpdates: false,
+    isDemo: report.isDemo,
+  }));
+
   // Filter activities by status
   const activeActivities = activities.filter(
     (activity) =>
@@ -492,7 +515,7 @@ export default function DashboardPage() {
               onDelete={handleDeleteActivity}
               onEdit={handleEditActivity}
               onExport={handleExportActivity}
-              reports={reports}
+              reports={reportSummaries}
             />
           ))}
           {activeActivities.length === 0 && (
@@ -520,7 +543,7 @@ export default function DashboardPage() {
                   onDelete={handleDeleteActivity}
                   onEdit={handleEditActivity}
                   onExport={handleExportActivity}
-                  reports={reports}
+                  reports={reportSummaries}
                 />
               ))}
             </div>

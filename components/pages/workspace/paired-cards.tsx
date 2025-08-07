@@ -96,7 +96,6 @@ function PairEditDialog({
             </label>
             <div className="flex items-center gap-3">
               <EffectivenessRating
-                id="effectiveness-rating"
                 onChange={setEffectivenessRating}
                 size="lg"
                 value={effectivenessRating}

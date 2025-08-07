@@ -53,11 +53,7 @@ import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
 import { useWorkspaceStore } from '@/lib/stores/workspace-store';
-import type {
-  Card as BiasCard,
-  LifecycleStage,
-  StageAssignment,
-} from '@/lib/types';
+import type { BiasCard, LifecycleStage, StageAssignment } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 // Map stage to image file
@@ -119,6 +115,8 @@ function StageColumn({
   cards: Array<{ card: BiasCard; assignment: StageAssignment }>;
   onRemoveCard: (cardId: string) => void;
   onCardClick: (card: BiasCard, assignment: StageAssignment) => void;
+  draggedCard?: BiasCard | null;
+  isDragging?: boolean;
 }) {
   const stageInfo = LIFECYCLE_STAGES[stage];
 
@@ -187,7 +185,7 @@ function StageColumn({
                   >
                     <div className="group relative">
                       <BiasCardDropped
-                        card={card}
+                        card={card as BiasCard}
                         cardNumber={
                           card.displayNumber || String(card.id).padStart(2, '0')
                         }

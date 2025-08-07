@@ -23,6 +23,25 @@ export interface WorkspaceState {
   activityProgress: ActivityProgress;
 }
 
+type WorkspaceActionData =
+  | {
+      assignmentId: string;
+      cardId: string;
+      stage: LifecycleStage;
+      annotation?: string;
+    }
+  | { cardId: string }
+  | { assignmentId: string }
+  | {
+      biasId: string;
+      mitigationId: string;
+      annotation?: string;
+      effectivenessRating?: number;
+    }
+  | { biasId: string; mitigationId: string }
+  | { biasId: string; mitigationId: string; updates: Record<string, unknown> }
+  | { cardId: string; annotation: string };
+
 export interface WorkspaceAction {
   id: string;
   type:
@@ -35,7 +54,7 @@ export interface WorkspaceAction {
     | 'UPDATE_ANNOTATION';
   timestamp: string;
   description: string;
-  data: Record<string, unknown>;
+  data: WorkspaceActionData;
   inverse: WorkspaceAction | null;
 }
 

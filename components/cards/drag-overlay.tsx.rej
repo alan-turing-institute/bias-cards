@@ -1,0 +1,11 @@
+@@ -46,8 +46,8 @@
+       {activeCard && (
+         <BiasCardDropped
+           card={activeCard as BiasCard}
+-          cardNumber={activeCard?.displayNumber || '01'}
+-          className={`shadow-2xl scale-105 opacity-90 w-[${String(activeCard?.id).padStart(3, '0')}px]`}
++          cardNumber={(activeCard as any)?.displayNumber || '01'}
++          className={`shadow-2xl scale-105 opacity-90 w-[${String((activeCard as any)?.id).padStart(3, '0')}px]`}
+         />
+       )}
+     </DragOverlay>

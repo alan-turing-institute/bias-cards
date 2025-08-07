@@ -91,7 +91,20 @@ function SidebarProvider({
 
       // This sets the cookie to keep the sidebar state using Cookie Store API
       if (typeof window !== 'undefined' && 'cookieStore' in window) {
-        (window as unknown).cookieStore.set({
+        const cookieStore = (
+          window as Window & {
+            cookieStore: {
+              set: (options: {
+                name: string;
+                value: string;
+                path: string;
+                sameSite: string;
+                expires: number;
+              }) => void;
+            };
+          }
+        ).cookieStore;
+        cookieStore.set({
           name: SIDEBAR_COOKIE_NAME,
           value: String(openState),
           path: '/',

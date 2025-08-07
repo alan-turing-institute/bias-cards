@@ -1,5 +1,5 @@
 import type { Activity } from '@/lib/types/activity';
-import type { BiasCard } from '@/lib/types/cards';
+import type { BiasCard, MitigationCard } from '@/lib/types/cards';
 import type { ProjectInfo } from '@/lib/types/project-info';
 import type { Report, ReportSummary } from '@/lib/types/reports';
 
@@ -242,7 +242,7 @@ export const DEMO_REPORTS: Partial<Report>[] = [
                 description:
                   'Historical lending data reflects past discriminatory practices',
                 caption: 'Past discrimination embedded in training data',
-              } as Partial<BiasCard>,
+              } as BiasCard,
               severity: 'high',
               confidence: 'high',
               comments: [],
@@ -266,7 +266,7 @@ export const DEMO_REPORTS: Partial<Report>[] = [
                 description:
                   'Training data not representative of all applicant populations',
                 caption: 'Non-representative sampling in data collection',
-              } as Partial<BiasCard>,
+              } as BiasCard,
               severity: 'high',
               confidence: 'medium',
               comments: [],
@@ -295,7 +295,7 @@ export const DEMO_REPORTS: Partial<Report>[] = [
                 description:
                   'Non-protected attributes serving as proxies for protected characteristics',
                 caption: 'Indirect discrimination through correlated features',
-              } as Partial<BiasCard>,
+              } as BiasCard,
               severity: 'high',
               confidence: 'high',
               comments: [],
@@ -323,7 +323,7 @@ export const DEMO_REPORTS: Partial<Report>[] = [
                 category: 'statistical-bias',
                 description: 'Model decisions influence future training data',
                 caption: 'Self-reinforcing bias through feedback mechanisms',
-              } as Partial<BiasCard>,
+              } as BiasCard,
               severity: 'medium',
               confidence: 'high',
               comments: [],
@@ -347,13 +347,21 @@ export const DEMO_REPORTS: Partial<Report>[] = [
           mitigations: [
             {
               mitigationCard: {
+                id: 'additional-data-collection',
                 name: 'Additional Data Collection',
                 title: 'additional-data-collection',
-                category: 'data-collection',
+                category: 'mitigation-technique',
                 description:
                   'Collect new, unbiased data to supplement historical records',
                 caption: 'Expanding data sources for better representation',
-              } as Partial<BiasCard>,
+                example:
+                  'Implementing diverse data collection strategies to address historical bias',
+                prompts: [
+                  'How can we expand our data sources?',
+                  'What gaps exist in current data?',
+                ],
+                icon: 'data-collection',
+              } as MitigationCard,
               timeline: '3 months',
               responsible: 'Data Engineering Team',
               successCriteria:
@@ -372,12 +380,20 @@ export const DEMO_REPORTS: Partial<Report>[] = [
             },
             {
               mitigationCard: {
+                id: 'synthetic-data-generation',
                 name: 'Synthetic Data Generation',
                 title: 'synthetic-data-generation',
-                category: 'data-augmentation',
+                category: 'mitigation-technique',
                 description: 'Generate synthetic examples to balance dataset',
                 caption: 'Creating artificial data to address imbalances',
-              } as Partial<BiasCard>,
+                example:
+                  'Using GANs or other techniques to generate balanced synthetic data',
+                prompts: [
+                  'What synthetic data techniques can we use?',
+                  'How do we validate synthetic data quality?',
+                ],
+                icon: 'data-generation',
+              } as MitigationCard,
               timeline: '2 months',
               responsible: 'ML Engineering Team',
               successCriteria:
@@ -400,13 +416,21 @@ export const DEMO_REPORTS: Partial<Report>[] = [
           mitigations: [
             {
               mitigationCard: {
+                id: 'identify-proxy-attributes',
                 name: 'Identify Proxy Attributes',
                 title: 'identify-proxy-attributes',
-                category: 'analysis',
+                category: 'mitigation-technique',
                 description:
                   'Systematically identify and handle features that proxy for protected attributes',
                 caption: 'Finding hidden discriminatory patterns',
-              } as Partial<BiasCard>,
+                example:
+                  'Using correlation analysis and fairness audits to identify proxy variables',
+                prompts: [
+                  'Which features might serve as proxies?',
+                  'How can we measure proxy relationships?',
+                ],
+                icon: 'analysis',
+              } as MitigationCard,
               timeline: '1 month',
               responsible: 'Fair Lending Team',
               successCriteria:
@@ -429,13 +453,21 @@ export const DEMO_REPORTS: Partial<Report>[] = [
           mitigations: [
             {
               mitigationCard: {
+                id: 'regular-auditing',
                 name: 'Regular Auditing',
                 title: 'regular-auditing',
-                category: 'monitoring',
+                category: 'mitigation-technique',
                 description:
                   'Implement continuous monitoring and auditing of model decisions',
                 caption: 'Ongoing bias detection and correction',
-              } as Partial<BiasCard>,
+                example:
+                  'Setting up automated monitoring dashboards and regular audit processes',
+                prompts: [
+                  'What metrics should we monitor?',
+                  'How often should we audit?',
+                ],
+                icon: 'monitoring',
+              } as MitigationCard,
               timeline: 'Ongoing',
               responsible: 'Model Risk Management',
               successCriteria:

@@ -113,8 +113,9 @@ export function OnboardingOverlay() {
 
     // Find and highlight target element
     if (step.target) {
+      const targetSelector = step.target;
       const findElement = () => {
-        const element = document.querySelector(step.target) as HTMLElement;
+        const element = document.querySelector(targetSelector) as HTMLElement;
         if (element) {
           setHighlightElement(element);
           updateTooltipPosition(element, step);

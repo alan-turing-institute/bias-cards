@@ -16,7 +16,10 @@ import {
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Separator } from '@/components/ui/separator';
-import { ReportExportService } from '@/lib/export/export-service';
+import {
+  getAvailableFormats,
+  getDefaultConfig,
+} from '@/lib/export/export-service';
 import { useReportsStore } from '@/lib/stores/reports-store';
 import type {
   Report,
@@ -44,15 +47,15 @@ export function ReportExportDialog({
   const [open, setOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState<string>('pdf');
   const [config, setConfig] = useState<ReportExportConfig>(
-    ReportExportService.getDefaultConfig('pdf')
+    getDefaultConfig('pdf')
   );
   const [exportSuccess, setExportSuccess] = useState(false);
 
-  const formats = ReportExportService.getAvailableFormats();
+  const formats = getAvailableFormats();
 
   const handleFormatChange = (format: string) => {
     setSelectedFormat(format);
-    setConfig(ReportExportService.getDefaultConfig(format));
+    setConfig(getDefaultConfig(format));
   };
 
   const handleSectionToggle = (section: keyof typeof config.sections) => {

@@ -33,7 +33,10 @@ import { useReportsStore } from '@/lib/stores/reports-store';
 import { useWorkspaceStore } from '@/lib/stores/workspace-store';
 import { useTemplateStore } from '@/lib/templates/template-store';
 import type { ProjectInfo } from '@/lib/types/project-info';
-import { validateActivityCompletion } from '@/lib/validation/activity-validation';
+import {
+  type ActivityValidationResult,
+  validateActivityCompletion,
+} from '@/lib/validation/activity-validation';
 
 function NewReportPageContent() {
   const router = useRouter();
@@ -68,15 +71,8 @@ function NewReportPageContent() {
     },
   });
 
-  interface ValidationResult {
-    isValid: boolean;
-    errors: string[];
-    warnings: string[];
-    gates: Array<{ name: string; passed: boolean; message: string }>;
-  }
-
   const [validationResult, setValidationResult] =
-    useState<ValidationResult | null>(null);
+    useState<ActivityValidationResult | null>(null);
   const [canCreateReport, setCanCreateReport] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     null

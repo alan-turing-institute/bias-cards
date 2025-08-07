@@ -166,7 +166,7 @@ export const useCardsStore = create<CardsState>()(
 // Add applyFilters as a private method
 // This is a workaround since we can't define methods inside the store
 const store = useCardsStore.getState();
-(store as unknown).applyFilters = () => {
+(store as CardsState).applyFilters = () => {
   const state = useCardsStore.getState();
   const { allCards, filters, searchQuery } = state;
   let filtered = filterCards(allCards, filters);

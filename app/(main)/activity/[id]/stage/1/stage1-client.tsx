@@ -49,7 +49,7 @@ import {
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
 import { useWorkspaceStore } from '@/lib/stores/workspace-store';
-import type { BiasRiskCategory, Card } from '@/lib/types';
+import type { BiasCard, BiasRiskCategory, Card } from '@/lib/types';
 
 // Regex pattern for extracting card IDs from drag element IDs
 const CARD_ID_REGEX = /-card-([^-]+)-/;
@@ -57,7 +57,7 @@ const CARD_ID_REGEX = /-card-([^-]+)-/;
 // Helper function to extract card from drag event
 function extractCardFromDragEvent(
   active: Active,
-  biasCards: Card[]
+  biasCards: BiasCard[]
 ): Card | null {
   // Get card from drag event data
   let card = active.data.current?.card as Card | undefined;
@@ -193,7 +193,7 @@ export default function Stage1Client() {
 
   // Filter to only bias cards (no mitigation cards)
   const biasOnlyCards = filteredCards.filter(
-    (card) => card.category !== 'mitigation-technique'
+    (card): card is BiasCard => card.category !== 'mitigation-technique'
   );
 
   // Get all assigned card IDs for filtering
@@ -315,7 +315,7 @@ export default function Stage1Client() {
                                         key={card.id}
                                       >
                                         <BiasCardList
-                                          card={card}
+                                          card={card as BiasCard}
                                           cardNumber={getCardNumber(card)}
                                           showCategory={false}
                                         />
@@ -353,7 +353,7 @@ export default function Stage1Client() {
                                           key={card.id}
                                         >
                                           <BiasCardList
-                                            card={card}
+                                            card={card as BiasCard}
                                             cardNumber={getCardNumber(card)}
                                             showCategory={false}
                                           />

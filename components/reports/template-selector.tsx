@@ -147,19 +147,23 @@ export function TemplateSelector({
           <div className="flex items-center gap-4 text-muted-foreground text-xs">
             <span>{template.structure.sections.length} sections</span>
             <span>v{template.version}</span>
-            {template.structure.validationRules.requireComplianceSection && (
-              <Tooltip>
-                <TooltipTrigger>
-                  <Badge className="text-xs" variant="outline">
-                    <Info className="mr-1 h-3 w-3" />
-                    Compliance
-                  </Badge>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p>This template includes compliance requirements</p>
-                </TooltipContent>
-              </Tooltip>
-            )}
+            {
+              ('requireComplianceSection' in
+                template.structure.validationRules &&
+                template.structure.validationRules.requireComplianceSection && (
+                  <Tooltip>
+                    <TooltipTrigger>
+                      <Badge className="text-xs" variant="outline">
+                        <Info className="mr-1 h-3 w-3" />
+                        Compliance
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>This template includes compliance requirements</p>
+                    </TooltipContent>
+                  </Tooltip>
+                )) as React.ReactNode
+            }
           </div>
         </CardFooter>
       </Card>

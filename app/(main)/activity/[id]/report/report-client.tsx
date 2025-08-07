@@ -19,6 +19,7 @@ import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
 import { useReportsStore } from '@/lib/stores/reports-store';
 import { useWorkspaceStore } from '@/lib/stores/workspace-store';
+import type { BiasCard, MitigationCard } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 // Risk category colors
@@ -178,11 +179,24 @@ export default function ReportClient() {
                       }
                     : null;
                 })
-                .filter(Boolean),
+                .filter(Boolean) as Array<
+                MitigationCard & {
+                  effectivenessRating?: number;
+                  notes?: string;
+                }
+              >,
             }
           : null;
       })
-      .filter(Boolean);
+      .filter(Boolean) as Array<
+      BiasCard & {
+        rationale?: string;
+        riskCategory?: string;
+        mitigations: Array<
+          MitigationCard & { effectivenessRating?: number; notes?: string }
+        >;
+      }
+    >;
 
     return {
       stage: key,

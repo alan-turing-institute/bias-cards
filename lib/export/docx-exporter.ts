@@ -72,7 +72,7 @@ export class DocxReportExporter {
       creator: 'Bias Cards Analysis System',
       title: this.report.projectInfo.title,
       description: this.report.projectInfo.description,
-      keywords: ['bias analysis', 'machine learning', 'mitigation'],
+      keywords: 'bias analysis, machine learning, mitigation',
     });
 
     return await Packer.toBlob(doc);
@@ -340,8 +340,12 @@ export class DocxReportExporter {
       if (info.team.members && info.team.members.length > 0) {
         paragraphs.push(
           new Paragraph({
-            text: 'Team Members:',
-            bold: true,
+            children: [
+              new TextRun({
+                text: 'Team Members:',
+                bold: true,
+              }),
+            ],
             spacing: { after: 60 },
           })
         );
@@ -402,8 +406,12 @@ export class DocxReportExporter {
 
       paragraphs.push(
         new Paragraph({
-          text: stageInfo.description,
-          italics: true,
+          children: [
+            new TextRun({
+              text: stageInfo.description,
+              italics: true,
+            }),
+          ],
           spacing: { after: 180 },
         })
       );
@@ -416,32 +424,28 @@ export class DocxReportExporter {
             new TableCell({
               children: [
                 new Paragraph({
-                  text: 'Bias Type',
-                  bold: true,
+                  children: [new TextRun({ text: 'Bias Type', bold: true })],
                 }),
               ],
             }),
             new TableCell({
               children: [
                 new Paragraph({
-                  text: 'Description',
-                  bold: true,
+                  children: [new TextRun({ text: 'Description', bold: true })],
                 }),
               ],
             }),
             new TableCell({
               children: [
                 new Paragraph({
-                  text: 'Severity',
-                  bold: true,
+                  children: [new TextRun({ text: 'Severity', bold: true })],
                 }),
               ],
             }),
             new TableCell({
               children: [
                 new Paragraph({
-                  text: 'Confidence',
-                  bold: true,
+                  children: [new TextRun({ text: 'Confidence', bold: true })],
                 }),
               ],
             }),

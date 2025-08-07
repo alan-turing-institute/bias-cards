@@ -5,9 +5,9 @@
   "scripts": {
     "dev": "next dev --turbopack -p 3002",
     "build": "next build",
-    "start": "http-server ./out -p 3002",
     "lint": "ultracite lint",
-    "format": "ultracite format"
+    "format": "ultracite format",
+    "typecheck": "npx tsc --noEmit"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

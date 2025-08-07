@@ -336,11 +336,11 @@ class SyncManager {
       const FIVE_MINUTES = 5 * 60 * 1000;
 
       if (timeSinceLastSync < FIVE_MINUTES) {
-        return {
+        return Promise.resolve({
           success: true,
           message: 'Skipping auto-sync (synced recently)',
           timestamp: this.lastSyncTime,
-        };
+        });
       }
     }
 

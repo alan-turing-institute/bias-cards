@@ -33,15 +33,15 @@ interface CommentsStoreState {
     category: CommentCategory,
     stageContext?: LifecycleStage,
     metadata?: Comment['metadata']
-  ) => Promise<string>; // Returns comment ID
+  ) => string; // Returns comment ID
 
   updateComment: (
     commentId: string,
     content: string,
     editReason?: string
-  ) => Promise<boolean>;
+  ) => boolean;
 
-  deleteComment: (commentId: string) => Promise<boolean>;
+  deleteComment: (commentId: string) => boolean;
 
   // Comment retrieval
   getCommentsByCard: (cardId: string) => Comment[];
@@ -65,9 +65,9 @@ interface CommentsStoreState {
   ) => number;
 
   // Bulk operations
-  bulkDeleteCommentsByCard: (cardId: string) => Promise<number>; // Returns count deleted
+  bulkDeleteCommentsByCard: (cardId: string) => number; // Returns count deleted
   exportComments: (cardIds?: string[]) => string; // Returns JSON string
-  importComments: (commentsJson: string) => Promise<number>; // Returns count imported
+  importComments: (commentsJson: string) => number; // Returns count imported
 
   // Cache management
   refreshCommentCache: () => void;
@@ -182,7 +182,10 @@ const matchesCategoryFilter = (
   return !categories || categories.includes(comment.category);
 };
 
-const matchesStageFilter = (comment: Comment, stages?: number[]): boolean => {
+const matchesStageFilter = (
+  comment: Comment,
+  stages?: LifecycleStage[]
+): boolean => {
   return (
     !(stages && comment.stageContext) || stages.includes(comment.stageContext)
   );

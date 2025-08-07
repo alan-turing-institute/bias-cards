@@ -1,7 +1,11 @@
 import { saveAs } from 'file-saver';
 import { generateBiasReport } from '@/lib/reports/report-generator';
 import { useWorkspaceStore } from '@/lib/stores/workspace-store';
-import type { Report, ReportExportConfig } from '@/lib/types/reports';
+import type {
+  Report,
+  ReportExportConfig,
+  ReportFormat,
+} from '@/lib/types/reports';
 import { DocxReportExporter } from './docx-exporter';
 import { MarkdownReportExporter } from './markdown-exporter';
 
@@ -10,8 +14,8 @@ import { MarkdownReportExporter } from './markdown-exporter';
  */
 function generateFilename(report: Report, format: string): string {
   const timestamp = new Date().toISOString().split('T')[0];
-  const projectName = report.metadata.projectName
-    ? report.metadata.projectName.toLowerCase().replace(/\s+/g, '-')
+  const projectName = report.projectInfo.title
+    ? report.projectInfo.title.toLowerCase().replace(/\s+/g, '-')
     : 'bias-report';
   return `${projectName}-${timestamp}.${format}`;
 }
@@ -33,8 +37,8 @@ async function getDocxContent(
   report: Report,
   config: ReportExportConfig
 ): Promise<Blob> {
-  const exporter = new DocxReportExporter();
-  return await exporter.export(report, config);
+  const exporter = new DocxReportExporter(report, config);
+  return await exporter.generate();
 }
 
 /**
@@ -44,8 +48,8 @@ function getMarkdownContent(
   report: Report,
   config: ReportExportConfig
 ): string {
-  const exporter = new MarkdownReportExporter();
-  return exporter.export(report, config);
+  const exporter = new MarkdownReportExporter(report, config);
+  return exporter.generate();
 }
 
 /**
@@ -83,8 +87,8 @@ async function exportPDF(
       includeAnnotations: config.sections.comments,
       includeRecommendations: config.sections.appendices,
       includeVisualization: false,
-      authorName: config.metadata?.author || '',
-      projectName: config.metadata?.project || '',
+      authorName: '',
+      projectName: '',
     },
   };
 
@@ -246,42 +250,40 @@ export function getAvailableFormats(): Array<{
  */
 export function getDefaultConfig(format: string): ReportExportConfig {
   const baseConfig: ReportExportConfig = {
-    format,
+    format: format as ReportFormat,
     sections: {
       executiveSummary: true,
+      projectInfo: true,
       biasIdentification: true,
       mitigationStrategies: true,
-      recommendations: true,
-      appendices: false,
+      implementation: true,
+      tracking: true,
       comments: true,
+      auditTrail: false,
+      appendices: false,
     },
-    styling: {
-      theme: 'professional',
-      includeCharts: true,
-      includeImages: true,
-    },
-    metadata: {
-      author: '',
-      project: '',
-      date: new Date().toISOString(),
-      version: '1.0',
+    options: {
+      includeSensitiveData: false,
+      includeBranding: true,
     },
   };
 
   // Format-specific adjustments
   switch (format) {
     case 'markdown':
-      baseConfig.styling.includeCharts = false;
-      baseConfig.styling.includeImages = false;
+      // Markdown doesn't support charts/images in the same way
       break;
     case 'json':
       baseConfig.sections = {
         executiveSummary: false,
+        projectInfo: true,
         biasIdentification: true,
         mitigationStrategies: true,
-        recommendations: true,
-        appendices: true,
+        implementation: true,
+        tracking: true,
         comments: true,
+        auditTrail: true,
+        appendices: true,
       };
       break;
     default:
@@ -289,4 +291,35 @@ export function getDefaultConfig(format: string): ReportExportConfig {
   }
 
   return baseConfig;
+}
+export function exportToFormat(_report: Report, _format: string): void {
+  // Export not yet implemented
+}
+
+export function getDefaultExportConfig(): ReportExportConfig {
+  return {
+    format: 'pdf',
+    sections: {
+      executiveSummary: true,
+      projectInfo: true,
+      biasIdentification: true,
+      mitigationStrategies: true,
+      implementation: true,
+      tracking: true,
+      comments: false,
+      auditTrail: false,
+      appendices: false,
+    },
+    options: {
+      includeSensitiveData: false,
+      includeBranding: true,
+      pageLayout: 'portrait',
+      colorScheme: 'full',
+      locale: 'en-US',
+    },
+  };
+}
+
+export function getSupportedExportFormats(): string[] {
+  return ['pdf', 'json', 'markdown', 'docx'];
 }

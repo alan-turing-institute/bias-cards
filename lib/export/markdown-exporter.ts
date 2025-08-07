@@ -2,7 +2,7 @@ import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
 import type { ProjectInfo } from '@/lib/types/project-info';
 import type {
   BiasIdentification,
-  Mitigation,
+  MitigationStrategy,
   Report,
   ReportExportConfig,
 } from '@/lib/types/reports';
@@ -387,7 +387,7 @@ export class MarkdownReportExporter {
 
   private addMitigationDetails(
     sections: string[],
-    mitigation: Mitigation
+    mitigation: MitigationStrategy['mitigations'][0]
   ): void {
     sections.push('**Implementation Details:**');
     sections.push(`- **Timeline:** ${mitigation.timeline}`);
@@ -400,7 +400,7 @@ export class MarkdownReportExporter {
 
   private addMitigationEffort(
     sections: string[],
-    mitigation: Mitigation
+    mitigation: MitigationStrategy['mitigations'][0]
   ): void {
     if (!mitigation.effort) {
       return;
@@ -421,7 +421,7 @@ export class MarkdownReportExporter {
 
   private addMitigationDependencies(
     sections: string[],
-    mitigation: Mitigation
+    mitigation: MitigationStrategy['mitigations'][0]
   ): void {
     if (!mitigation.dependencies || mitigation.dependencies.length === 0) {
       return;
@@ -436,7 +436,7 @@ export class MarkdownReportExporter {
 
   private addSingleMitigation(
     sections: string[],
-    mitigation: Mitigation,
+    mitigation: MitigationStrategy['mitigations'][0],
     index: number
   ): void {
     sections.push(`#### ${index + 1}. ${mitigation.mitigationCard.title}`, '');

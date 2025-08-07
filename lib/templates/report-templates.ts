@@ -1,4 +1,4 @@
-import type { ReportTemplate } from '@/lib/types/reports';
+import type { Report, ReportTemplate } from '@/lib/types/reports';
 
 /**
  * Default report templates for different domains
@@ -742,7 +742,7 @@ export function suggestTemplates(projectDomain: string): ReportTemplate[] {
  * Validate if a report meets template requirements
  */
 export function validateReportAgainstTemplate(
-  report: Record<string, unknown>,
+  report: Report,
   templateId: string
 ): { isValid: boolean; errors: string[] } {
   const template = getTemplateById(templateId);
@@ -755,7 +755,7 @@ export function validateReportAgainstTemplate(
 
   // Check minimum bias count
   if (
-    rules.minimumBiasCount &&
+    typeof rules.minimumBiasCount === 'number' &&
     report.analysis.biasIdentification.length < rules.minimumBiasCount
   ) {
     errors.push(
@@ -765,7 +765,7 @@ export function validateReportAgainstTemplate(
 
   // Check minimum mitigation count
   if (
-    rules.minimumMitigationCount &&
+    typeof rules.minimumMitigationCount === 'number' &&
     report.analysis.mitigationStrategies.length < rules.minimumMitigationCount
   ) {
     errors.push(
@@ -787,7 +787,7 @@ export function validateReportAgainstTemplate(
 
   // Check required project fields
   for (const field of template.structure.requiredProjectFields) {
-    if (!report.projectInfo?.[field]) {
+    if (!report.projectInfo?.[field as keyof typeof report.projectInfo]) {
       errors.push(`Project field '${field}' is required`);
     }
   }

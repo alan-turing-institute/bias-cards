@@ -376,7 +376,10 @@ function ReportPageContent() {
               </CardHeader>
               <CardContent className="space-y-4">
                 {currentReport.analysis.mitigationStrategies.map((strategy) => (
-                  <div className="space-y-3" key={`strategy-${strategy.stage}`}>
+                  <div
+                    className="space-y-3"
+                    key={`strategy-${strategy.biasId}`}
+                  >
                     <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                       {strategy.mitigations.map((mitigation) => (
                         <div

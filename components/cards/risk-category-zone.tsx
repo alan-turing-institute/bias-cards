@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import type {
-  Card as BiasCard,
+  BiasCard,
   BiasRiskAssignment,
   BiasRiskCategory,
 } from '@/lib/types';
@@ -19,6 +19,7 @@ interface RiskCategoryZoneProps {
   assignments: BiasRiskAssignment[];
   biasCards: BiasCard[];
   onRemoveCard: (cardId: string) => void;
+  isDragging?: boolean;
 }
 
 const CATEGORY_CONFIG: Record<
@@ -161,7 +162,7 @@ export function RiskCategoryZone({
                   >
                     <div className="group relative">
                       <BiasCardDropped
-                        card={card as unknown}
+                        card={card as BiasCard}
                         cardNumber={
                           card.displayNumber || String(card.id).padStart(2, '0')
                         }

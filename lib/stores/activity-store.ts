@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DEMO_ACTIVITIES } from '@/lib/data/demo-content';
 import type { Activity, Report } from '@/lib/types/activity';
+import type { ActivityStage } from '@/lib/types/cards';
 
 interface ActivityStore {
   // State
@@ -110,7 +111,7 @@ export const useActivityStore = create<ActivityStore>()(
             activity.id === id
               ? {
                   ...activity,
-                  currentStage: stage as unknown,
+                  currentStage: stage as ActivityStage,
                   lastModified: new Date().toISOString(),
                 }
               : activity
@@ -126,7 +127,7 @@ export const useActivityStore = create<ActivityStore>()(
               const nextStage = Math.min(stage + 1, 5); // Cap at stage 5
               return {
                 ...activity,
-                currentStage: nextStage as unknown,
+                currentStage: nextStage as ActivityStage,
                 progress: {
                   ...activity.progress,
                   completed: newCompleted,
