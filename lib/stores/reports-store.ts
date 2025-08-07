@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DEMO_REPORTS } from '@/lib/data/demo-content';
 import { ReportExportService } from '@/lib/export/export-service';
+import type { Card } from '@/lib/types/cards';
 import type { ProjectInfo } from '@/lib/types/project-info';
 import type {
   AuditTrailEntry,
@@ -12,6 +13,7 @@ import type {
   ReportStatus,
   ReportSummary,
 } from '@/lib/types/reports';
+import type { WorkspaceState } from '@/lib/types/workspace';
 import { useCardsStore } from './cards-store';
 import { useWorkspaceStore } from './workspace-store';
 
@@ -137,6 +139,75 @@ const generateAuditId = () => {
   return `audit-${Date.now()}-${auditCounter}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
+// Helper function to process bias identifications
+function processBiasIdentifications(
+  workspaceState: WorkspaceState,
+  getCardById: (id: string) => Card | undefined,
+  user: { userId: string; userName: string }
+): BiasIdentification[] {
+  const biasIdentification: BiasIdentification[] = [];
+
+  for (const assignment of workspaceState.stageAssignments) {
+    const biasCard = getCardById(assignment.cardId);
+    if (!biasCard) {
+      continue;
+    }
+
+    let stageIdentification = biasIdentification.find(
+      (bi) => bi.stage === assignment.stage
+    );
+    if (!stageIdentification) {
+      stageIdentification = {
+        stage: assignment.stage,
+        biases: [],
+      };
+      biasIdentification.push(stageIdentification);
+    }
+
+    stageIdentification.biases.push({
+      biasCard: biasCard as unknown,
+      severity: 'medium',
+      confidence: 'medium',
+      comments: [],
+      identifiedAt: assignment.timestamp || new Date().toISOString(),
+      identifiedBy: user.userId,
+    });
+  }
+
+  return biasIdentification;
+}
+
+// Helper function to process mitigation strategies
+function processMitigationStrategies(
+  workspaceState: WorkspaceState,
+  getCardById: (id: string) => Card | undefined
+): MitigationStrategy[] {
+  const mitigationStrategies: MitigationStrategy[] = [];
+
+  for (const pair of workspaceState.cardPairs) {
+    const mitigationCard = getCardById(pair.mitigationId);
+    if (!mitigationCard) {
+      continue;
+    }
+
+    mitigationStrategies.push({
+      biasId: pair.biasId,
+      mitigations: [
+        {
+          mitigationCard: mitigationCard as unknown,
+          timeline: 'TBD',
+          responsible: 'TBD',
+          successCriteria: 'TBD',
+          priority: 'medium',
+          comments: [],
+        },
+      ],
+    });
+  }
+
+  return mitigationStrategies;
+}
+
 export const useReportsStore = create<ReportsStore>()(
   persist(
     (set, get) => ({
@@ -149,13 +220,7 @@ export const useReportsStore = create<ReportsStore>()(
       error: null,
 
       // CRUD Operations
-      createReport: async (
-        activityId,
-        projectInfo,
-        userId,
-        userName,
-        templateId
-      ) => {
+      createReport: (activityId, projectInfo, userId, userName, templateId) => {
         const user = {
           userId: userId || 'default-user',
           userName: userName || 'Anonymous User',
@@ -347,62 +412,15 @@ export const useReportsStore = create<ReportsStore>()(
           );
 
           // Generate analysis from workspace
-          const biasIdentification: BiasIdentification[] = [];
-          const mitigationStrategies: MitigationStrategy[] = [];
-
-          // Convert workspace assignments to bias identification
-          workspaceState.stageAssignments.forEach((assignment) => {
-            // Get the actual bias card data
-            const biasCard = getCardById(assignment.cardId);
-            if (!biasCard) {
-              return; // Skip if card not found
-            }
-
-            // Find existing stage or create new one
-            let stageIdentification = biasIdentification.find(
-              (bi) => bi.stage === assignment.stage
-            );
-            if (!stageIdentification) {
-              stageIdentification = {
-                stage: assignment.stage,
-                biases: [],
-              };
-              biasIdentification.push(stageIdentification);
-            }
-
-            // Add bias to stage
-            stageIdentification.biases.push({
-              biasCard: biasCard as any,
-              severity: 'medium', // Default, could be enhanced later
-              confidence: 'medium',
-              comments: [], // TODO: Get comments from comment store
-              identifiedAt: assignment.timestamp || new Date().toISOString(),
-              identifiedBy: user.userId,
-            });
-          });
-
-          // Convert card pairs to mitigation strategies
-          workspaceState.cardPairs.forEach((pair) => {
-            // Get the actual mitigation card data
-            const mitigationCard = getCardById(pair.mitigationId);
-            if (!mitigationCard) {
-              return; // Skip if card not found
-            }
-
-            mitigationStrategies.push({
-              biasId: pair.biasId,
-              mitigations: [
-                {
-                  mitigationCard: mitigationCard as any,
-                  timeline: 'TBD', // To be defined during report editing
-                  responsible: 'TBD',
-                  successCriteria: 'TBD',
-                  priority: 'medium',
-                  comments: [], // TODO: Get comments from comment store
-                },
-              ],
-            });
-          });
+          const biasIdentification = processBiasIdentifications(
+            workspaceState,
+            getCardById,
+            user
+          );
+          const mitigationStrategies = processMitigationStrategies(
+            workspaceState,
+            getCardById
+          );
 
           // Update the report with generated analysis
           get().updateReport(
@@ -640,31 +658,33 @@ export const useReportsStore = create<ReportsStore>()(
       filterReports: (filters) => {
         const summaries = get().getReportSummaries();
 
-        return summaries.filter((summary) => {
-          if (filters.status && !filters.status.includes(summary.status)) {
-            return false;
-          }
-          if (filters.domain && !filters.domain.includes(summary.domain)) {
-            return false;
-          }
-          if (
-            filters.tags &&
-            !filters.tags.some((tag) => summary.tags.includes(tag))
-          ) {
-            return false;
-          }
+        const matchesStatus = (summary: ReportSummary) =>
+          !filters.status || filters.status.includes(summary.status);
 
-          if (filters.dateRange) {
-            const reportDate = new Date(summary.lastModified);
-            const start = new Date(filters.dateRange.start);
-            const end = new Date(filters.dateRange.end);
-            if (reportDate < start || reportDate > end) {
-              return false;
-            }
-          }
+        const matchesDomain = (summary: ReportSummary) =>
+          !filters.domain || filters.domain.includes(summary.domain);
 
-          return true;
-        });
+        const matchesTags = (summary: ReportSummary) =>
+          !filters.tags ||
+          filters.tags.some((tag) => summary.tags.includes(tag));
+
+        const matchesDateRange = (summary: ReportSummary) => {
+          if (!filters.dateRange) {
+            return true;
+          }
+          const reportDate = new Date(summary.lastModified);
+          const start = new Date(filters.dateRange.start);
+          const end = new Date(filters.dateRange.end);
+          return reportDate >= start && reportDate <= end;
+        };
+
+        return summaries.filter(
+          (summary) =>
+            matchesStatus(summary) &&
+            matchesDomain(summary) &&
+            matchesTags(summary) &&
+            matchesDateRange(summary)
+        );
       },
 
       // Audit trail
@@ -742,7 +762,7 @@ export const useReportsStore = create<ReportsStore>()(
         // 2. User has no reports (new user)
         if (!state.demoReportsInitialized && state.reports.length === 0) {
           const demoReports = DEMO_REPORTS.filter(
-            (demo) => !state.deletedDemoReportIds.includes(demo.id!)
+            (demo) => demo.id && !state.deletedDemoReportIds.includes(demo.id)
           ).map((demo) => demo as Report);
 
           set({

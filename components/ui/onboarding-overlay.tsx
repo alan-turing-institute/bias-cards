@@ -34,7 +34,7 @@ export function OnboardingOverlay() {
   const progress = ((currentStep + 1) / totalSteps) * 100;
 
   const updateTooltipPosition = useCallback(
-    (element: HTMLElement, step: OnboardingStep) => {
+    (element: HTMLElement, onboardingStep: OnboardingStep) => {
       const rect = element.getBoundingClientRect();
       const tooltipWidth = 320; // Width of the tooltip card (w-80 = 20rem = 320px)
       const tooltipHeight = 280; // Approximate height of tooltip
@@ -45,7 +45,7 @@ export function OnboardingOverlay() {
       let y = 0;
 
       // Calculate position based on placement
-      switch (step.placement) {
+      switch (onboardingStep.placement) {
         case 'top':
           x = rect.left + rect.width / 2;
           y = rect.top - spacing - tooltipHeight / 2;
@@ -73,7 +73,7 @@ export function OnboardingOverlay() {
       // Check right edge
       if (x + tooltipWidth / 2 > window.innerWidth - padding) {
         // If placement is right and would overflow, position to the left instead
-        if (step.placement === 'right') {
+        if (onboardingStep.placement === 'right') {
           x = rect.left - spacing - tooltipWidth / 2;
         } else {
           x = window.innerWidth - tooltipWidth / 2 - padding;
@@ -114,7 +114,7 @@ export function OnboardingOverlay() {
     // Find and highlight target element
     if (step.target) {
       const findElement = () => {
-        const element = document.querySelector(step.target!) as HTMLElement;
+        const element = document.querySelector(step.target) as HTMLElement;
         if (element) {
           setHighlightElement(element);
           updateTooltipPosition(element, step);

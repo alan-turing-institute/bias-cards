@@ -29,7 +29,9 @@ export default function ActivityLayout({
   const activity = isClient ? getActivity(activityId) : null;
 
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient) {
+      return;
+    }
 
     if (!activity) {
       // Give it a moment for demo data to initialize

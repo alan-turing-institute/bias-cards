@@ -149,11 +149,11 @@ const createCommentSummary = (
     'implementation',
     'general',
   ];
-  categories.forEach((category) => {
+  for (const category of categories) {
     if (!(category in commentsByCategory)) {
       commentsByCategory[category] = 0;
     }
-  });
+  }
 
   const sortedComments = cardComments.sort(
     (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
@@ -171,63 +171,71 @@ const createCommentSummary = (
 /**
  * Filters comments based on provided criteria
  */
+const matchesCardFilter = (comment: Comment, cardIds?: string[]): boolean => {
+  return !cardIds || cardIds.includes(comment.cardId);
+};
+
+const matchesCategoryFilter = (
+  comment: Comment,
+  categories?: CommentCategory[]
+): boolean => {
+  return !categories || categories.includes(comment.category);
+};
+
+const matchesStageFilter = (comment: Comment, stages?: number[]): boolean => {
+  return (
+    !(stages && comment.stageContext) || stages.includes(comment.stageContext)
+  );
+};
+
+const matchesUserFilter = (comment: Comment, userId?: string): boolean => {
+  return !userId || comment.userId === userId;
+};
+
+const matchesDateFilter = (
+  comment: Comment,
+  dateRange?: { start: string; end: string }
+): boolean => {
+  if (!dateRange) {
+    return true;
+  }
+
+  const commentDate = new Date(comment.timestamp);
+  const startDate = new Date(dateRange.start);
+  const endDate = new Date(dateRange.end);
+
+  return commentDate >= startDate && commentDate <= endDate;
+};
+
+const matchesSearchFilter = (
+  comment: Comment,
+  searchQuery?: string
+): boolean => {
+  if (!searchQuery) {
+    return true;
+  }
+
+  const query = searchQuery.toLowerCase();
+  const searchableText = [comment.content, comment.userName, comment.category]
+    .join(' ')
+    .toLowerCase();
+
+  return searchableText.includes(query);
+};
+
 const applyCommentFilters = (
   comments: Comment[],
   filters: CommentFilters
 ): Comment[] => {
   return comments.filter((comment) => {
-    // Card ID filter
-    if (filters.cardIds && !filters.cardIds.includes(comment.cardId)) {
-      return false;
-    }
-
-    // Category filter
-    if (filters.categories && !filters.categories.includes(comment.category)) {
-      return false;
-    }
-
-    // Stage filter
-    if (
-      filters.stages &&
-      comment.stageContext &&
-      !filters.stages.includes(comment.stageContext)
-    ) {
-      return false;
-    }
-
-    // User filter
-    if (filters.userId && comment.userId !== filters.userId) {
-      return false;
-    }
-
-    // Date range filter
-    if (filters.dateRange) {
-      const commentDate = new Date(comment.timestamp);
-      const startDate = new Date(filters.dateRange.start);
-      const endDate = new Date(filters.dateRange.end);
-
-      if (commentDate < startDate || commentDate > endDate) {
-        return false;
-      }
-    }
-
-    // Search query filter
-    if (filters.searchQuery) {
-      const query = filters.searchQuery.toLowerCase();
-      const searchableText = [
-        comment.content,
-        comment.userName,
-        comment.category,
-      ]
-        .join(' ')
-        .toLowerCase();
-
-      if (!searchableText.includes(query)) {
-        return false;
-      }
-    }
-
-    return true;
+    return (
+      matchesCardFilter(comment, filters.cardIds) &&
+      matchesCategoryFilter(comment, filters.categories) &&
+      matchesStageFilter(comment, filters.stages) &&
+      matchesUserFilter(comment, filters.userId) &&
+      matchesDateFilter(comment, filters.dateRange) &&
+      matchesSearchFilter(comment, filters.searchQuery)
+    );
   });
 };
 
@@ -246,7 +254,7 @@ export const useCommentsStore = create<CommentsStoreState>()(
         currentUser: null,
 
         // Comment management actions
-        addComment: async (
+        addComment: (
           cardId,
           cardType,
           content,
@@ -303,7 +311,7 @@ export const useCommentsStore = create<CommentsStoreState>()(
           }
         },
 
-        updateComment: async (commentId, content, editReason) => {
+        updateComment: (commentId, content, editReason) => {
           try {
             set({ isLoading: true, error: null });
 
@@ -362,7 +370,7 @@ export const useCommentsStore = create<CommentsStoreState>()(
           }
         },
 
-        deleteComment: async (commentId) => {
+        deleteComment: (commentId) => {
           try {
             set({ isLoading: true, error: null });
 
@@ -475,7 +483,7 @@ export const useCommentsStore = create<CommentsStoreState>()(
         },
 
         // Bulk operations
-        bulkDeleteCommentsByCard: async (cardId) => {
+        bulkDeleteCommentsByCard: (cardId) => {
           try {
             set({ isLoading: true, error: null });
 
@@ -519,7 +527,7 @@ export const useCommentsStore = create<CommentsStoreState>()(
           );
         },
 
-        importComments: async (commentsJson) => {
+        importComments: (commentsJson) => {
           try {
             set({ isLoading: true, error: null });
 

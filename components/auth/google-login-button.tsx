@@ -19,7 +19,7 @@ export function GoogleLoginButton({
   onSuccess,
   onError,
   className,
-  variant = 'standard',
+
   'data-google-login': dataGoogleLogin,
 }: GoogleLoginButtonProps) {
   const { login, setError, setLoading } = useAuthStore();
@@ -58,7 +58,8 @@ export function GoogleLoginButton({
           name: userInfo.name,
           picture: userInfo.picture,
           accessToken: tokenResponse.access_token,
-          refreshToken: tokenResponse.refresh_token,
+          refreshToken:
+            (tokenResponse as { refresh_token?: string }).refresh_token || '',
           expiresAt: Date.now() + tokenResponse.expires_in * 1000,
         });
 
@@ -79,7 +80,7 @@ export function GoogleLoginButton({
     flow: 'implicit',
   });
 
-  const _handleSuccess = async (_credentialResponse: CredentialResponse) => {
+  const _handleSuccess = (_credentialResponse: CredentialResponse) => {
     // This is for the one-tap sign-in, but we need OAuth flow for Drive API
     // So we'll trigger the OAuth flow instead
     googleLogin();
@@ -110,7 +111,12 @@ export function GoogleLoginButton({
       onClick={() => googleLogin()}
       variant="outline"
     >
-      <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+      <svg
+        aria-label="Google logo"
+        className="mr-2 h-4 w-4"
+        viewBox="0 0 24 24"
+      >
+        <title>Google logo</title>
         <path
           d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
           fill="currentColor"

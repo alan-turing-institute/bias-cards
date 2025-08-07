@@ -103,7 +103,7 @@ export default function GenerateReportPage() {
           <h3 className="mb-4 font-semibold text-lg">Report Options</h3>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="font-medium text-sm">Include Sections</label>
+              <div className="font-medium text-sm">Include Sections</div>
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
                   <input className="rounded" defaultChecked type="checkbox" />
@@ -120,7 +120,7 @@ export default function GenerateReportPage() {
               </div>
             </div>
             <div className="space-y-2">
-              <label className="font-medium text-sm">Report Format</label>
+              <div className="font-medium text-sm">Report Format</div>
               <div className="space-y-2">
                 <label className="flex items-center space-x-2">
                   <input

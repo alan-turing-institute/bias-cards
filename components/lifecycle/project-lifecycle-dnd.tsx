@@ -30,10 +30,12 @@ function StageDropZone({
   });
 
   return (
-    <div
+    <button
+      aria-label={`Select ${LIFECYCLE_STAGES[stage].name} stage`}
       className={cn(
         '-translate-x-1/2 -translate-y-1/2 absolute h-20 w-32 cursor-pointer rounded-lg border-2 border-transparent transition-all',
         'hover:border-primary/20 hover:bg-primary/10',
+        'focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2',
         isOver && 'scale-105 border-primary bg-primary/20',
         isSelected && 'ring-2 ring-primary ring-offset-2'
       )}
@@ -43,13 +45,14 @@ function StageDropZone({
         left: `${position.x}%`,
         top: `${position.y}%`,
       }}
+      type="button"
     >
       {count > 0 && (
         <div className="-top-2 -right-2 absolute flex h-6 w-6 items-center justify-center rounded-full bg-primary font-bold text-primary-foreground text-xs">
           {count}
         </div>
       )}
-    </div>
+    </button>
   );
 }
 
@@ -112,7 +115,9 @@ export function ProjectLifecycleDnd({
           setIsLoaded(true);
         }
       })
-      .catch((_error) => {});
+      .catch((_error) => {
+        // Handle initialization error silently
+      });
   }, []);
 
   return (
@@ -136,7 +141,12 @@ export function ProjectLifecycleDnd({
                   count={stageCounts[stage] || 0}
                   isSelected={selectedStage === stage}
                   key={stage}
-                  onStageClick={onStageClick || (() => {})}
+                  onStageClick={
+                    onStageClick ||
+                    (() => {
+                      // Default empty stage click handler
+                    })
+                  }
                   position={stagePositions[stage]}
                   stage={stage}
                 />

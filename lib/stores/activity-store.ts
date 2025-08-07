@@ -110,7 +110,7 @@ export const useActivityStore = create<ActivityStore>()(
             activity.id === id
               ? {
                   ...activity,
-                  currentStage: stage as any,
+                  currentStage: stage as unknown,
                   lastModified: new Date().toISOString(),
                 }
               : activity
@@ -126,7 +126,7 @@ export const useActivityStore = create<ActivityStore>()(
               const nextStage = Math.min(stage + 1, 5); // Cap at stage 5
               return {
                 ...activity,
-                currentStage: nextStage as any,
+                currentStage: nextStage as unknown,
                 progress: {
                   ...activity.progress,
                   completed: newCompleted,
@@ -227,7 +227,7 @@ export const useActivityStore = create<ActivityStore>()(
         // 2. User has no activities (new user)
         if (!state.demoDataInitialized && state.activities.length === 0) {
           const demoActivities = DEMO_ACTIVITIES.filter(
-            (demo) => !state.deletedDemoIds.includes(demo.id!)
+            (demo) => demo.id && !state.deletedDemoIds.includes(demo.id)
           ).map(
             (demo) =>
               ({

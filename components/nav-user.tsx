@@ -33,7 +33,7 @@ import { useAuthStore } from '@/lib/stores';
 
 export function NavUser() {
   const { isMobile } = useSidebar();
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const { user, isAuthenticated, logout } = useAuthStore();
   const [mounted, setMounted] = useState(false);
 
@@ -150,7 +150,9 @@ export function NavUser() {
             <GoogleLoginButton
               className="w-full"
               data-google-login
-              onSuccess={() => {}}
+              onSuccess={() => {
+                // Google login success handled by auth context
+              }}
               variant="standard"
             />
           </div>

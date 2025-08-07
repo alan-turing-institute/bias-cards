@@ -534,7 +534,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
 
         removeCardAnnotation: (cardId) => {
           set((state) => {
-            const { [cardId]: removed, ...rest } = state.customAnnotations;
+            const { [cardId]: _, ...rest } = state.customAnnotations;
             return {
               customAnnotations: rest,
               lastModified: new Date().toISOString(),
@@ -640,17 +640,22 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
             limit
           );
 
-          return suggestions.map((suggestion) => {
-            const mitigation = mitigationCards.find(
-              (m) => m.id === suggestion.mitigationId
-            );
-            return {
-              mitigation: mitigation!,
-              score: suggestion.score,
-              reasons: suggestion.reasons,
-              predictedEffectiveness: suggestion.predictedEffectiveness,
-            };
-          });
+          return suggestions
+            .map((suggestion) => {
+              const mitigation = mitigationCards.find(
+                (m) => m.id === suggestion.mitigationId
+              );
+              if (!mitigation) {
+                return null;
+              }
+              return {
+                mitigation,
+                score: suggestion.score,
+                reasons: suggestion.reasons,
+                predictedEffectiveness: suggestion.predictedEffectiveness,
+              };
+            })
+            .filter((item): item is NonNullable<typeof item> => item !== null);
         },
 
         getMatchingScore: (biasId, mitigationId) => {
@@ -712,6 +717,10 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
           }
 
           const actionToUndo = state.history.undoStack.at(-1);
+          if (!actionToUndo) {
+            return;
+          }
+
           const newUndoStack = state.history.undoStack.slice(0, -1);
           const newRedoStack = [...state.history.redoStack, actionToUndo];
 
@@ -736,6 +745,10 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
           }
 
           const actionToRedo = state.history.redoStack.at(-1);
+          if (!actionToRedo) {
+            return;
+          }
+
           const newRedoStack = state.history.redoStack.slice(0, -1);
           const newUndoStack = [...state.history.undoStack, actionToRedo];
 
@@ -860,6 +873,11 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
               }));
               break;
             }
+            default: {
+              // Exhaustive check
+              const _exhaustiveCheck: never = action;
+              throw new Error(`Unknown action type: ${_exhaustiveCheck}`);
+            }
           }
         },
       }),
@@ -881,11 +899,14 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
           completedStages: state.completedStages,
           activityProgress: state.activityProgress,
         }),
-        migrate: (persistedState: any, _version: number) => {
+        migrate: (persistedState: unknown, _version: number) => {
+          // Type guard for persisted state
+          const state = persistedState as Partial<WorkspaceState>;
+
           // Add IDs to existing assignments that don't have them
-          if (persistedState?.stageAssignments) {
-            persistedState.stageAssignments =
-              persistedState.stageAssignments.map((assignment: any) => {
+          if (state?.stageAssignments) {
+            state.stageAssignments = state.stageAssignments.map(
+              (assignment) => {
                 if (!assignment.id) {
                   return {
                     ...assignment,
@@ -893,9 +914,10 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
                   };
                 }
                 return assignment;
-              });
+              }
+            );
           }
-          return persistedState;
+          return state;
         },
       }
     ),

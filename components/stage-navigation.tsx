@@ -89,11 +89,12 @@ export function StageNavigation({
     }
   };
 
-  const progressPercentage = progress
-    ? progress.total > 0
-      ? (progress.current / progress.total) * 100
-      : 0
-    : (completedStages / 5) * 100;
+  const progressPercentage = (() => {
+    if (progress) {
+      return progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
+    }
+    return (completedStages / 5) * 100;
+  })();
 
   return (
     <div className="border-b bg-background">
@@ -128,6 +129,7 @@ export function StageNavigation({
                       )}
                       disabled={!canAccess}
                       onClick={() => handleStageNavigation(stage)}
+                      type="button"
                     >
                       {isCompleted ? (
                         <CheckCircle2 className="h-3 w-3 md:h-4 md:w-4" />

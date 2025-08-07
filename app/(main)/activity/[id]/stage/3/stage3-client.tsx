@@ -46,6 +46,86 @@ interface StageAssignmentWithCard {
   riskCategory?: string;
 }
 
+interface AssignmentCardProps {
+  assignment: StageAssignmentWithCard;
+  viewMode: 'lifecycle' | 'risk';
+  showDescriptions: boolean;
+  onStartEdit: (assignment: StageAssignmentWithCard) => void;
+}
+
+// Component for rendering assignment cards
+const AssignmentCard = ({
+  assignment,
+  viewMode,
+  showDescriptions,
+  onStartEdit,
+}: AssignmentCardProps) => (
+  <Card className="transition-all" key={assignment.id}>
+    <CardContent className="p-4">
+      <div className="space-y-3">
+        {/* Card header */}
+        <div className="flex-1">
+          <div className="mb-2 flex items-center gap-2">
+            <h4 className="font-semibold text-lg">{assignment.card.name}</h4>
+            {/* Conditional badge based on view mode */}
+            {viewMode === 'lifecycle' && assignment.riskCategory && (
+              <Badge
+                className={cn(
+                  'text-xs',
+                  RISK_COLORS[
+                    assignment.riskCategory as keyof typeof RISK_COLORS
+                  ]
+                )}
+              >
+                {assignment.riskCategory.replace('-', ' ')}
+              </Badge>
+            )}
+            {viewMode === 'risk' && (
+              <Badge className="text-xs" variant="secondary">
+                {LIFECYCLE_STAGES[assignment.stage].name}
+              </Badge>
+            )}
+          </div>
+          {showDescriptions && (
+            <p className="text-muted-foreground text-sm">
+              {assignment.card.description}
+            </p>
+          )}
+        </div>
+
+        {/* Rationale section */}
+        {assignment.annotation && assignment.annotation.trim().length > 0 ? (
+          <div className="space-y-2">
+            <h5 className="font-semibold text-sm">Rationale:</h5>
+            <p className="text-sm leading-relaxed">{assignment.annotation}</p>
+          </div>
+        ) : (
+          <div className="rounded-md border border-muted-foreground/30 border-dashed p-4 text-center">
+            <p className="text-muted-foreground text-sm">
+              No rationale provided yet. Click "Add Rationale" to document why
+              this bias is relevant to this stage.
+            </p>
+          </div>
+        )}
+
+        {/* Edit/Add Rationale button positioned at bottom right */}
+        <div className="flex justify-end">
+          <Button
+            onClick={() => onStartEdit(assignment)}
+            size="sm"
+            variant="outline"
+          >
+            <Edit3 className="mr-2 h-4 w-4" />
+            {assignment.annotation && assignment.annotation.trim().length > 0
+              ? 'Edit'
+              : 'Add Rationale'}
+          </Button>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+);
+
 export default function Stage3Client() {
   const params = useParams();
   const router = useRouter();
@@ -176,80 +256,6 @@ export default function Stage3Client() {
     setEditingAssignment(null);
   };
 
-  // Helper component for rendering assignment cards
-  const AssignmentCard = ({
-    assignment,
-    viewMode,
-  }: {
-    assignment: StageAssignmentWithCard;
-    viewMode: 'lifecycle' | 'risk';
-  }) => (
-    <Card className="transition-all" key={assignment.id}>
-      <CardContent className="p-4">
-        <div className="space-y-3">
-          {/* Card header */}
-          <div className="flex-1">
-            <div className="mb-2 flex items-center gap-2">
-              <h4 className="font-semibold text-lg">{assignment.card.name}</h4>
-              {/* Conditional badge based on view mode */}
-              {viewMode === 'lifecycle' && assignment.riskCategory && (
-                <Badge
-                  className={cn(
-                    'text-xs',
-                    RISK_COLORS[
-                      assignment.riskCategory as keyof typeof RISK_COLORS
-                    ]
-                  )}
-                >
-                  {assignment.riskCategory.replace('-', ' ')}
-                </Badge>
-              )}
-              {viewMode === 'risk' && (
-                <Badge className="text-xs" variant="secondary">
-                  {LIFECYCLE_STAGES[assignment.stage].name}
-                </Badge>
-              )}
-            </div>
-            {showDescriptions && (
-              <p className="text-muted-foreground text-sm">
-                {assignment.card.description}
-              </p>
-            )}
-          </div>
-
-          {/* Rationale section */}
-          {assignment.annotation && assignment.annotation.trim().length > 0 ? (
-            <div className="space-y-2">
-              <h5 className="font-semibold text-sm">Rationale:</h5>
-              <p className="text-sm leading-relaxed">{assignment.annotation}</p>
-            </div>
-          ) : (
-            <div className="rounded-md border border-muted-foreground/30 border-dashed p-4 text-center">
-              <p className="text-muted-foreground text-sm">
-                No rationale provided yet. Click "Add Rationale" to document why
-                this bias is relevant to this stage.
-              </p>
-            </div>
-          )}
-
-          {/* Edit/Add Rationale button positioned at bottom right */}
-          <div className="flex justify-end">
-            <Button
-              onClick={() => handleStartEdit(assignment)}
-              size="sm"
-              variant="outline"
-            >
-              <Edit3 className="mr-2 h-4 w-4" />
-              {assignment.annotation && assignment.annotation.trim().length > 0
-                ? 'Edit'
-                : 'Add Rationale'}
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
-  );
-
   return (
     <div className="flex h-full flex-col">
       <StageNavigation
@@ -352,6 +358,8 @@ export default function Stage3Client() {
                             <AssignmentCard
                               assignment={assignment}
                               key={assignment.id}
+                              onStartEdit={handleStartEdit}
+                              showDescriptions={showDescriptions}
                               viewMode="lifecycle"
                             />
                           ))}
@@ -383,6 +391,8 @@ export default function Stage3Client() {
                             <AssignmentCard
                               assignment={assignment}
                               key={assignment.id}
+                              onStartEdit={handleStartEdit}
+                              showDescriptions={showDescriptions}
                               viewMode="risk"
                             />
                           ))}

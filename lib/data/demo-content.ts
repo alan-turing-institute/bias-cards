@@ -1,4 +1,5 @@
 import type { Activity } from '@/lib/types/activity';
+import type { BiasCard } from '@/lib/types/cards';
 import type { ProjectInfo } from '@/lib/types/project-info';
 import type { Report, ReportSummary } from '@/lib/types/reports';
 
@@ -241,7 +242,7 @@ export const DEMO_REPORTS: Partial<Report>[] = [
                 description:
                   'Historical lending data reflects past discriminatory practices',
                 caption: 'Past discrimination embedded in training data',
-              } as any,
+              } as Partial<BiasCard>,
               severity: 'high',
               confidence: 'high',
               comments: [],
@@ -265,7 +266,7 @@ export const DEMO_REPORTS: Partial<Report>[] = [
                 description:
                   'Training data not representative of all applicant populations',
                 caption: 'Non-representative sampling in data collection',
-              } as any,
+              } as Partial<BiasCard>,
               severity: 'high',
               confidence: 'medium',
               comments: [],
@@ -294,7 +295,7 @@ export const DEMO_REPORTS: Partial<Report>[] = [
                 description:
                   'Non-protected attributes serving as proxies for protected characteristics',
                 caption: 'Indirect discrimination through correlated features',
-              } as any,
+              } as Partial<BiasCard>,
               severity: 'high',
               confidence: 'high',
               comments: [],
@@ -322,7 +323,7 @@ export const DEMO_REPORTS: Partial<Report>[] = [
                 category: 'statistical-bias',
                 description: 'Model decisions influence future training data',
                 caption: 'Self-reinforcing bias through feedback mechanisms',
-              } as any,
+              } as Partial<BiasCard>,
               severity: 'medium',
               confidence: 'high',
               comments: [],
@@ -352,7 +353,7 @@ export const DEMO_REPORTS: Partial<Report>[] = [
                 description:
                   'Collect new, unbiased data to supplement historical records',
                 caption: 'Expanding data sources for better representation',
-              } as any,
+              } as Partial<BiasCard>,
               timeline: '3 months',
               responsible: 'Data Engineering Team',
               successCriteria:
@@ -376,7 +377,7 @@ export const DEMO_REPORTS: Partial<Report>[] = [
                 category: 'data-augmentation',
                 description: 'Generate synthetic examples to balance dataset',
                 caption: 'Creating artificial data to address imbalances',
-              } as any,
+              } as Partial<BiasCard>,
               timeline: '2 months',
               responsible: 'ML Engineering Team',
               successCriteria:
@@ -405,7 +406,7 @@ export const DEMO_REPORTS: Partial<Report>[] = [
                 description:
                   'Systematically identify and handle features that proxy for protected attributes',
                 caption: 'Finding hidden discriminatory patterns',
-              } as any,
+              } as Partial<BiasCard>,
               timeline: '1 month',
               responsible: 'Fair Lending Team',
               successCriteria:
@@ -434,7 +435,7 @@ export const DEMO_REPORTS: Partial<Report>[] = [
                 description:
                   'Implement continuous monitoring and auditing of model decisions',
                 caption: 'Ongoing bias detection and correction',
-              } as any,
+              } as Partial<BiasCard>,
               timeline: 'Ongoing',
               responsible: 'Model Risk Management',
               successCriteria:
@@ -549,25 +550,30 @@ export const DEMO_REPORTS: Partial<Report>[] = [
 // Helper function to get demo report summaries
 export function getDemoReportSummaries(): ReportSummary[] {
   return DEMO_REPORTS.map((report) => ({
-    id: report.id!,
-    activityId: report.activityId!,
+    id: report.id ?? 'unknown-id',
+    activityId: report.activityId ?? 'unknown-activity',
     isDemo: true,
-    title: report.projectInfo!.title,
-    status: report.metadata!.status,
-    createdAt: report.metadata!.createdAt,
-    lastModified: report.metadata!.lastModified,
-    version: report.metadata!.version,
-    owner: report.permissions!.owner,
-    domain: report.projectInfo!.domain,
-    tags: report.metadata!.tags,
-    biasCount: report.analysis!.biasIdentification.reduce(
-      (count, bi) => count + bi.biases.length,
-      0
-    ),
-    mitigationCount: report.analysis!.mitigationStrategies.reduce(
-      (count, ms) => count + ms.mitigations.length,
-      0
-    ),
+    title: report.projectInfo?.title || 'Untitled Report',
+    status: report.metadata?.status || 'draft',
+    createdAt: report.metadata?.createdAt || new Date().toISOString(),
+    lastModified: report.metadata?.lastModified || new Date().toISOString(),
+    version:
+      typeof report.metadata?.version === 'number'
+        ? report.metadata.version
+        : 1,
+    owner: report.permissions?.owner || 'demo-user',
+    domain: report.projectInfo?.domain || '',
+    tags: report.metadata?.tags || [],
+    biasCount:
+      report.analysis?.biasIdentification.reduce(
+        (count, bi) => count + bi.biases.length,
+        0
+      ) || 0,
+    mitigationCount:
+      report.analysis?.mitigationStrategies.reduce(
+        (count, ms) => count + ms.mitigations.length,
+        0
+      ) || 0,
     completionPercentage: 85,
   }));
 }

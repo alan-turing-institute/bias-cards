@@ -742,7 +742,7 @@ export function suggestTemplates(projectDomain: string): ReportTemplate[] {
  * Validate if a report meets template requirements
  */
 export function validateReportAgainstTemplate(
-  report: any,
+  report: Record<string, unknown>,
   templateId: string
 ): { isValid: boolean; errors: string[] } {
   const template = getTemplateById(templateId);
@@ -786,11 +786,11 @@ export function validateReportAgainstTemplate(
   }
 
   // Check required project fields
-  template.structure.requiredProjectFields.forEach((field) => {
-    if (!report.projectInfo[field]) {
+  for (const field of template.structure.requiredProjectFields) {
+    if (!report.projectInfo?.[field]) {
       errors.push(`Project field '${field}' is required`);
     }
-  });
+  }
 
   return {
     isValid: errors.length === 0,

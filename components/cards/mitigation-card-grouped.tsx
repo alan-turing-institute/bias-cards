@@ -18,7 +18,9 @@ interface MitigationCardGroupedProps {
 export function MitigationCardGrouped({
   cards,
   getCardNumber = () => '01',
-  onCardClick = () => {},
+  onCardClick = () => {
+    // Default empty handler for card clicks
+  },
   className,
 }: MitigationCardGroupedProps) {
   const [isExpanded, setIsExpanded] = useState(true);
@@ -32,6 +34,7 @@ export function MitigationCardGrouped({
           getCategoryColors('mitigation-technique').lightBg
         )}
         onClick={() => setIsExpanded(!isExpanded)}
+        type="button"
       >
         <div className="flex items-center gap-2">
           <span

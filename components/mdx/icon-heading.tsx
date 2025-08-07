@@ -1,5 +1,5 @@
 import type { LucideIcon } from 'lucide-react';
-import type { ReactNode } from 'react';
+import type { ElementType, ReactNode } from 'react';
 import { cn } from '@/lib/utils';
 
 interface IconHeadingProps {
@@ -15,7 +15,7 @@ export function IconHeading({
   level = 2,
   className,
 }: IconHeadingProps) {
-  const Tag = `h${level}` as keyof JSX.IntrinsicElements;
+  const Tag = `h${level}` as ElementType;
 
   const sizeClasses = {
     1: 'text-3xl font-bold',
@@ -34,7 +34,15 @@ export function IconHeading({
       className={cn(
         'flex items-center gap-2',
         sizeClasses[level],
-        level === 1 ? 'mb-4' : level === 2 ? 'mt-8 mb-4' : 'mb-2',
+        (() => {
+          if (level === 1) {
+            return 'mb-4';
+          }
+          if (level === 2) {
+            return 'mt-8 mb-4';
+          }
+          return 'mb-2';
+        })(),
         className
       )}
     >

@@ -76,7 +76,9 @@ export function ReportExportDialog({
         setOpen(false);
         setExportSuccess(false);
       }, 2000);
-    } catch (_error) {}
+    } catch (_error) {
+      // Handle error silently
+    }
   };
 
   return (
@@ -247,22 +249,30 @@ export function ReportExportDialog({
             Cancel
           </Button>
           <Button disabled={isLoading || exportSuccess} onClick={handleExport}>
-            {exportSuccess ? (
-              <>
-                <Check className="mr-2 h-4 w-4" />
-                Exported!
-              </>
-            ) : isLoading ? (
-              <>
-                <FileDown className="mr-2 h-4 w-4 animate-pulse" />
-                Exporting...
-              </>
-            ) : (
-              <>
-                <Download className="mr-2 h-4 w-4" />
-                Export Report
-              </>
-            )}
+            {(() => {
+              if (exportSuccess) {
+                return (
+                  <>
+                    <Check className="mr-2 h-4 w-4" />
+                    Exported!
+                  </>
+                );
+              }
+              if (isLoading) {
+                return (
+                  <>
+                    <FileDown className="mr-2 h-4 w-4 animate-pulse" />
+                    Exporting...
+                  </>
+                );
+              }
+              return (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Report
+                </>
+              );
+            })()}
           </Button>
         </DialogFooter>
       </DialogContent>

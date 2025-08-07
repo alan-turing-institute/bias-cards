@@ -42,8 +42,7 @@ function ReportPageContent() {
   const {
     currentReport,
     setCurrentReport,
-    updateReportStatus,
-    exportReport,
+
     isLoading,
     error,
   } = useReportsStore();
@@ -267,8 +266,11 @@ function ReportPageContent() {
                     <h4 className="font-medium">Key Findings</h4>
                     <ul className="mt-2 list-inside list-disc space-y-1">
                       {currentReport.analysis.executiveSummary.keyFindings.map(
-                        (finding, index) => (
-                          <li className="text-muted-foreground" key={index}>
+                        (finding) => (
+                          <li
+                            className="text-muted-foreground"
+                            key={`finding-${finding.substring(0, 20)}`}
+                          >
                             {finding}
                           </li>
                         )
@@ -290,8 +292,11 @@ function ReportPageContent() {
                     <h4 className="font-medium">Recommendations</h4>
                     <ul className="mt-2 list-inside list-disc space-y-1">
                       {currentReport.analysis.executiveSummary.recommendations.map(
-                        (rec, index) => (
-                          <li className="text-muted-foreground" key={index}>
+                        (rec) => (
+                          <li
+                            className="text-muted-foreground"
+                            key={`rec-${rec.substring(0, 20)}`}
+                          >
                             {rec}
                           </li>
                         )
@@ -314,16 +319,19 @@ function ReportPageContent() {
               </CardHeader>
               <CardContent className="space-y-6">
                 {currentReport.analysis.biasIdentification.map(
-                  (identification, index) => (
-                    <div className="space-y-3" key={index}>
+                  (identification) => (
+                    <div
+                      className="space-y-3"
+                      key={`identification-${identification.stage}`}
+                    >
                       <h4 className="font-medium capitalize">
                         {identification.stage.replace(/-/g, ' ')}
                       </h4>
                       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                        {identification.biases.map((bias, biasIndex) => (
+                        {identification.biases.map((bias) => (
                           <div
                             className="rounded-lg border p-3"
-                            key={biasIndex}
+                            key={`bias-${bias.biasCard.id}`}
                           >
                             <div className="mb-2 flex items-center justify-between">
                               <h5 className="font-medium text-sm">
@@ -331,13 +339,15 @@ function ReportPageContent() {
                               </h5>
                               <Badge
                                 className="text-xs"
-                                variant={
-                                  bias.severity === 'high'
-                                    ? 'destructive'
-                                    : bias.severity === 'medium'
-                                      ? 'default'
-                                      : 'secondary'
-                                }
+                                variant={(() => {
+                                  if (bias.severity === 'high') {
+                                    return 'destructive';
+                                  }
+                                  if (bias.severity === 'medium') {
+                                    return 'default';
+                                  }
+                                  return 'secondary';
+                                })()}
                               >
                                 {bias.severity}
                               </Badge>
@@ -365,50 +375,51 @@ function ReportPageContent() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                {currentReport.analysis.mitigationStrategies.map(
-                  (strategy, index) => (
-                    <div className="space-y-3" key={index}>
-                      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                        {strategy.mitigations.map((mitigation, mitIndex) => (
-                          <div className="rounded-lg border p-3" key={mitIndex}>
-                            <div className="mb-2 flex items-center justify-between">
-                              <h5 className="font-medium text-sm">
-                                {mitigation.mitigationCard.title}
-                              </h5>
-                              <Badge
-                                className="text-xs"
-                                variant={
-                                  mitigation.priority === 'high'
-                                    ? 'destructive'
-                                    : mitigation.priority === 'medium'
-                                      ? 'default'
-                                      : 'secondary'
+                {currentReport.analysis.mitigationStrategies.map((strategy) => (
+                  <div className="space-y-3" key={`strategy-${strategy.stage}`}>
+                    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                      {strategy.mitigations.map((mitigation) => (
+                        <div
+                          className="rounded-lg border p-3"
+                          key={`mitigation-${mitigation.mitigationCard.id}`}
+                        >
+                          <div className="mb-2 flex items-center justify-between">
+                            <h5 className="font-medium text-sm">
+                              {mitigation.mitigationCard.title}
+                            </h5>
+                            <Badge
+                              className="text-xs"
+                              variant={(() => {
+                                if (mitigation.priority === 'high') {
+                                  return 'destructive';
                                 }
-                              >
-                                {mitigation.priority}
-                              </Badge>
+                                if (mitigation.priority === 'medium') {
+                                  return 'default';
+                                }
+                                return 'secondary';
+                              })()}
+                            >
+                              {mitigation.priority}
+                            </Badge>
+                          </div>
+                          <p className="mb-2 line-clamp-2 text-muted-foreground text-xs">
+                            {mitigation.mitigationCard.description}
+                          </p>
+                          <div className="space-y-1 text-xs">
+                            <div>
+                              <span className="font-medium">Timeline:</span>{' '}
+                              {mitigation.timeline}
                             </div>
-                            <p className="mb-2 line-clamp-2 text-muted-foreground text-xs">
-                              {mitigation.mitigationCard.description}
-                            </p>
-                            <div className="space-y-1 text-xs">
-                              <div>
-                                <span className="font-medium">Timeline:</span>{' '}
-                                {mitigation.timeline}
-                              </div>
-                              <div>
-                                <span className="font-medium">
-                                  Responsible:
-                                </span>{' '}
-                                {mitigation.responsible}
-                              </div>
+                            <div>
+                              <span className="font-medium">Responsible:</span>{' '}
+                              {mitigation.responsible}
                             </div>
                           </div>
-                        ))}
-                      </div>
+                        </div>
+                      ))}
                     </div>
-                  )
-                )}
+                  </div>
+                ))}
               </CardContent>
             </Card>
           )}

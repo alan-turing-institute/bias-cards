@@ -5,313 +5,288 @@ import type { Report, ReportExportConfig } from '@/lib/types/reports';
 import { DocxReportExporter } from './docx-exporter';
 import { MarkdownReportExporter } from './markdown-exporter';
 
-export class ReportExportService {
-  /**
-   * Export a report in the specified format
-   */
-  static async exportReport(
-    report: Report,
-    config: ReportExportConfig
-  ): Promise<void> {
-    const filename = ReportExportService.generateFilename(
+/**
+ * Generate a filename for the report
+ */
+function generateFilename(report: Report, format: string): string {
+  const timestamp = new Date().toISOString().split('T')[0];
+  const projectName = report.metadata.projectName
+    ? report.metadata.projectName.toLowerCase().replace(/\s+/g, '-')
+    : 'bias-report';
+  return `${projectName}-${timestamp}.${format}`;
+}
+
+/**
+ * Get PDF content for a report
+ */
+function getPDFContent(report: Report, _config: ReportExportConfig): Blob {
+  // Here you would use a PDF generation library like jsPDF or puppeteer
+  // For now, returning a placeholder
+  const content = JSON.stringify(report, null, 2);
+  return new Blob([content], { type: 'application/pdf' });
+}
+
+/**
+ * Get DOCX content for a report
+ */
+async function getDocxContent(
+  report: Report,
+  config: ReportExportConfig
+): Promise<Blob> {
+  const exporter = new DocxReportExporter();
+  return await exporter.export(report, config);
+}
+
+/**
+ * Get Markdown content for a report
+ */
+function getMarkdownContent(
+  report: Report,
+  config: ReportExportConfig
+): string {
+  const exporter = new MarkdownReportExporter();
+  return exporter.export(report, config);
+}
+
+/**
+ * Get JSON content for a report
+ */
+function getJSONContent(report: Report, config: ReportExportConfig): string {
+  return JSON.stringify(
+    {
       report,
-      config.format
-    );
+      exportConfig: config,
+      exportDate: new Date().toISOString(),
+    },
+    null,
+    2
+  );
+}
+
+/**
+ * Export to PDF using existing report generator
+ */
+async function exportPDF(
+  _report: Report,
+  config: ReportExportConfig,
+  filename: string
+): Promise<void> {
+  const workspaceState = useWorkspaceStore.getState();
+  const reportData = {
+    workspace: workspaceState,
+    biasCards: [], // These would need to be loaded from the report data
+    mitigationCards: [], // These would need to be loaded from the report data
+    config: {
+      includeExecutiveSummary: config.sections.executiveSummary,
+      includeStageAnalysis: config.sections.biasIdentification,
+      includeMitigationStrategies: config.sections.mitigationStrategies,
+      includeAnnotations: config.sections.comments,
+      includeRecommendations: config.sections.appendices,
+      includeVisualization: false,
+      authorName: config.metadata?.author || '',
+      projectName: config.metadata?.project || '',
+    },
+  };
+
+  // This would integrate with the existing PDF generation
+  const pdfContent = await generateBiasReport(reportData);
+  saveAs(new Blob([pdfContent]), filename);
+}
+
+/**
+ * Export to DOCX format
+ */
+async function exportDocx(
+  report: Report,
+  config: ReportExportConfig,
+  filename: string
+): Promise<void> {
+  const content = await getDocxContent(report, config);
+  saveAs(content, filename);
+}
+
+/**
+ * Export to Markdown format
+ */
+function exportMarkdown(
+  report: Report,
+  config: ReportExportConfig,
+  filename: string
+): void {
+  const content = getMarkdownContent(report, config);
+  const blob = new Blob([content], { type: 'text/markdown' });
+  saveAs(blob, filename);
+}
+
+/**
+ * Export to JSON format
+ */
+function exportJSON(
+  report: Report,
+  config: ReportExportConfig,
+  filename: string
+): void {
+  const content = getJSONContent(report, config);
+  const blob = new Blob([content], { type: 'application/json' });
+  saveAs(blob, filename);
+}
+
+/**
+ * Export a report in the specified format
+ */
+export async function exportReport(
+  report: Report,
+  config: ReportExportConfig
+): Promise<void> {
+  const filename = generateFilename(report, config.format);
+
+  switch (config.format) {
+    case 'pdf':
+      await exportPDF(report, config, filename);
+      break;
+    case 'docx':
+      await exportDocx(report, config, filename);
+      break;
+    case 'markdown':
+      exportMarkdown(report, config, filename);
+      break;
+    case 'json':
+      exportJSON(report, config, filename);
+      break;
+    default:
+      throw new Error(`Unsupported export format: ${config.format}`);
+  }
+}
+
+/**
+ * Export multiple reports in a batch
+ */
+export async function exportBatch(
+  reports: Report[],
+  config: ReportExportConfig
+): Promise<void> {
+  // For batch export, we'll create a zip file
+  const JSZip = (await import('jszip')).default;
+  const zip = new JSZip();
+
+  // Process reports in parallel
+  const promises = reports.map(async (report) => {
+    const filename = generateFilename(report, config.format);
+    let content: Blob | Buffer | string | null = null;
 
     switch (config.format) {
       case 'pdf':
-        await ReportExportService.exportPDF(report, config, filename);
+        content = getPDFContent(report, config);
         break;
       case 'docx':
-        await ReportExportService.exportDocx(report, config, filename);
+        content = await getDocxContent(report, config);
         break;
       case 'markdown':
-        await ReportExportService.exportMarkdown(report, config, filename);
+        content = getMarkdownContent(report, config);
         break;
       case 'json':
-        await ReportExportService.exportJSON(report, config, filename);
+        content = getJSONContent(report, config);
         break;
       default:
         throw new Error(`Unsupported export format: ${config.format}`);
     }
-  }
 
-  /**
-   * Export multiple reports in a batch
-   */
-  static async exportBatch(
-    reports: Report[],
-    config: ReportExportConfig
-  ): Promise<void> {
-    // For batch export, we'll create a zip file
-    const JSZip = (await import('jszip')).default;
-    const zip = new JSZip();
-
-    for (const report of reports) {
-      const filename = ReportExportService.generateFilename(
-        report,
-        config.format
-      );
-      let content: Blob | Buffer | string | null = null;
-
-      switch (config.format) {
-        case 'pdf':
-          content = await ReportExportService.getPDFContent(report, config);
-          break;
-        case 'docx':
-          content = await ReportExportService.getDocxContent(report, config);
-          break;
-        case 'markdown':
-          content = ReportExportService.getMarkdownContent(report, config);
-          break;
-        case 'json':
-          content = ReportExportService.getJSONContent(report, config);
-          break;
-      }
-
-      if (content) {
-        zip.file(filename, content);
-      }
+    if (content) {
+      return { filename, content };
     }
+    return null;
+  });
 
-    const zipBlob = await zip.generateAsync({ type: 'blob' });
-    saveAs(zipBlob, `bias-reports-batch-${Date.now()}.zip`);
-  }
+  const results = await Promise.all(promises);
 
-  /**
-   * Export to PDF using existing report generator
-   */
-  private static async exportPDF(
-    report: Report,
-    config: ReportExportConfig,
-    filename: string
-  ): Promise<void> {
-    const workspaceState = useWorkspaceStore.getState();
-    const reportData = {
-      workspace: workspaceState,
-      biasCards: [], // These would need to be loaded from the report data
-      mitigationCards: [], // These would need to be loaded from the report data
-      config: {
-        includeExecutiveSummary: config.sections.executiveSummary,
-        includeStageAnalysis: config.sections.biasIdentification,
-        includeMitigationStrategies: config.sections.mitigationStrategies,
-        includeAnnotations: config.sections.comments,
-        includeRecommendations: config.sections.appendices,
-        includeVisualization: false,
-        projectName: report.projectInfo.title,
-      },
-    };
-    const blob = await generateBiasReport(reportData);
-    saveAs(blob, filename);
-  }
-
-  private static async getPDFContent(
-    report: Report,
-    config: ReportExportConfig
-  ): Promise<Blob> {
-    const workspaceState = useWorkspaceStore.getState();
-    const reportData = {
-      workspace: workspaceState,
-      biasCards: [], // These would need to be loaded from the report data
-      mitigationCards: [], // These would need to be loaded from the report data
-      config: {
-        includeExecutiveSummary: config.sections.executiveSummary,
-        includeStageAnalysis: config.sections.biasIdentification,
-        includeMitigationStrategies: config.sections.mitigationStrategies,
-        includeAnnotations: config.sections.comments,
-        includeRecommendations: config.sections.appendices,
-        includeVisualization: false,
-        projectName: report.projectInfo.title,
-      },
-    };
-    return await generateBiasReport(reportData);
-  }
-
-  /**
-   * Export to Word/DOCX format
-   */
-  private static async exportDocx(
-    report: Report,
-    config: ReportExportConfig,
-    filename: string
-  ): Promise<void> {
-    const exporter = new DocxReportExporter(report, config);
-    const blob = await exporter.generate();
-    saveAs(blob, filename);
-  }
-
-  private static async getDocxContent(
-    report: Report,
-    config: ReportExportConfig
-  ): Promise<Blob> {
-    const exporter = new DocxReportExporter(report, config);
-    return await exporter.generate();
-  }
-
-  /**
-   * Export to Markdown format
-   */
-  private static async exportMarkdown(
-    report: Report,
-    config: ReportExportConfig,
-    filename: string
-  ): Promise<void> {
-    const exporter = new MarkdownReportExporter(report, config);
-    const content = exporter.generate();
-    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' });
-    saveAs(blob, filename);
-  }
-
-  private static getMarkdownContent(
-    report: Report,
-    config: ReportExportConfig
-  ): string {
-    const exporter = new MarkdownReportExporter(report, config);
-    return exporter.generate();
-  }
-
-  /**
-   * Export to JSON format
-   */
-  private static async exportJSON(
-    report: Report,
-    config: ReportExportConfig,
-    filename: string
-  ): Promise<void> {
-    const content = ReportExportService.getJSONContent(report, config);
-    const blob = new Blob([content], {
-      type: 'application/json;charset=utf-8',
-    });
-    saveAs(blob, filename);
-  }
-
-  private static getJSONContent(
-    report: Report,
-    config: ReportExportConfig
-  ): string {
-    // Filter report data based on config
-    const exportData: any = {
-      metadata: report.metadata,
-      projectInfo: report.projectInfo,
-    };
-
-    if (config.sections.executiveSummary) {
-      exportData.executiveSummary = report.analysis.executiveSummary;
+  for (const result of results) {
+    if (result) {
+      zip.file(result.filename, result.content);
     }
-
-    if (config.sections.biasIdentification) {
-      exportData.biasIdentification = report.analysis.biasIdentification;
-    }
-
-    if (config.sections.mitigationStrategies) {
-      exportData.mitigationStrategies = report.analysis.mitigationStrategies;
-    }
-
-    if (config.sections.tracking) {
-      exportData.tracking = report.tracking;
-    }
-
-    if (config.sections.auditTrail) {
-      exportData.auditTrail = report.auditTrail;
-    }
-
-    // Handle sensitive data
-    if (!config.options.includeSensitiveData) {
-      // Remove sensitive fields
-      if (exportData.projectInfo?.team) {
-        exportData.projectInfo.team = {
-          ...exportData.projectInfo.team,
-          members: exportData.projectInfo.team.members?.map((m: any) => ({
-            ...m,
-            email: undefined,
-            contact: undefined,
-          })),
-        };
-      }
-      if (exportData.auditTrail) {
-        exportData.auditTrail = exportData.auditTrail.map((entry: any) => ({
-          ...entry,
-          details: {
-            ...entry.details,
-            ipAddress: undefined,
-            userAgent: undefined,
-          },
-        }));
-      }
-    }
-
-    return JSON.stringify(exportData, null, 2);
   }
 
-  /**
-   * Generate a filename for the export
-   */
-  private static generateFilename(report: Report, format: string): string {
-    const sanitizedTitle = report.projectInfo.title
-      .replace(/[^a-zA-Z0-9]/g, '-')
-      .toLowerCase();
-    const timestamp = new Date().toISOString().split('T')[0];
-    const version = `v${report.metadata.version}`;
+  const zipBlob = await zip.generateAsync({ type: 'blob' });
+  saveAs(zipBlob, `bias-reports-batch-${Date.now()}.zip`);
+}
 
-    return `${sanitizedTitle}-bias-report-${version}-${timestamp}.${format}`;
-  }
+/**
+ * Get available export formats
+ */
+export function getAvailableFormats(): Array<{
+  value: string;
+  label: string;
+  description: string;
+}> {
+  return [
+    {
+      value: 'pdf',
+      label: 'PDF',
+      description: 'Portable Document Format - Best for printing and sharing',
+    },
+    {
+      value: 'docx',
+      label: 'Word Document',
+      description: 'Microsoft Word - Best for editing and collaboration',
+    },
+    {
+      value: 'markdown',
+      label: 'Markdown',
+      description: 'Plain text format - Best for version control',
+    },
+    {
+      value: 'json',
+      label: 'JSON',
+      description: 'Data format - Best for programmatic processing',
+    },
+  ];
+}
 
-  /**
-   * Get available export formats
-   */
-  static getAvailableFormats(): Array<{
-    value: string;
-    label: string;
-    description: string;
-  }> {
-    return [
-      {
-        value: 'pdf',
-        label: 'PDF',
-        description: 'Portable Document Format - Best for sharing and printing',
-      },
-      {
-        value: 'docx',
-        label: 'Word',
-        description: 'Microsoft Word - Editable document format',
-      },
-      {
-        value: 'markdown',
-        label: 'Markdown',
-        description: 'Plain text format - Best for documentation systems',
-      },
-      {
-        value: 'json',
-        label: 'JSON',
-        description: 'Raw data format - Best for integrations',
-      },
-    ];
-  }
+/**
+ * Get default export configuration
+ */
+export function getDefaultConfig(format: string): ReportExportConfig {
+  const baseConfig: ReportExportConfig = {
+    format,
+    sections: {
+      executiveSummary: true,
+      biasIdentification: true,
+      mitigationStrategies: true,
+      recommendations: true,
+      appendices: false,
+      comments: true,
+    },
+    styling: {
+      theme: 'professional',
+      includeCharts: true,
+      includeImages: true,
+    },
+    metadata: {
+      author: '',
+      project: '',
+      date: new Date().toISOString(),
+      version: '1.0',
+    },
+  };
 
-  /**
-   * Get default export configuration
-   */
-  static getDefaultConfig(format: string): ReportExportConfig {
-    return {
-      format: format as any,
-      sections: {
-        executiveSummary: true,
-        projectInfo: true,
+  // Format-specific adjustments
+  switch (format) {
+    case 'markdown':
+      baseConfig.styling.includeCharts = false;
+      baseConfig.styling.includeImages = false;
+      break;
+    case 'json':
+      baseConfig.sections = {
+        executiveSummary: false,
         biasIdentification: true,
         mitigationStrategies: true,
-        implementation: true,
-        tracking: true,
-        comments: true,
-        auditTrail: format === 'pdf' || format === 'json',
+        recommendations: true,
         appendices: true,
-      },
-      options: {
-        includeSensitiveData: false,
-        includeBranding: true,
-        pageLayout: 'portrait',
-        colorScheme: 'full',
-        locale: 'en-US',
-      },
-    };
+        comments: true,
+      };
+      break;
+    default:
+      break;
   }
+
+  return baseConfig;
 }

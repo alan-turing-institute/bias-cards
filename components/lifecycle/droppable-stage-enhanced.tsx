@@ -18,7 +18,7 @@ export function DroppableStageEnhanced({
   className,
   isValidDrop = true,
 }: DroppableStageEnhancedProps) {
-  const { isOver, setNodeRef, active } = useDroppable({
+  const { isOver, setNodeRef } = useDroppable({
     id: `stage-${stage}`,
     data: {
       stage,

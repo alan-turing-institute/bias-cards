@@ -34,14 +34,18 @@ function CategoryGroup({
   // Add headerBg property for grouped view
   const extendedColors = {
     ...colors,
-    headerBg:
-      category === 'cognitive-bias'
-        ? 'bg-teal-100'
-        : category === 'social-bias'
-          ? 'bg-emerald-100'
-          : category === 'statistical-bias'
-            ? 'bg-amber-100'
-            : 'bg-gray-100',
+    headerBg: (() => {
+      if (category === 'cognitive-bias') {
+        return 'bg-teal-100';
+      }
+      if (category === 'social-bias') {
+        return 'bg-emerald-100';
+      }
+      if (category === 'statistical-bias') {
+        return 'bg-amber-100';
+      }
+      return 'bg-gray-100';
+    })(),
   };
 
   const categoryNames = {
@@ -60,6 +64,7 @@ function CategoryGroup({
           'hover:opacity-80'
         )}
         onClick={() => setIsExpanded(!isExpanded)}
+        type="button"
       >
         <div className="flex items-center gap-2">
           <span className={cn('font-semibold text-xs', colors.text)}>
@@ -128,7 +133,9 @@ function CategoryGroup({
 export function BiasCardGrouped({
   cards,
   getCardNumber = () => '01',
-  onCardClick = () => {},
+  onCardClick = () => {
+    // Default empty handler for card clicks
+  },
   className,
 }: BiasCardGroupedProps) {
   // Group cards by category

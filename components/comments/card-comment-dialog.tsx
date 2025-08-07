@@ -260,20 +260,26 @@ export function CardCommentDialog({
   ) => {
     try {
       await addComment(cardId, cardType, content, category, stageContext);
-    } catch (_error) {}
+    } catch (_error) {
+      // Handle error silently
+    }
   };
 
   const handleEditComment = async (commentId: string, content: string) => {
     try {
       await updateComment(commentId, content);
-    } catch (_error) {}
+    } catch (_error) {
+      // Handle error silently
+    }
   };
 
   const handleDeleteComment = async (commentId: string) => {
     if (confirm('Are you sure you want to delete this comment?')) {
       try {
         await deleteComment(commentId);
-      } catch (_error) {}
+      } catch (_error) {
+        // Handle error silently
+      }
     }
   };
 

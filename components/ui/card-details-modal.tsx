@@ -141,7 +141,10 @@ export function CardDetailsModal({
                   <h4 className="mb-2 font-semibold">Discussion Prompts</h4>
                   <ul className="list-inside list-disc space-y-1">
                     {card.prompts.map((prompt, index) => (
-                      <li className="text-muted-foreground text-sm" key={index}>
+                      <li
+                        className="text-muted-foreground text-sm"
+                        key={`${card.id}-prompt-${index}`}
+                      >
                         {prompt}
                       </li>
                     ))}

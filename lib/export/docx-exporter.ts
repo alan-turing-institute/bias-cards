@@ -4,7 +4,6 @@ import {
   HeadingLevel,
   Packer,
   Paragraph,
-  ShadingType,
   Table,
   TableCell,
   TableRow,
@@ -16,103 +15,67 @@ import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
 import type { Report, ReportExportConfig } from '@/lib/types/reports';
 
 export class DocxReportExporter {
-  private doc: Document;
   private report: Report;
   private config: ReportExportConfig;
 
   constructor(report: Report, config: ReportExportConfig) {
     this.report = report;
     this.config = config;
-    this.doc = new Document({
-      sections: [],
-      styles: {
-        default: {
-          heading1: {
-            run: {
-              size: 32,
-              bold: true,
-              color: '2E3F4F',
-            },
-            paragraph: {
-              spacing: { after: 240 },
-            },
-          },
-          heading2: {
-            run: {
-              size: 26,
-              bold: true,
-              color: '2E3F4F',
-            },
-            paragraph: {
-              spacing: { before: 240, after: 120 },
-            },
-          },
-          heading3: {
-            run: {
-              size: 22,
-              bold: true,
-              color: '4A5568',
-            },
-            paragraph: {
-              spacing: { before: 120, after: 120 },
-            },
-          },
-        },
-      },
-      creator: 'Bias Cards Report Generator',
-      title: this.report.projectInfo.title,
-      description: this.report.projectInfo.description,
-    });
   }
 
   async generate(): Promise<Blob> {
-    const sections = [];
+    const sections: (Paragraph | Table)[] = [];
 
-    // Title Page
-    sections.push(this.createTitlePage());
+    // Title page
+    sections.push(...this.createTitlePage());
 
     // Executive Summary
     if (
       this.config.sections.executiveSummary &&
       this.report.analysis.executiveSummary
     ) {
-      sections.push(this.createExecutiveSummary());
+      sections.push(...this.createExecutiveSummary());
     }
 
     // Project Information
     if (this.config.sections.projectInfo) {
-      sections.push(this.createProjectInfo());
+      sections.push(...this.createProjectInfo());
     }
 
     // Bias Identification
     if (this.config.sections.biasIdentification) {
-      sections.push(this.createBiasIdentification());
+      sections.push(...this.createBiasIdentification());
     }
 
     // Mitigation Strategies
     if (this.config.sections.mitigationStrategies) {
-      sections.push(this.createMitigationStrategies());
+      sections.push(...this.createMitigationStrategies());
     }
 
     // Implementation & Tracking
     if (this.config.sections.tracking) {
-      sections.push(this.createTrackingSection());
+      sections.push(...this.createTrackingSection());
     }
 
     // Audit Trail
     if (this.config.sections.auditTrail) {
-      sections.push(this.createAuditTrail());
+      sections.push(...this.createAuditTrail());
     }
 
-    this.doc = new Document({
-      ...this.doc,
-      sections: sections.map((children) => ({
-        properties: {},
-        children,
-      })),
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: sections,
+        },
+      ],
+      creator: 'Bias Cards Analysis System',
+      title: this.report.projectInfo.title,
+      description: this.report.projectInfo.description,
+      keywords: ['bias analysis', 'machine learning', 'mitigation'],
     });
 
-    return await Packer.toBlob(this.doc);
+    return await Packer.toBlob(doc);
   }
 
   private createTitlePage(): Paragraph[] {
@@ -131,28 +94,23 @@ export class DocxReportExporter {
     // Subtitle
     paragraphs.push(
       new Paragraph({
+        text: 'Machine Learning Bias Analysis Report',
+        heading: HeadingLevel.HEADING_1,
         alignment: AlignmentType.CENTER,
-        spacing: { after: 1200 },
-        children: [
-          new TextRun({
-            text: 'Machine Learning Bias Analysis Report',
-            size: 28,
-            color: '666666',
-          }),
-        ],
+        spacing: { after: 400 },
       })
     );
 
-    // Project Domain
+    // Domain
     paragraphs.push(
       new Paragraph({
         text: `Domain: ${this.report.projectInfo.domain}`,
         alignment: AlignmentType.CENTER,
-        spacing: { after: 240 },
+        spacing: { after: 200 },
       })
     );
 
-    // Report Metadata
+    // Report metadata
     const metadata = [
       `Report ID: ${this.report.id}`,
       `Status: ${this.report.metadata.status.toUpperCase()}`,
@@ -165,9 +123,16 @@ export class DocxReportExporter {
           day: 'numeric',
         }
       )}`,
+      `Last Modified: ${new Date(
+        this.report.metadata.lastModified
+      ).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })}`,
     ];
 
-    metadata.forEach((item) => {
+    for (const item of metadata) {
       paragraphs.push(
         new Paragraph({
           text: item,
@@ -175,7 +140,7 @@ export class DocxReportExporter {
           spacing: { after: 120 },
         })
       );
-    });
+    }
 
     // Page break
     paragraphs.push(new Paragraph({ text: '', pageBreakBefore: true }));
@@ -204,10 +169,11 @@ export class DocxReportExporter {
         new Paragraph({
           text: 'Key Findings',
           heading: HeadingLevel.HEADING_2,
+          spacing: { before: 240, after: 120 },
         })
       );
 
-      summary.keyFindings.forEach((finding) => {
+      for (const finding of summary.keyFindings) {
         paragraphs.push(
           new Paragraph({
             text: finding,
@@ -215,7 +181,7 @@ export class DocxReportExporter {
             spacing: { after: 120 },
           })
         );
-      });
+      }
     }
 
     // Risk Assessment
@@ -224,6 +190,7 @@ export class DocxReportExporter {
         new Paragraph({
           text: 'Risk Assessment',
           heading: HeadingLevel.HEADING_2,
+          spacing: { before: 240, after: 120 },
         })
       );
 
@@ -241,23 +208,40 @@ export class DocxReportExporter {
         new Paragraph({
           text: 'Recommendations',
           heading: HeadingLevel.HEADING_2,
+          spacing: { before: 240, after: 120 },
         })
       );
 
-      summary.recommendations.forEach((rec, index) => {
+      for (const recommendation of summary.recommendations) {
         paragraphs.push(
           new Paragraph({
-            children: [
-              new TextRun({
-                text: `${index + 1}. `,
-                bold: true,
-              }),
-              new TextRun(rec),
-            ],
+            text: recommendation,
+            numbering: {
+              reference: 'recommendations',
+              level: 0,
+            },
             spacing: { after: 120 },
           })
         );
-      });
+      }
+    }
+
+    // Business Impact
+    if (summary.businessImpact) {
+      paragraphs.push(
+        new Paragraph({
+          text: 'Business Impact',
+          heading: HeadingLevel.HEADING_2,
+          spacing: { before: 240, after: 120 },
+        })
+      );
+
+      paragraphs.push(
+        new Paragraph({
+          text: summary.businessImpact,
+          spacing: { after: 240 },
+        })
+      );
     }
 
     paragraphs.push(new Paragraph({ text: '', pageBreakBefore: true }));
@@ -281,8 +265,10 @@ export class DocxReportExporter {
       new Paragraph({
         text: 'Description',
         heading: HeadingLevel.HEADING_2,
+        spacing: { before: 240, after: 120 },
       })
     );
+
     paragraphs.push(
       new Paragraph({
         text: info.description,
@@ -296,8 +282,10 @@ export class DocxReportExporter {
         new Paragraph({
           text: 'Objectives',
           heading: HeadingLevel.HEADING_2,
+          spacing: { before: 240, after: 120 },
         })
       );
+
       paragraphs.push(
         new Paragraph({
           text: info.objectives,
@@ -312,8 +300,10 @@ export class DocxReportExporter {
         new Paragraph({
           text: 'Scope',
           heading: HeadingLevel.HEADING_2,
+          spacing: { before: 240, after: 120 },
         })
       );
+
       paragraphs.push(
         new Paragraph({
           text: info.scope,
@@ -328,10 +318,10 @@ export class DocxReportExporter {
         new Paragraph({
           text: 'Team Information',
           heading: HeadingLevel.HEADING_2,
+          spacing: { before: 240, after: 120 },
         })
       );
 
-      // Project Lead
       paragraphs.push(
         new Paragraph({
           children: [
@@ -347,16 +337,16 @@ export class DocxReportExporter {
         })
       );
 
-      // Team Members
       if (info.team.members && info.team.members.length > 0) {
         paragraphs.push(
           new Paragraph({
-            children: [new TextRun({ text: 'Team Members:', bold: true })],
+            text: 'Team Members:',
+            bold: true,
             spacing: { after: 60 },
           })
         );
 
-        info.team.members.forEach((member) => {
+        for (const member of info.team.members) {
           paragraphs.push(
             new Paragraph({
               text: `${member.name} - ${member.role}`,
@@ -364,7 +354,7 @@ export class DocxReportExporter {
               spacing: { after: 60 },
             })
           );
-        });
+        }
       }
     }
 
@@ -396,112 +386,80 @@ export class DocxReportExporter {
     );
 
     // For each stage
-    this.report.analysis.biasIdentification.forEach((identification) => {
+    for (const identification of this.report.analysis.biasIdentification) {
       const stageInfo = LIFECYCLE_STAGES[identification.stage];
       if (!stageInfo) {
-        return;
+        continue;
       }
 
       paragraphs.push(
         new Paragraph({
           text: stageInfo.name,
           heading: HeadingLevel.HEADING_2,
+          spacing: { before: 240, after: 120 },
         })
       );
 
       paragraphs.push(
         new Paragraph({
-          children: [
-            new TextRun({
-              text: stageInfo.description,
-              italics: true,
-            }),
-          ],
+          text: stageInfo.description,
+          italics: true,
           spacing: { after: 180 },
         })
       );
 
-      // Create table for biases
-      const tableRows: TableRow[] = [];
-
-      // Header row
-      tableRows.push(
+      // Create table of biases
+      const tableRows: TableRow[] = [
         new TableRow({
+          tableHeader: true,
           children: [
             new TableCell({
               children: [
                 new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: 'Bias Type',
-                      bold: true,
-                    }),
-                  ],
-                  alignment: AlignmentType.CENTER,
+                  text: 'Bias Type',
+                  bold: true,
                 }),
               ],
-              shading: {
-                type: ShadingType.SOLID,
-                color: 'E5E7EB',
-              },
             }),
             new TableCell({
               children: [
                 new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: 'Description',
-                      bold: true,
-                    }),
-                  ],
-                  alignment: AlignmentType.CENTER,
+                  text: 'Description',
+                  bold: true,
                 }),
               ],
-              shading: {
-                type: ShadingType.SOLID,
-                color: 'E5E7EB',
-              },
             }),
             new TableCell({
               children: [
                 new Paragraph({
-                  children: [
-                    new TextRun({
-                      text: 'Severity',
-                      bold: true,
-                    }),
-                  ],
-                  alignment: AlignmentType.CENTER,
+                  text: 'Severity',
+                  bold: true,
                 }),
               ],
-              shading: {
-                type: ShadingType.SOLID,
-                color: 'E5E7EB',
-              },
+            }),
+            new TableCell({
+              children: [
+                new Paragraph({
+                  text: 'Confidence',
+                  bold: true,
+                }),
+              ],
             }),
           ],
-        })
-      );
+        }),
+      ];
 
-      // Data rows
-      identification.biases.forEach((bias) => {
+      for (const bias of identification.biases) {
         tableRows.push(
           new TableRow({
             children: [
               new TableCell({
                 children: [
                   new Paragraph({
-                    text: bias.biasCard.title,
-                  }),
-                ],
-              }),
-              new TableCell({
-                children: [
-                  new Paragraph({
                     children: [
                       new TextRun({
-                        text: bias.biasCard.description,
-                        size: 20,
+                        text: bias.biasCard.title,
+                        bold: true,
                       }),
                     ],
                   }),
@@ -510,7 +468,13 @@ export class DocxReportExporter {
               new TableCell({
                 children: [
                   new Paragraph({
-                    alignment: AlignmentType.CENTER,
+                    text: bias.biasCard.description,
+                  }),
+                ],
+              }),
+              new TableCell({
+                children: [
+                  new Paragraph({
                     children: [
                       new TextRun({
                         text: bias.severity.toUpperCase(),
@@ -521,10 +485,17 @@ export class DocxReportExporter {
                   }),
                 ],
               }),
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    text: bias.confidence,
+                  }),
+                ],
+              }),
             ],
           })
         );
-      });
+      }
 
       const table = new Table({
         rows: tableRows,
@@ -534,9 +505,9 @@ export class DocxReportExporter {
         },
       });
 
-      paragraphs.push(table as any); // Type assertion needed due to docx typing
+      paragraphs.push(table as unknown as Paragraph); // Type assertion needed due to docx typing
       paragraphs.push(new Paragraph({ text: '', spacing: { after: 240 } }));
-    });
+    }
 
     paragraphs.push(new Paragraph({ text: '', pageBreakBefore: true }));
 
@@ -560,25 +531,27 @@ export class DocxReportExporter {
       })
     );
 
-    this.report.analysis.mitigationStrategies.forEach((strategy, index) => {
+    let strategyIndex = 0;
+    for (const strategy of this.report.analysis.mitigationStrategies) {
       paragraphs.push(
         new Paragraph({
-          text: `Strategy ${index + 1}`,
+          text: `Strategy ${strategyIndex + 1}`,
           heading: HeadingLevel.HEADING_3,
         })
       );
+      strategyIndex++;
 
-      strategy.mitigations.forEach((mitigation) => {
+      for (const mitigation of strategy.mitigations) {
         paragraphs.push(
           new Paragraph({
             children: [
               new TextRun({
-                text: 'Mitigation: ',
+                text: mitigation.mitigationCard.title,
                 bold: true,
+                size: 24,
               }),
-              new TextRun(mitigation.mitigationCard.title),
             ],
-            spacing: { after: 60 },
+            spacing: { before: 180, after: 60 },
           })
         );
 
@@ -589,15 +562,14 @@ export class DocxReportExporter {
           })
         );
 
-        // Implementation details
         const details = [
           { label: 'Timeline', value: mitigation.timeline },
           { label: 'Responsible', value: mitigation.responsible },
-          { label: 'Priority', value: mitigation.priority },
+          { label: 'Priority', value: mitigation.priority.toUpperCase() },
           { label: 'Success Criteria', value: mitigation.successCriteria },
         ];
 
-        details.forEach((detail) => {
+        for (const detail of details) {
           paragraphs.push(
             new Paragraph({
               children: [
@@ -611,11 +583,11 @@ export class DocxReportExporter {
               spacing: { after: 60 },
             })
           );
-        });
+        }
 
         paragraphs.push(new Paragraph({ text: '', spacing: { after: 180 } }));
-      });
-    });
+      }
+    }
 
     return paragraphs;
   }
@@ -645,7 +617,7 @@ export class DocxReportExporter {
       return paragraphs;
     }
 
-    this.report.tracking.mitigationTracking.forEach((tracking) => {
+    for (const tracking of this.report.tracking.mitigationTracking) {
       paragraphs.push(
         new Paragraph({
           text: `Mitigation ID: ${tracking.mitigationId}`,
@@ -683,7 +655,7 @@ export class DocxReportExporter {
           })
         );
 
-        tracking.updates.forEach((update) => {
+        for (const update of tracking.updates) {
           paragraphs.push(
             new Paragraph({
               children: [
@@ -697,11 +669,11 @@ export class DocxReportExporter {
               spacing: { after: 60 },
             })
           );
-        });
+        }
       }
 
       paragraphs.push(new Paragraph({ text: '', spacing: { after: 240 } }));
-    });
+    }
 
     return paragraphs;
   }
@@ -726,7 +698,7 @@ export class DocxReportExporter {
     // Take last 10 entries
     const recentEntries = this.report.auditTrail.slice(-10).reverse();
 
-    recentEntries.forEach((entry) => {
+    for (const entry of recentEntries) {
       paragraphs.push(
         new Paragraph({
           children: [
@@ -747,7 +719,7 @@ export class DocxReportExporter {
           spacing: { after: 60 },
         })
       );
-    });
+    }
 
     return paragraphs;
   }

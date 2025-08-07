@@ -28,6 +28,7 @@ export interface MitigationCard {
   example: string;
   prompts: string[];
   icon: string;
+  displayNumber?: string; // Optional display number for UI
 }
 
 export type Card = BiasCard | MitigationCard;

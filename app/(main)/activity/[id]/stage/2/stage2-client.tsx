@@ -13,6 +13,7 @@ import {
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Info, Layers, Search, X } from 'lucide-react';
+import Image from 'next/image';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { BiasCardDropped } from '@/components/cards/bias-card-dropped';
@@ -78,6 +79,10 @@ const getStageImage = (stage: LifecycleStage): string => {
   return stageImages[stage] || '';
 };
 
+// Regex patterns for drag and drop operations
+const CARD_ID_REGEX = /-card-(\d+)-/;
+const STAGE_CARD_REGEX = /^stage-([^-]+(?:-[^-]+)*)-card-\d+-(.+)$/;
+
 // Define lifecycle stages array at module level
 const lifecycleStages: LifecycleStage[] = [
   'project-planning',
@@ -95,12 +100,13 @@ const lifecycleStages: LifecycleStage[] = [
 ];
 
 // Risk category colors for filtering
-const RISK_COLORS = {
+const _RISK_COLORS = {
   'high-risk': 'bg-red-100 border-red-300 text-red-800',
   'medium-risk': 'bg-amber-100 border-amber-300 text-amber-800',
   'low-risk': 'bg-green-100 border-green-300 text-green-800',
   'needs-discussion': 'bg-blue-100 border-blue-300 text-blue-800',
 };
+// RISK_COLORS are used for potential future risk-based styling
 
 // Component for each lifecycle stage column
 function StageColumn({
@@ -108,15 +114,11 @@ function StageColumn({
   cards,
   onRemoveCard,
   onCardClick,
-  isDragging = false,
-  draggedCard = null,
 }: {
   stage: LifecycleStage;
   cards: Array<{ card: BiasCard; assignment: StageAssignment }>;
   onRemoveCard: (cardId: string) => void;
   onCardClick: (card: BiasCard, assignment: StageAssignment) => void;
-  isDragging?: boolean;
-  draggedCard?: BiasCard | null;
 }) {
   const stageInfo = LIFECYCLE_STAGES[stage];
 
@@ -137,10 +139,12 @@ function StageColumn({
       <CardHeader className="pb-3">
         {/* Header with larger image and title */}
         <div className="flex gap-3">
-          <img
+          <Image
             alt={`${stageInfo.name} illustration`}
             className="h-16 w-16 rounded-md object-cover shadow-sm"
+            height={64}
             src={getStageImage(stage)}
+            width={64}
           />
           <div className="flex min-w-0 flex-1 items-center">
             <h3 className="flex-1 font-semibold text-base leading-tight">
@@ -149,7 +153,10 @@ function StageColumn({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <button className="ml-2 text-muted-foreground transition-colors hover:text-foreground">
+                  <button
+                    className="ml-2 text-muted-foreground transition-colors hover:text-foreground"
+                    type="button"
+                  >
                     <Info className="h-4 w-4" />
                   </button>
                 </TooltipTrigger>
@@ -180,7 +187,7 @@ function StageColumn({
                   >
                     <div className="group relative">
                       <BiasCardDropped
-                        card={card as any}
+                        card={card}
                         cardNumber={
                           card.displayNumber || String(card.id).padStart(2, '0')
                         }
@@ -205,6 +212,7 @@ function StageColumn({
                             e.preventDefault();
                           }}
                           title="View details and add rationale"
+                          type="button"
                         >
                           <Info className="h-3.5 w-3.5" />
                         </button>
@@ -225,6 +233,7 @@ function StageColumn({
                             e.stopPropagation();
                             e.preventDefault();
                           }}
+                          type="button"
                         >
                           <X className="h-3.5 w-3.5" />
                         </button>
@@ -281,8 +290,7 @@ export default function Stage2Client() {
   const activityId = params.id as string;
 
   const { completeActivityStage } = useActivityStore();
-  const { biasCards, setSearchQuery, filteredCards, loadCards, isLoading } =
-    useCardsStore();
+  const { biasCards, setSearchQuery, loadCards } = useCardsStore();
 
   const {
     stageAssignments,
@@ -337,34 +345,47 @@ export default function Stage2Client() {
     })
   );
 
-  const handleDragStart = (event: DragStartEvent) => {
-    const { active } = event;
-
-    // Get card from drag event data or find by ID
+  // Helper function to extract card from drag event
+  const extractCardFromActive = (active: {
+    data: { current?: { card?: BiasCard; cardId?: string } };
+    id: string | number;
+  }): BiasCard | null => {
+    // Get card from drag event data
     let card = active.data.current?.card as BiasCard | undefined;
 
+    // Try getting card from cardId in data
     if (!card && active.data.current?.cardId) {
       const cardId = active.data.current.cardId as string;
       card = enrichedBiasCards.find((c) => c.id === cardId);
     }
 
+    // Extract cardId from active.id
     if (!card && active.id) {
       const activeIdStr = active.id.toString();
-      let cardId: string | null = null;
-
-      if (activeIdStr.startsWith('card-')) {
-        cardId = activeIdStr.replace('card-', '');
-      } else if (activeIdStr.includes('-card-')) {
-        const match = activeIdStr.match(/-card-(\d+)-/);
-        if (match) {
-          cardId = match[1];
-        }
-      }
-
+      const cardId = extractCardIdFromString(activeIdStr);
       if (cardId) {
         card = enrichedBiasCards.find((c) => c.id === cardId);
       }
     }
+
+    return card || null;
+  };
+
+  // Helper function to extract card ID from string
+  const extractCardIdFromString = (idStr: string): string | null => {
+    if (idStr.startsWith('card-')) {
+      return idStr.replace('card-', '');
+    }
+    if (idStr.includes('-card-')) {
+      const match = idStr.match(CARD_ID_REGEX);
+      return match ? match[1] : null;
+    }
+    return null;
+  };
+
+  const handleDragStart = (event: DragStartEvent) => {
+    const { active } = event;
+    const card = extractCardFromActive(active);
 
     if (card) {
       setActiveCard(card);
@@ -373,67 +394,49 @@ export default function Stage2Client() {
     }
   };
 
+  // Helper function to handle card movement between stages
+  const handleCardMovement = (
+    card: BiasCard,
+    active: { id: string | number },
+    targetStage: LifecycleStage
+  ) => {
+    const activeIdStr = active.id.toString();
+
+    if (activeIdStr.startsWith('stage-')) {
+      // Handle moving between stages
+      const match = activeIdStr.match(STAGE_CARD_REGEX);
+      if (match) {
+        const sourceStage = match[1] as LifecycleStage;
+        const timestamp = match[2];
+
+        const assignmentToMove = stageAssignments.find(
+          (a) => a.cardId === card.id && a.timestamp === timestamp
+        );
+
+        if (assignmentToMove && sourceStage !== targetStage) {
+          removeCardFromStage(assignmentToMove.id);
+          assignCardToStage(card.id, targetStage);
+        }
+      }
+    } else {
+      // New card from library
+      assignCardToStage(card.id, targetStage);
+      setIsSheetOpen(false);
+    }
+  };
+
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
     if (over?.id.toString().startsWith('stage-')) {
-      // Get card from drag event
-      let card = active.data.current?.card as BiasCard | undefined;
-
-      if (!card && active.data.current?.cardId) {
-        const cardId = active.data.current.cardId as string;
-        card = enrichedBiasCards.find((c) => c.id === cardId);
-      }
-
-      if (!card && active.id) {
-        const activeIdStr = active.id.toString();
-        let cardId: string | null = null;
-
-        if (activeIdStr.startsWith('card-')) {
-          cardId = activeIdStr.replace('card-', '');
-        } else if (activeIdStr.includes('-card-')) {
-          const match = activeIdStr.match(/-card-(\d+)-/);
-          if (match) {
-            cardId = match[1];
-          }
-        }
-
-        if (cardId) {
-          card = enrichedBiasCards.find((c) => c.id === cardId);
-        }
-      }
+      const card = extractCardFromActive(active);
 
       if (card) {
         const targetStage = over.id
           .toString()
           .replace('stage-', '') as LifecycleStage;
 
-        // Check if this is a card being moved from another stage
-        const activeIdStr = active.id.toString();
-        if (activeIdStr.startsWith('stage-')) {
-          // Handle moving between stages
-          const match = activeIdStr.match(
-            /^stage-([^-]+(?:-[^-]+)*)-card-\d+-(.+)$/
-          );
-
-          if (match) {
-            const sourceStage = match[1] as LifecycleStage;
-            const timestamp = match[2];
-
-            const assignmentToMove = stageAssignments.find(
-              (a) => a.cardId === card.id && a.timestamp === timestamp
-            );
-
-            if (assignmentToMove && sourceStage !== targetStage) {
-              removeCardFromStage(assignmentToMove.id);
-              assignCardToStage(card.id, targetStage);
-            }
-          }
-        } else {
-          // New card from library
-          assignCardToStage(card.id, targetStage);
-          setIsSheetOpen(false);
-        }
+        handleCardMovement(card, active, targetStage);
       }
     }
 
@@ -512,10 +515,16 @@ export default function Stage2Client() {
       const indexA = categoryOrder.indexOf(a);
       const indexB = categoryOrder.indexOf(b);
       // If both are in the order list, sort by their position
-      if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+      if (indexA !== -1 && indexB !== -1) {
+        return indexA - indexB;
+      }
       // If only one is in the list, it comes first
-      if (indexA !== -1) return -1;
-      if (indexB !== -1) return 1;
+      if (indexA !== -1) {
+        return -1;
+      }
+      if (indexB !== -1) {
+        return 1;
+      }
       // Otherwise, sort alphabetically
       return a.localeCompare(b);
     });
@@ -554,7 +563,7 @@ export default function Stage2Client() {
                         >
                           <div className="relative">
                             <BiasCardList
-                              card={card as any}
+                              card={card}
                               cardNumber={getCardNumber(card)}
                               showCategory={false}
                             />

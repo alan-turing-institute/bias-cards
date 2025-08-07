@@ -56,6 +56,124 @@ interface StageAssignmentWithCard {
   riskCategory?: string;
 }
 
+interface AssignmentCardProps {
+  assignment: StageAssignmentWithCard;
+  viewMode: 'lifecycle' | 'risk';
+  showDescriptions: boolean;
+  pairsForBias: CardPair[];
+  mitigationCards: MitigationCard[];
+  onSelectMitigations: (biasId: string, mitigationIds: string[]) => void;
+  onRemovePair: (biasId: string, mitigationId: string) => void;
+}
+
+// Helper component for rendering assignment cards
+const AssignmentCard = ({
+  assignment,
+  viewMode,
+  showDescriptions,
+  pairsForBias,
+  mitigationCards,
+  onSelectMitigations,
+  onRemovePair,
+}: AssignmentCardProps) => {
+  const [rationaleOpen, setRationaleOpen] = useState(false);
+
+  return (
+    <Card className="transition-all" key={assignment.id}>
+      <CardContent className="p-3 sm:p-4">
+        <div className="space-y-3">
+          {/* Card header */}
+          <div className="flex-1">
+            <div className="mb-2 flex flex-wrap items-center gap-2">
+              <h4 className="font-semibold text-base sm:text-lg">
+                {assignment.card.name}
+              </h4>
+              {/* Conditional badge based on view mode */}
+              {viewMode === 'lifecycle' && assignment.riskCategory && (
+                <Badge
+                  className={cn(
+                    'text-xs',
+                    RISK_COLORS[
+                      assignment.riskCategory as keyof typeof RISK_COLORS
+                    ]
+                  )}
+                >
+                  {assignment.riskCategory.replace('-', ' ')}
+                </Badge>
+              )}
+              {viewMode === 'risk' && (
+                <Badge className="text-xs" variant="secondary">
+                  {LIFECYCLE_STAGES[assignment.stage].name}
+                </Badge>
+              )}
+            </div>
+            {showDescriptions && (
+              <p className="text-muted-foreground text-xs sm:text-sm">
+                {assignment.card.description}
+              </p>
+            )}
+          </div>
+
+          {/* Rationale section (collapsible on mobile) */}
+          {assignment.annotation && assignment.annotation.trim().length > 0 && (
+            <>
+              {/* Mobile collapsible */}
+              <Collapsible
+                className="md:hidden"
+                onOpenChange={setRationaleOpen}
+                open={rationaleOpen}
+              >
+                <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
+                  <h5 className="font-semibold text-sm">Rationale</h5>
+                  {rationaleOpen ? (
+                    <ChevronUp className="h-4 w-4" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4" />
+                  )}
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <p className="mt-2 rounded-md bg-muted/50 p-3 text-xs leading-relaxed sm:text-sm">
+                    {assignment.annotation}
+                  </p>
+                </CollapsibleContent>
+              </Collapsible>
+
+              {/* Desktop visible */}
+              <div className="hidden space-y-2 md:block">
+                <h5 className="font-semibold text-sm">Rationale:</h5>
+                <p className="rounded-md bg-muted/50 p-3 text-sm leading-relaxed">
+                  {assignment.annotation}
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* Mitigation selection */}
+          <div className="space-y-2">
+            <h5 className="font-semibold text-sm">Mitigation Strategies:</h5>
+            <SelectedMitigations
+              existingPairs={pairsForBias}
+              mitigationCards={mitigationCards}
+              onRemovePair={(mitigationId) =>
+                onRemovePair(assignment.cardId, mitigationId)
+              }
+            />
+            <MitigationSelectionDialog
+              biasCardId={assignment.cardId}
+              biasCardName={assignment.card.name}
+              mitigationCards={mitigationCards}
+              onSelectMitigations={(mitigationIds) =>
+                onSelectMitigations(assignment.cardId, mitigationIds)
+              }
+              selectedMitigations={pairsForBias.map((p) => p.mitigationId)}
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 // Component for displaying selected mitigation cards
 function SelectedMitigations({
   existingPairs,
@@ -248,114 +366,6 @@ export default function Stage4Client() {
     }
   };
 
-  // Helper component for rendering assignment cards
-  const AssignmentCard = ({
-    assignment,
-    viewMode,
-  }: {
-    assignment: StageAssignmentWithCard;
-    viewMode: 'lifecycle' | 'risk';
-  }) => {
-    const pairsForBias = getPairsForBias(assignment.cardId);
-    const [rationaleOpen, setRationaleOpen] = useState(false);
-
-    return (
-      <Card className="transition-all" key={assignment.id}>
-        <CardContent className="p-3 sm:p-4">
-          <div className="space-y-3">
-            {/* Card header */}
-            <div className="flex-1">
-              <div className="mb-2 flex flex-wrap items-center gap-2">
-                <h4 className="font-semibold text-base sm:text-lg">
-                  {assignment.card.name}
-                </h4>
-                {/* Conditional badge based on view mode */}
-                {viewMode === 'lifecycle' && assignment.riskCategory && (
-                  <Badge
-                    className={cn(
-                      'text-xs',
-                      RISK_COLORS[
-                        assignment.riskCategory as keyof typeof RISK_COLORS
-                      ]
-                    )}
-                  >
-                    {assignment.riskCategory.replace('-', ' ')}
-                  </Badge>
-                )}
-                {viewMode === 'risk' && (
-                  <Badge className="text-xs" variant="secondary">
-                    {LIFECYCLE_STAGES[assignment.stage].name}
-                  </Badge>
-                )}
-              </div>
-              {showDescriptions && (
-                <p className="text-muted-foreground text-xs sm:text-sm">
-                  {assignment.card.description}
-                </p>
-              )}
-            </div>
-
-            {/* Rationale section (collapsible on mobile) */}
-            {assignment.annotation &&
-              assignment.annotation.trim().length > 0 && (
-                <>
-                  {/* Mobile collapsible */}
-                  <Collapsible
-                    className="md:hidden"
-                    onOpenChange={setRationaleOpen}
-                    open={rationaleOpen}
-                  >
-                    <CollapsibleTrigger className="flex w-full items-center justify-between text-left">
-                      <h5 className="font-semibold text-sm">Rationale</h5>
-                      {rationaleOpen ? (
-                        <ChevronUp className="h-4 w-4" />
-                      ) : (
-                        <ChevronDown className="h-4 w-4" />
-                      )}
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <p className="mt-2 rounded-md bg-muted/50 p-3 text-xs leading-relaxed sm:text-sm">
-                        {assignment.annotation}
-                      </p>
-                    </CollapsibleContent>
-                  </Collapsible>
-
-                  {/* Desktop visible */}
-                  <div className="hidden space-y-2 md:block">
-                    <h5 className="font-semibold text-sm">Rationale:</h5>
-                    <p className="rounded-md bg-muted/50 p-3 text-sm leading-relaxed">
-                      {assignment.annotation}
-                    </p>
-                  </div>
-                </>
-              )}
-
-            {/* Mitigation selection */}
-            <div className="space-y-2">
-              <h5 className="font-semibold text-sm">Mitigation Strategies:</h5>
-              <SelectedMitigations
-                existingPairs={pairsForBias}
-                mitigationCards={mitigationCards}
-                onRemovePair={(mitigationId) =>
-                  removeCardPair(assignment.cardId, mitigationId)
-                }
-              />
-              <MitigationSelectionDialog
-                biasCardId={assignment.cardId}
-                biasCardName={assignment.card.name}
-                mitigationCards={mitigationCards}
-                onSelectMitigations={(mitigationIds) =>
-                  handleSelectMitigations(assignment.cardId, mitigationIds)
-                }
-                selectedMitigations={pairsForBias.map((p) => p.mitigationId)}
-              />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  };
-
   return (
     <div className="flex h-full flex-col">
       <StageNavigation
@@ -451,6 +461,11 @@ export default function Stage4Client() {
                             <AssignmentCard
                               assignment={assignment}
                               key={assignment.id}
+                              mitigationCards={mitigationCards}
+                              onRemovePair={removeCardPair}
+                              onSelectMitigations={handleSelectMitigations}
+                              pairsForBias={getPairsForBias(assignment.cardId)}
+                              showDescriptions={showDescriptions}
                               viewMode="lifecycle"
                             />
                           ))}
@@ -482,6 +497,11 @@ export default function Stage4Client() {
                             <AssignmentCard
                               assignment={assignment}
                               key={assignment.id}
+                              mitigationCards={mitigationCards}
+                              onRemovePair={removeCardPair}
+                              onSelectMitigations={handleSelectMitigations}
+                              pairsForBias={getPairsForBias(assignment.cardId)}
+                              showDescriptions={showDescriptions}
                               viewMode="risk"
                             />
                           ))}

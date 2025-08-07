@@ -17,7 +17,15 @@ import { SidebarTrigger } from '@/components/ui/sidebar';
 export default function SavedActivitiesPage() {
   const router = useRouter();
   // In a real app, this would fetch saved workspaces from a database
-  const savedWorkspaces: any[] = [];
+  interface SavedWorkspace {
+    id: string;
+    name: string;
+    description?: string;
+    lastModified: string;
+    status: string;
+  }
+
+  const savedWorkspaces: SavedWorkspace[] = [];
 
   return (
     <>

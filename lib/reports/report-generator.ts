@@ -115,10 +115,10 @@ export class BiasCardReportGenerator {
       metadata.unshift(`Author: ${config.authorName}`);
     }
 
-    metadata.forEach((line) => {
+    for (const line of metadata) {
       this.pdf.text(line, this.margin, this.currentY);
       this.currentY += 4;
-    });
+    }
 
     this.currentY += 10;
     this.addSeparator();
@@ -161,6 +161,62 @@ export class BiasCardReportGenerator {
     this.currentY += 10;
   }
 
+  private renderStageHeader(stageInfo: {
+    name: string;
+    phase: string;
+    order: number;
+    description: string;
+  }): void {
+    this.pdf.setFontSize(12);
+    this.pdf.setFont('helvetica', 'bold');
+    this.pdf.setTextColor(0, 0, 0);
+    this.pdf.text(stageInfo.name, this.margin, this.currentY);
+    this.currentY += 6;
+
+    this.pdf.setFontSize(10);
+    this.pdf.setFont('helvetica', 'normal');
+    this.pdf.setTextColor(80, 80, 80);
+    const description = this.wrapText(
+      stageInfo.description,
+      this.contentWidth - 10
+    );
+    for (const line of description) {
+      this.pdf.text(line, this.margin + 5, this.currentY);
+      this.currentY += 4;
+    }
+    this.currentY += 3;
+  }
+
+  private renderAssignmentCard(
+    assignment: StageAssignment,
+    biasCards: Card[],
+    mitigationCards: Card[]
+  ): void {
+    const card = [...biasCards, ...mitigationCards].find(
+      (c) => c.id === assignment.cardId
+    );
+    if (!card) {
+      return;
+    }
+
+    this.pdf.setFontSize(9);
+    this.pdf.setTextColor(40, 40, 40);
+    this.pdf.text(`• ${card.name}`, this.margin + 10, this.currentY);
+    this.currentY += 4;
+
+    if (assignment.annotation) {
+      this.pdf.setTextColor(100, 100, 100);
+      const annotationLines = this.wrapText(
+        `  "${assignment.annotation}"`,
+        this.contentWidth - 20
+      );
+      for (const line of annotationLines) {
+        this.pdf.text(line, this.margin + 15, this.currentY);
+        this.currentY += 3.5;
+      }
+    }
+  }
+
   private addStageAnalysis(
     workspace: WorkspaceState,
     biasCards: Card[],
@@ -180,61 +236,23 @@ export class BiasCardReportGenerator {
       {} as Record<string, StageAssignment[]>
     );
 
-    Object.entries(stageGroups).forEach(([stage, assignments]) => {
+    for (const [stage, assignments] of Object.entries(stageGroups)) {
       const stageInfo =
         LIFECYCLE_STAGES[stage as keyof typeof LIFECYCLE_STAGES];
       if (!stageInfo) {
-        return;
+        continue;
       }
 
       this.checkPageBreak(40);
-
-      this.pdf.setFontSize(12);
-      this.pdf.setFont('helvetica', 'bold');
-      this.pdf.setTextColor(0, 0, 0);
-      this.pdf.text(stageInfo.name, this.margin, this.currentY);
-      this.currentY += 6;
-
-      this.pdf.setFontSize(10);
-      this.pdf.setFont('helvetica', 'normal');
-      this.pdf.setTextColor(80, 80, 80);
-      const description = this.wrapText(
-        stageInfo.description,
-        this.contentWidth - 10
-      );
-      description.forEach((line) => {
-        this.pdf.text(line, this.margin + 5, this.currentY);
-        this.currentY += 4;
-      });
-      this.currentY += 3;
+      this.renderStageHeader(stageInfo);
 
       // List assigned cards
-      assignments.forEach((assignment) => {
-        const card = [...biasCards, ...mitigationCards].find(
-          (c) => c.id === assignment.cardId
-        );
-        if (card) {
-          this.pdf.setFontSize(9);
-          this.pdf.setTextColor(40, 40, 40);
-          this.pdf.text(`• ${card.name}`, this.margin + 10, this.currentY);
-          this.currentY += 4;
-
-          if (assignment.annotation) {
-            this.pdf.setTextColor(100, 100, 100);
-            const annotationLines = this.wrapText(
-              `  "${assignment.annotation}"`,
-              this.contentWidth - 20
-            );
-            annotationLines.forEach((line) => {
-              this.pdf.text(line, this.margin + 15, this.currentY);
-              this.currentY += 3.5;
-            });
-          }
-        }
-      });
+      for (const assignment of assignments) {
+        this.renderAssignmentCard(assignment, biasCards, mitigationCards);
+      }
 
       this.currentY += 5;
-    });
+    }
   }
 
   private addMitigationStrategies(
@@ -296,10 +314,10 @@ export class BiasCardReportGenerator {
           pair.annotation,
           this.contentWidth - 10
         );
-        annotationLines.forEach((line) => {
+        for (const line of annotationLines) {
           this.pdf.text(line, this.margin + 5, this.currentY);
           this.currentY += 4;
-        });
+        }
       }
 
       this.currentY += 5;
@@ -320,37 +338,34 @@ export class BiasCardReportGenerator {
 
     this.addSectionHeader('Custom Annotations');
 
-    Object.entries(workspace.customAnnotations).forEach(
-      ([cardId, annotation]) => {
-        this.checkPageBreak(15);
+    for (const [cardId, annotation] of Object.entries(
+      workspace.customAnnotations
+    )) {
+      this.checkPageBreak(15);
 
-        const card = [...biasCards, ...mitigationCards].find(
-          (c) => c.id === cardId
-        );
-        if (!card) {
-          return;
-        }
-
-        this.pdf.setFontSize(10);
-        this.pdf.setFont('helvetica', 'bold');
-        this.pdf.setTextColor(0, 0, 0);
-        this.pdf.text(card.name, this.margin, this.currentY);
-        this.currentY += 5;
-
-        this.pdf.setFont('helvetica', 'normal');
-        this.pdf.setTextColor(60, 60, 60);
-        const annotationLines = this.wrapText(
-          annotation,
-          this.contentWidth - 10
-        );
-        annotationLines.forEach((line) => {
-          this.pdf.text(line, this.margin + 5, this.currentY);
-          this.currentY += 4;
-        });
-
-        this.currentY += 5;
+      const card = [...biasCards, ...mitigationCards].find(
+        (c) => c.id === cardId
+      );
+      if (!card) {
+        return;
       }
-    );
+
+      this.pdf.setFontSize(10);
+      this.pdf.setFont('helvetica', 'bold');
+      this.pdf.setTextColor(0, 0, 0);
+      this.pdf.text(card.name, this.margin, this.currentY);
+      this.currentY += 5;
+
+      this.pdf.setFont('helvetica', 'normal');
+      this.pdf.setTextColor(60, 60, 60);
+      const annotationLines = this.wrapText(annotation, this.contentWidth - 10);
+      for (const line of annotationLines) {
+        this.pdf.text(line, this.margin + 5, this.currentY);
+        this.currentY += 4;
+      }
+
+      this.currentY += 5;
+    }
   }
 
   private addRecommendations(
@@ -456,7 +471,7 @@ export class BiasCardReportGenerator {
     this.pdf.setFont('helvetica', 'normal');
     this.pdf.setTextColor(40, 40, 40);
 
-    lines.forEach((line) => {
+    for (const line of lines) {
       if (line === '') {
         this.currentY += 3;
         return;
@@ -464,11 +479,11 @@ export class BiasCardReportGenerator {
 
       this.checkPageBreak(8);
       const wrappedLines = this.wrapText(line, this.contentWidth);
-      wrappedLines.forEach((wrappedLine) => {
+      for (const wrappedLine of wrappedLines) {
         this.pdf.text(wrappedLine, this.margin, this.currentY);
         this.currentY += 4.5;
-      });
-    });
+      }
+    }
   }
 
   private addSeparator(): void {
@@ -494,7 +509,7 @@ export class BiasCardReportGenerator {
     const lines: string[] = [];
     let currentLine = '';
 
-    words.forEach((word) => {
+    for (const word of words) {
       const testLine = currentLine + (currentLine ? ' ' : '') + word;
       const textWidth = this.pdf.getTextWidth(testLine);
 
@@ -504,7 +519,7 @@ export class BiasCardReportGenerator {
       } else {
         currentLine = testLine;
       }
-    });
+    }
 
     if (currentLine) {
       lines.push(currentLine);

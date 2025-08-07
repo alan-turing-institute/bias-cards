@@ -1,6 +1,7 @@
 'use client';
 
 import {
+  type Active,
   closestCenter,
   DndContext,
   type DragEndEvent,
@@ -50,13 +51,46 @@ import { useCardsStore } from '@/lib/stores/cards-store';
 import { useWorkspaceStore } from '@/lib/stores/workspace-store';
 import type { BiasRiskCategory, Card } from '@/lib/types';
 
+// Regex pattern for extracting card IDs from drag element IDs
+const CARD_ID_REGEX = /-card-([^-]+)-/;
+
+// Helper function to extract card from drag event
+function extractCardFromDragEvent(
+  active: Active,
+  biasCards: Card[]
+): Card | null {
+  // Get card from drag event data
+  let card = active.data.current?.card as Card | undefined;
+
+  // If card not found in drag data, try to find it by ID
+  if (!card && active.id) {
+    const activeIdStr = active.id.toString();
+    let cardId: string | null = null;
+
+    if (activeIdStr.startsWith('card-')) {
+      cardId = activeIdStr.replace('card-', '');
+    } else if (activeIdStr.includes('-card-')) {
+      const match = activeIdStr.match(CARD_ID_REGEX);
+      if (match) {
+        cardId = match[1];
+      }
+    }
+
+    if (cardId) {
+      card = biasCards.find((c) => c.id === cardId);
+    }
+  }
+
+  return card || null;
+}
+
 export default function Stage1Client() {
   const params = useParams();
   const router = useRouter();
   const activityId = params.id as string;
 
   const { completeActivityStage } = useActivityStore();
-  const { biasCards, setSearchQuery, filteredCards, loadCards, isLoading } =
+  const { biasCards, setSearchQuery, filteredCards, loadCards } =
     useCardsStore();
 
   const {
@@ -128,28 +162,7 @@ export default function Stage1Client() {
 
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
-
-    // Get card from drag event data
-    let card = active.data.current?.card as Card | undefined;
-
-    // If card not found in drag data, try to find it by ID
-    if (!card && active.id) {
-      const activeIdStr = active.id.toString();
-      let cardId: string | null = null;
-
-      if (activeIdStr.startsWith('card-')) {
-        cardId = activeIdStr.replace('card-', '');
-      } else if (activeIdStr.includes('-card-')) {
-        const match = activeIdStr.match(/-card-([^-]+)-/);
-        if (match) {
-          cardId = match[1];
-        }
-      }
-
-      if (cardId) {
-        card = biasCards.find((c) => c.id === cardId);
-      }
-    }
+    const card = extractCardFromDragEvent(active, biasCards);
 
     if (card) {
       setActiveCard(card);
@@ -162,33 +175,13 @@ export default function Stage1Client() {
     const { active, over } = event;
 
     if (over?.id.toString().startsWith('risk-category-')) {
-      // Get card from drag event data
-      let card = active.data.current?.card as Card | undefined;
-
-      if (!card && active.id) {
-        const activeIdStr = active.id.toString();
-        let cardId: string | null = null;
-
-        if (activeIdStr.startsWith('card-')) {
-          cardId = activeIdStr.replace('card-', '');
-        } else if (activeIdStr.includes('-card-')) {
-          const match = activeIdStr.match(/-card-([^-]+)-/);
-          if (match) {
-            cardId = match[1];
-          }
-        }
-
-        if (cardId) {
-          card = biasCards.find((c) => c.id === cardId);
-        }
-      }
+      const card = extractCardFromDragEvent(active, biasCards);
 
       if (card) {
         const targetCategory = over.id
           .toString()
           .replace('risk-category-', '') as BiasRiskCategory;
 
-        // Assign bias to risk category
         assignBiasRisk(card.id, targetCategory);
         setIsSheetOpen(false);
       }
@@ -322,7 +315,7 @@ export default function Stage1Client() {
                                         key={card.id}
                                       >
                                         <BiasCardList
-                                          card={card as any}
+                                          card={card}
                                           cardNumber={getCardNumber(card)}
                                           showCategory={false}
                                         />
@@ -360,7 +353,7 @@ export default function Stage1Client() {
                                           key={card.id}
                                         >
                                           <BiasCardList
-                                            card={card as any}
+                                            card={card}
                                             cardNumber={getCardNumber(card)}
                                             showCategory={false}
                                           />

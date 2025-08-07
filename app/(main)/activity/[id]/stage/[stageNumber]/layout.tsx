@@ -173,20 +173,27 @@ export default function StageLayout({
                 const isCurrent = stage === currentStageNumber;
                 const isAccessible = stage <= completedStages + 1;
 
+                let buttonClass =
+                  'flex h-8 w-8 items-center justify-center rounded-full font-medium text-xs transition-colors ';
+                if (isCompleted) {
+                  buttonClass += 'bg-green-600 text-white';
+                } else if (isCurrent) {
+                  buttonClass += 'bg-amber-600 text-white';
+                } else if (isAccessible) {
+                  buttonClass +=
+                    'bg-muted text-muted-foreground hover:bg-muted/80';
+                } else {
+                  buttonClass +=
+                    'cursor-not-allowed bg-muted/50 text-muted-foreground/50';
+                }
+
                 return (
                   <button
-                    className={`flex h-8 w-8 items-center justify-center rounded-full font-medium text-xs transition-colors ${
-                      isCompleted
-                        ? 'bg-green-600 text-white'
-                        : isCurrent
-                          ? 'bg-amber-600 text-white'
-                          : isAccessible
-                            ? 'bg-muted text-muted-foreground hover:bg-muted/80'
-                            : 'cursor-not-allowed bg-muted/50 text-muted-foreground/50'
-                    }`}
+                    className={buttonClass}
                     disabled={!isAccessible}
                     key={stage}
                     onClick={() => handleStageClick(stage as ActivityStage)}
+                    type="button"
                   >
                     {isCompleted ? <CheckCircle className="h-4 w-4" /> : stage}
                   </button>

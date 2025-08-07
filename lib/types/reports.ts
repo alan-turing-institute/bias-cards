@@ -207,10 +207,10 @@ export interface AuditTrailEntry {
     section?: string;
 
     /** Previous values (for updates) */
-    previousValues?: Record<string, any>;
+    previousValues?: Record<string, unknown>;
 
     /** New values (for updates) */
-    newValues?: Record<string, any>;
+    newValues?: Record<string, unknown>;
 
     /** Reason for the change */
     reason?: string;
@@ -265,7 +265,7 @@ export interface ReportExportConfig {
   template?: {
     id: string;
     name: string;
-    customization?: Record<string, any>;
+    customization?: Record<string, unknown>;
   };
 }
 
@@ -456,7 +456,7 @@ export interface ReportTemplate {
     requiredProjectFields: string[];
 
     /** Validation rules */
-    validationRules: Record<string, any>;
+    validationRules: Record<string, unknown>;
   };
 
   /** Template metadata */

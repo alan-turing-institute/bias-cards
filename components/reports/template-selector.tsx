@@ -34,7 +34,6 @@ interface TemplateSelectorProps {
   projectDomain?: string;
   onSelectTemplate: (templateId: string) => void;
   selectedTemplateId?: string | null;
-  showCustomTemplates?: boolean;
 }
 
 const domainIcons: Record<string, React.ReactNode> = {
@@ -48,7 +47,6 @@ export function TemplateSelector({
   projectDomain,
   onSelectTemplate,
   selectedTemplateId,
-  showCustomTemplates = true,
 }: TemplateSelectorProps) {
   const {
     getAllTemplates,

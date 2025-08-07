@@ -68,7 +68,15 @@ function NewReportPageContent() {
     },
   });
 
-  const [validationResult, setValidationResult] = useState<any>(null);
+  interface ValidationResult {
+    isValid: boolean;
+    errors: string[];
+    warnings: string[];
+    gates: Array<{ name: string; passed: boolean; message: string }>;
+  }
+
+  const [validationResult, setValidationResult] =
+    useState<ValidationResult | null>(null);
   const [canCreateReport, setCanCreateReport] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
     null
@@ -115,7 +123,7 @@ function NewReportPageContent() {
       setProjectInfo((prev) => ({
         ...prev,
         [section]: {
-          ...(prev[section as keyof ProjectInfo] as any),
+          ...(prev[section as keyof ProjectInfo] as Record<string, unknown>),
           [subfield]: value,
         },
       }));
@@ -135,7 +143,7 @@ function NewReportPageContent() {
         projectLead: {
           ...prev.team.projectLead,
           [field]: value,
-        } as any,
+        } as typeof prev.team.projectLead,
       },
     }));
   };
@@ -160,7 +168,9 @@ function NewReportPageContent() {
       }
 
       router.push(`/reports/view?id=${reportId}`);
-    } catch (_error) {}
+    } catch (_error) {
+      // Error already logged above
+    }
   };
 
   return (
@@ -231,8 +241,8 @@ function NewReportPageContent() {
             </CardHeader>
             <CardContent>
               <div className="grid gap-3 md:grid-cols-2">
-                {validationResult.gates.map((gate: any, index: number) => (
-                  <div className="flex items-center gap-2" key={index}>
+                {validationResult.gates.map((gate) => (
+                  <div className="flex items-center gap-2" key={gate.name}>
                     <Badge
                       className="flex h-6 w-6 items-center justify-center rounded-full p-0"
                       variant={gate.passed ? 'default' : 'secondary'}

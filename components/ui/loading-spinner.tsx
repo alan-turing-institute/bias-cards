@@ -49,7 +49,7 @@ export function LoadingSpinner({
               'h-4 w-4': size === 'lg',
             })}
             initial="initial"
-            key={index}
+            key={`loading-dot-${index}`}
             transition={{
               ...dotTransition,
               delay: index * 0.1,

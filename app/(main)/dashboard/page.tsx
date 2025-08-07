@@ -21,13 +21,7 @@ import {
   BreadcrumbSeparator,
 } from '@/components/ui/breadcrumb';
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -53,6 +47,7 @@ import { useActivityStore } from '@/lib/stores/activity-store';
 import { useOnboardingStore } from '@/lib/stores/onboarding-store';
 import { useReportsStore } from '@/lib/stores/reports-store';
 import type { Activity } from '@/lib/types/activity';
+import type { ReportSummary } from '@/lib/types/reports';
 
 const sectors = [
   'None',
@@ -90,7 +85,7 @@ function ActivityCard({
   onEdit: (activity: Activity, e?: React.MouseEvent) => void;
   onExport: (id: string) => void;
   onDelete: (id: string, title: string, isDemo?: boolean) => void;
-  reports: any[];
+  reports: ReportSummary[];
 }) {
   const router = useRouter();
   const isCompleted = activity.status === 'completed';

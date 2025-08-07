@@ -6,6 +6,9 @@ import type {
   WorkspaceFilters,
 } from '@/lib/types';
 
+// Top-level regex for splitting words
+const WORD_SPLIT_REGEX = /\s+/;
+
 export function filterCards(cards: Card[], filters: WorkspaceFilters): Card[] {
   let filteredCards = [...cards];
 
@@ -38,7 +41,7 @@ export function searchCards(cards: Card[], query: string): Card[] {
   }
 
   const normalizedQuery = query.toLowerCase().trim();
-  const queryWords = normalizedQuery.split(/\s+/);
+  const queryWords = normalizedQuery.split(WORD_SPLIT_REGEX);
 
   return cards.filter((card) => {
     const searchableText = [
@@ -137,11 +140,11 @@ export function getCardRelevanceScore(card: Card, query: string): number {
     score += 2;
   }
 
-  card.prompts.forEach((prompt) => {
+  for (const prompt of card.prompts) {
     if (prompt.toLowerCase().includes(normalizedQuery)) {
       score += 1;
     }
-  });
+  }
 
   return score;
 }

@@ -35,7 +35,7 @@ export interface WorkspaceAction {
     | 'UPDATE_ANNOTATION';
   timestamp: string;
   description: string;
-  data: any;
+  data: Record<string, unknown>;
   inverse: WorkspaceAction | null;
 }
 

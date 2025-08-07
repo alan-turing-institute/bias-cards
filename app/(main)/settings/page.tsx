@@ -33,8 +33,8 @@ export default function SettingsPage() {
 
   useEffect(() => {
     // Load settings from store
-    setAutoSync(settings?.autoSync);
-    setSyncOnSave(settings?.syncOnSave);
+    setAutoSync(settings?.autoSync ?? false);
+    setSyncOnSave(settings?.syncOnSave ?? false);
   }, [settings]);
 
   const handleSaveSettings = () => {
@@ -211,16 +211,20 @@ export default function SettingsPage() {
             disabled={saveStatus === 'saving'}
             onClick={handleSaveSettings}
           >
-            {saveStatus === 'saving' ? (
-              'Saving...'
-            ) : saveStatus === 'saved' ? (
-              'Saved!'
-            ) : (
-              <>
-                <Save className="mr-2 h-4 w-4" />
-                Save Settings
-              </>
-            )}
+            {(() => {
+              if (saveStatus === 'saving') {
+                return 'Saving...';
+              }
+              if (saveStatus === 'saved') {
+                return 'Saved!';
+              }
+              return (
+                <>
+                  <Save className="mr-2 h-4 w-4" />
+                  Save Settings
+                </>
+              );
+            })()}
           </Button>
         </div>
       )}

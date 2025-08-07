@@ -52,6 +52,7 @@ export function StageGroupHeader({
     return (
       <CardHeader>
         <CardTitle className="flex items-center gap-5">
+          {/* biome-ignore lint/performance/noImgElement: Static export doesn't support next/image */}
           <img
             alt={`${LIFECYCLE_STAGES[stage].name} illustration`}
             className="h-20 w-20 rounded-lg object-cover shadow-sm"

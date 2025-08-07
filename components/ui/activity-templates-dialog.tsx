@@ -81,30 +81,32 @@ export function ActivityTemplatesDialog({
 
       // Apply stage assignments
       if (templateWorkspace.stageAssignments) {
-        templateWorkspace.stageAssignments.forEach((assignment) => {
+        for (const assignment of templateWorkspace.stageAssignments) {
           workspaceStore.assignCardToStage(
             assignment.cardId,
             assignment.stage,
             assignment.annotation
           );
-        });
+        }
       }
 
       // Apply card pairs
       if (templateWorkspace.cardPairs) {
-        templateWorkspace.cardPairs.forEach((pair) => {
+        for (const pair of templateWorkspace.cardPairs) {
           workspaceStore.createCardPair(
             pair.biasId,
             pair.mitigationId,
             pair.annotation,
             pair.effectivenessRating
           );
-        });
+        }
       }
 
       setOpen(false);
       setSelectedTemplate(null);
-    } catch (_error) {}
+    } catch (_error) {
+      // Handle error silently
+    }
   };
 
   const renderTemplateCard = (template: ActivityTemplate) => {
@@ -112,15 +114,16 @@ export function ActivityTemplatesDialog({
     const IconComponent = categoryInfo.icon;
 
     return (
-      <div
+      <button
         className={cn(
-          'cursor-pointer rounded-lg border p-4 transition-all hover:shadow-md',
+          'w-full cursor-pointer rounded-lg border p-4 text-left transition-all hover:shadow-md',
           selectedTemplate?.id === template.id
             ? 'border-blue-500 bg-blue-50 shadow-md'
             : 'border-gray-200 hover:border-gray-300'
         )}
         key={template.id}
         onClick={() => setSelectedTemplate(template)}
+        type="button"
       >
         <div className="flex items-start gap-3">
           <div className={cn('rounded-lg p-2', categoryInfo.color)}>
@@ -146,7 +149,7 @@ export function ActivityTemplatesDialog({
             </div>
           </div>
         </div>
-      </div>
+      </button>
     );
   };
 
@@ -171,7 +174,10 @@ export function ActivityTemplatesDialog({
           <h4 className="font-medium text-sm">Learning Objectives</h4>
           <ul className="mt-2 space-y-1 text-muted-foreground text-xs">
             {template.learningObjectives.map((objective, index) => (
-              <li className="flex items-start gap-2" key={index}>
+              <li
+                className="flex items-start gap-2"
+                key={`${template.id}-objective-${index}`}
+              >
                 <span className="mt-1 block h-1 w-1 flex-shrink-0 rounded-full bg-current" />
                 {objective}
               </li>
@@ -184,7 +190,10 @@ export function ActivityTemplatesDialog({
             <h4 className="font-medium text-sm">Instructions</h4>
             <ul className="mt-2 space-y-1 text-muted-foreground text-xs">
               {template.instructions.map((instruction, index) => (
-                <li className="flex items-start gap-2" key={index}>
+                <li
+                  className="flex items-start gap-2"
+                  key={`${template.id}-instruction-${index}`}
+                >
                   <span className="mt-1 block h-1 w-1 flex-shrink-0 rounded-full bg-current" />
                   {instruction}
                 </li>
@@ -198,7 +207,10 @@ export function ActivityTemplatesDialog({
             <h4 className="font-medium text-sm">Completion Criteria</h4>
             <ul className="mt-2 space-y-1 text-muted-foreground text-xs">
               {template.completionCriteria.map((criteria, index) => (
-                <li className="flex items-start gap-2" key={index}>
+                <li
+                  className="flex items-start gap-2"
+                  key={`${template.id}-instruction-${index}`}
+                >
                   <span className="mt-1 block h-1 w-1 flex-shrink-0 rounded-full bg-current" />
                   {criteria}
                 </li>

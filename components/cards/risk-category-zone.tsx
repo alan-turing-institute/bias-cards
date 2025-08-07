@@ -19,7 +19,6 @@ interface RiskCategoryZoneProps {
   assignments: BiasRiskAssignment[];
   biasCards: BiasCard[];
   onRemoveCard: (cardId: string) => void;
-  isDragging?: boolean;
 }
 
 const CATEGORY_CONFIG: Record<
@@ -87,7 +86,6 @@ export function RiskCategoryZone({
   assignments,
   biasCards,
   onRemoveCard,
-  isDragging = false,
 }: RiskCategoryZoneProps) {
   const config = CATEGORY_CONFIG[category];
   const IconComponent = config.icon;
@@ -163,7 +161,7 @@ export function RiskCategoryZone({
                   >
                     <div className="group relative">
                       <BiasCardDropped
-                        card={card as any}
+                        card={card as unknown}
                         cardNumber={
                           card.displayNumber || String(card.id).padStart(2, '0')
                         }
@@ -185,6 +183,7 @@ export function RiskCategoryZone({
                           e.stopPropagation();
                           e.preventDefault();
                         }}
+                        type="button"
                       >
                         ×
                       </button>

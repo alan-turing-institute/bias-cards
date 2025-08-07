@@ -123,13 +123,15 @@ export default function TeamCollaborationPage() {
                           {member.avatar}
                         </div>
                         <div
-                          className={`-bottom-1 -right-1 absolute h-3 w-3 rounded-full border-2 border-background ${
-                            member.status === 'online'
-                              ? 'bg-green-500'
-                              : member.status === 'away'
-                                ? 'bg-yellow-500'
-                                : 'bg-gray-400'
-                          }`}
+                          className={`-bottom-1 -right-1 absolute h-3 w-3 rounded-full border-2 border-background ${(() => {
+                            if (member.status === 'online') {
+                              return 'bg-green-500';
+                            }
+                            if (member.status === 'away') {
+                              return 'bg-yellow-500';
+                            }
+                            return 'bg-gray-400';
+                          })()}`}
                         />
                       </div>
                       <div>

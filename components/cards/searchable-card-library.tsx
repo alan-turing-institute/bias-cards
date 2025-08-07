@@ -51,10 +51,10 @@ export function SearchableCardLibrary({
       'mitigation-technique': 0,
     };
 
-    cards.forEach((card) => {
+    for (const card of cards) {
       counts[card.category as CardCategory] =
         (counts[card.category as CardCategory] || 0) + 1;
-    });
+    }
 
     return counts;
   }, [cards]);

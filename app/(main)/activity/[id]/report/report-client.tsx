@@ -29,12 +29,32 @@ const RISK_COLORS = {
   'needs-discussion': 'bg-blue-100 border-blue-300 text-blue-800',
 };
 
+// Helper function to download a file
+function downloadFile(content: string, filename: string, mimeType: string) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const anchorEl = document.createElement('a');
+  anchorEl.href = url;
+  anchorEl.download = filename;
+  document.body.appendChild(anchorEl);
+  anchorEl.click();
+  document.body.removeChild(anchorEl);
+  URL.revokeObjectURL(url);
+}
+
+// Helper function to generate filename
+function generateFilename(title: string, extension: string): string {
+  return `bias-cards-report-${title
+    .toLowerCase()
+    .replace(/\s+/g, '-')}-${Date.now()}.${extension}`;
+}
+
 export default function ReportClient() {
   const params = useParams();
   const router = useRouter();
   const activityId = params.id as string;
 
-  const { getActivity, exportActivity } = useActivityStore();
+  const { getActivity } = useActivityStore();
   const { biasCards, mitigationCards, loadCards } = useCardsStore();
   const { stageAssignments, getBiasRiskAssignments, cardPairs } =
     useWorkspaceStore();
@@ -91,7 +111,9 @@ export default function ReportClient() {
 
           // Redirect to the new report
           router.push(`/reports/view?id=${reportId}`);
-        } catch (_error) {}
+        } catch (_error) {
+          // Silently handle error - report generation failed
+        }
       }
     };
 
@@ -169,42 +191,30 @@ export default function ReportClient() {
     };
   });
 
-  const handleExport = async (format: 'pdf' | 'markdown' | 'word' | 'json') => {
-    setIsExporting(true);
+  // Helper function to export JSON data
+  const exportJSON = () => {
+    const exportData = {
+      activity,
+      stageAssignments,
+      biasRiskAssignments,
+      cardPairs,
+      biasCards: biasCards.filter((c) =>
+        stageAssignments.some((assignment) => assignment.cardId === c.id)
+      ),
+      mitigationCards: mitigationCards.filter((c) =>
+        cardPairs.some((pair) => pair.mitigationId === c.id)
+      ),
+      exportedAt: new Date().toISOString(),
+    };
 
-    try {
-      if (format === 'json') {
-        // Export full activity data
-        const exportData = {
-          activity,
-          stageAssignments,
-          biasRiskAssignments,
-          cardPairs,
-          biasCards: biasCards.filter((c) =>
-            stageAssignments.some((a) => a.cardId === c.id)
-          ),
-          mitigationCards: mitigationCards.filter((c) =>
-            cardPairs.some((p) => p.mitigationId === c.id)
-          ),
-          exportedAt: new Date().toISOString(),
-        };
+    const content = JSON.stringify(exportData, null, 2);
+    const filename = generateFilename(activity.title, 'json');
+    downloadFile(content, filename, 'application/json');
+  };
 
-        const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-          type: 'application/json',
-        });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `bias-cards-report-${activity.title
-          .toLowerCase()
-          .replace(/\s+/g, '-')}-${Date.now()}.json`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-      } else if (format === 'markdown') {
-        // Generate markdown report
-        let markdown = `# Bias Cards Analysis Report
+  // Helper functions for building markdown sections
+  const buildMarkdownHeader = () => {
+    return `# Bias Cards Analysis Report
 
 ## ${activity.title}
 
@@ -213,13 +223,17 @@ export default function ReportClient() {
 **Generated:** ${new Date().toLocaleDateString()}
 
 ---
+`;
+  };
 
-## Summary Statistics
+  const buildMarkdownSummary = () => {
+    const ratioPercent = Math.round(
+      (assignmentsWithRationale / totalBiasCards) * 100
+    );
+    return `## Summary Statistics
 
 - **Total Bias Cards Identified:** ${totalBiasCards}
-- **Cards with Rationale:** ${assignmentsWithRationale} (${Math.round(
-          (assignmentsWithRationale / totalBiasCards) * 100
-        )}%)
+- **Cards with Rationale:** ${assignmentsWithRationale} (${ratioPercent}%)
 - **Total Mitigation Strategies:** ${totalMitigations}
 - **Mitigations with Effectiveness Rating:** ${pairsWithRating}
 - **Mitigations with Implementation Notes:** ${pairsWithNotes}
@@ -229,67 +243,108 @@ export default function ReportClient() {
 ## Bias Analysis by Lifecycle Stage
 
 `;
+  };
 
-        dataByStage.forEach(({ stageName, biasCards }) => {
-          if (biasCards.length === 0) {
-            return;
-          }
-
-          markdown += `### ${stageName}
-
+  const buildMitigationSection = (mitigation: {
+    name: string;
+    description: string;
+    effectivenessRating?: number;
+    notes?: string;
+  }) => {
+    let section = `- **${mitigation.name}**
+  - Description: ${mitigation.description}
 `;
-          biasCards.forEach((card: any) => {
-            markdown += `#### ${card.name}
+    if (mitigation.effectivenessRating) {
+      section += `  - Effectiveness Rating: ${mitigation.effectivenessRating}/5
+`;
+    }
+    if (mitigation.notes) {
+      section += `  - Implementation Notes: ${mitigation.notes}
+`;
+    }
+    return `${section}\n`;
+  };
+
+  const buildBiasCardSection = (card: {
+    name: string;
+    category: string;
+    riskCategory?: string;
+    description: string;
+    rationale?: string;
+    mitigations: Array<{
+      name: string;
+      description: string;
+      effectivenessRating?: number;
+      notes?: string;
+    }>;
+  }) => {
+    let section = `#### ${card.name}
 
 **Category:** ${card.category}  
 **Risk Level:** ${card.riskCategory || 'Not assessed'}  
 **Description:** ${card.description}
 
 `;
-            if (card.rationale) {
-              markdown += `**Rationale:** ${card.rationale}
+
+    if (card.rationale) {
+      section += `**Rationale:** ${card.rationale}
 
 `;
-            }
+    }
 
-            if (card.mitigations.length > 0) {
-              markdown += `**Mitigation Strategies:**
-
-`;
-              card.mitigations.forEach((mitigation: any) => {
-                markdown += `- **${mitigation.name}**
-  - Description: ${mitigation.description}
-`;
-                if (mitigation.effectivenessRating) {
-                  markdown += `  - Effectiveness Rating: ${mitigation.effectivenessRating}/5
-`;
-                }
-                if (mitigation.notes) {
-                  markdown += `  - Implementation Notes: ${mitigation.notes}
-`;
-                }
-                markdown += `
-`;
-              });
-            }
-
-            markdown += `---
+    if (card.mitigations.length > 0) {
+      section += `**Mitigation Strategies:**
 
 `;
-          });
-        });
+      for (const mitigation of card.mitigations) {
+        section += buildMitigationSection(mitigation);
+      }
+    }
 
-        const blob = new Blob([markdown], { type: 'text/markdown' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `bias-cards-report-${activity.title
-          .toLowerCase()
-          .replace(/\s+/g, '-')}-${Date.now()}.md`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
+    return `${section}---\n\n`;
+  };
+
+  // Main export markdown function (simplified)
+  const exportMarkdown = () => {
+    let markdown = buildMarkdownHeader();
+    markdown += buildMarkdownSummary();
+
+    for (const { stageName, biasCards: stageCards } of dataByStage) {
+      if (stageCards.length === 0) {
+        continue;
+      }
+
+      markdown += `### ${stageName}\n\n`;
+
+      for (const card of stageCards as Array<{
+        name: string;
+        category: string;
+        riskCategory?: string;
+        description: string;
+        rationale?: string;
+        mitigations: Array<{
+          name: string;
+          description: string;
+          effectivenessRating?: number;
+          notes?: string;
+        }>;
+      }>) {
+        markdown += buildBiasCardSection(card);
+      }
+    }
+
+    const filename = generateFilename(activity.title, 'md');
+    downloadFile(markdown, filename, 'text/markdown');
+  };
+
+  const handleExport = (format: 'pdf' | 'markdown' | 'word' | 'json') => {
+    setIsExporting(true);
+
+    try {
+      if (format === 'json') {
+        exportJSON();
+      } else if (format === 'markdown') {
+        exportMarkdown();
       } else {
         // PDF and Word export not yet implemented
         alert(`${format.toUpperCase()} export functionality coming soon!`);
@@ -472,75 +527,80 @@ export default function ReportClient() {
                 <h3 className="mb-4 font-semibold text-lg">
                   Bias Analysis by Lifecycle Stage
                 </h3>
-                {dataByStage.map(({ stage, stageName, biasCards }) => {
-                  if (biasCards.length === 0) {
-                    return null;
-                  }
+                {dataByStage.map(
+                  ({ stage, stageName, biasCards: stageCards }) => {
+                    if (stageCards.length === 0) {
+                      return null;
+                    }
 
-                  return (
-                    <div className="mb-6" key={stage}>
-                      <h4 className="mb-3 font-medium text-base">
-                        {stageName}
-                      </h4>
-                      <div className="space-y-3">
-                        {biasCards.map((card: any) => (
-                          <div className="rounded-md border p-4" key={card.id}>
-                            <div className="mb-2 flex items-center gap-2">
-                              <h5 className="font-medium">{card.name}</h5>
-                              {card.riskCategory && (
-                                <Badge
-                                  className={cn(
-                                    'text-xs',
-                                    RISK_COLORS[
-                                      card.riskCategory as keyof typeof RISK_COLORS
-                                    ]
-                                  )}
-                                >
-                                  {card.riskCategory.replace('-', ' ')}
-                                </Badge>
+                    return (
+                      <div className="mb-6" key={stage}>
+                        <h4 className="mb-3 font-medium text-base">
+                          {stageName}
+                        </h4>
+                        <div className="space-y-3">
+                          {stageCards.map((card) => (
+                            <div
+                              className="rounded-md border p-4"
+                              key={card.id}
+                            >
+                              <div className="mb-2 flex items-center gap-2">
+                                <h5 className="font-medium">{card.name}</h5>
+                                {card.riskCategory && (
+                                  <Badge
+                                    className={cn(
+                                      'text-xs',
+                                      RISK_COLORS[
+                                        card.riskCategory as keyof typeof RISK_COLORS
+                                      ]
+                                    )}
+                                  >
+                                    {card.riskCategory.replace('-', ' ')}
+                                  </Badge>
+                                )}
+                              </div>
+                              <p className="mb-2 text-muted-foreground text-sm">
+                                {card.description}
+                              </p>
+                              {card.rationale && (
+                                <div className="mb-2">
+                                  <p className="font-medium text-sm">
+                                    Rationale:
+                                  </p>
+                                  <p className="text-sm">{card.rationale}</p>
+                                </div>
+                              )}
+                              {card.mitigations.length > 0 && (
+                                <div>
+                                  <p className="mb-1 font-medium text-sm">
+                                    Mitigation Strategies:
+                                  </p>
+                                  <ul className="list-inside list-disc space-y-1 text-sm">
+                                    {card.mitigations.map((mitigation) => (
+                                      <li key={mitigation.id}>
+                                        <span className="font-medium">
+                                          {mitigation.name}
+                                        </span>
+                                        {mitigation.effectivenessRating && (
+                                          <span className="text-muted-foreground">
+                                            {' '}
+                                            (Rating:{' '}
+                                            {mitigation.effectivenessRating}
+                                            /5)
+                                          </span>
+                                        )}
+                                      </li>
+                                    ))}
+                                  </ul>
+                                </div>
                               )}
                             </div>
-                            <p className="mb-2 text-muted-foreground text-sm">
-                              {card.description}
-                            </p>
-                            {card.rationale && (
-                              <div className="mb-2">
-                                <p className="font-medium text-sm">
-                                  Rationale:
-                                </p>
-                                <p className="text-sm">{card.rationale}</p>
-                              </div>
-                            )}
-                            {card.mitigations.length > 0 && (
-                              <div>
-                                <p className="mb-1 font-medium text-sm">
-                                  Mitigation Strategies:
-                                </p>
-                                <ul className="list-inside list-disc space-y-1 text-sm">
-                                  {card.mitigations.map((mitigation: any) => (
-                                    <li key={mitigation.id}>
-                                      <span className="font-medium">
-                                        {mitigation.name}
-                                      </span>
-                                      {mitigation.effectivenessRating && (
-                                        <span className="text-muted-foreground">
-                                          {' '}
-                                          (Rating:{' '}
-                                          {mitigation.effectivenessRating}
-                                          /5)
-                                        </span>
-                                      )}
-                                    </li>
-                                  ))}
-                                </ul>
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  }
+                )}
               </div>
             </CardContent>
           </Card>

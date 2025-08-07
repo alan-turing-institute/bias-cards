@@ -61,6 +61,7 @@ export function EffectivenessRating({
                 // Add hover preview logic if needed
               }
             }}
+            type="button"
           >
             <Star
               className={cn(

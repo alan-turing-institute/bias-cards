@@ -174,24 +174,32 @@ export function DriveFileManager({
               </TableRow>
             </TableHeader>
             <TableBody>
-              {loading ? (
-                <TableRow>
-                  <TableCell className="py-8 text-center" colSpan={5}>
-                    <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin" />
-                    Loading files...
-                  </TableCell>
-                </TableRow>
-              ) : files.length === 0 ? (
-                <TableRow>
-                  <TableCell
-                    className="py-8 text-center text-muted-foreground"
-                    colSpan={5}
-                  >
-                    No files found
-                  </TableCell>
-                </TableRow>
-              ) : (
-                files.map((file) => (
+              {(() => {
+                if (loading) {
+                  return (
+                    <TableRow>
+                      <TableCell className="py-8 text-center" colSpan={5}>
+                        <RefreshCw className="mx-auto mb-2 h-6 w-6 animate-spin" />
+                        Loading files...
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+
+                if (files.length === 0) {
+                  return (
+                    <TableRow>
+                      <TableCell
+                        className="py-8 text-center text-muted-foreground"
+                        colSpan={5}
+                      >
+                        No files found
+                      </TableCell>
+                    </TableRow>
+                  );
+                }
+
+                return files.map((file) => (
                   <TableRow
                     className={cn(
                       'cursor-pointer hover:bg-muted/50',
@@ -217,8 +225,8 @@ export function DriveFileManager({
                       </Button>
                     </TableCell>
                   </TableRow>
-                ))
-              )}
+                ));
+              })()}
             </TableBody>
           </Table>
         </ScrollArea>

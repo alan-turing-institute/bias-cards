@@ -25,8 +25,8 @@ const STORAGE_KEY_PREFIX = 'bias-cards';
 
 export interface StorageManager {
   // localStorage operations
-  saveToLocalStorage: (key: string, data: any) => Promise<void>;
-  loadFromLocalStorage: (key: string) => Promise<any | null>;
+  saveToLocalStorage: (key: string, data: unknown) => Promise<void>;
+  loadFromLocalStorage: <T = unknown>(key: string) => Promise<T | null>;
   removeFromLocalStorage: (key: string) => Promise<void>;
   clearLocalStorage: () => Promise<void>;
 
@@ -53,59 +53,69 @@ class BrowserStorageManager implements StorageManager {
     return `${STORAGE_KEY_PREFIX}:${key}`;
   }
 
-  async saveToLocalStorage(key: string, data: any): Promise<void> {
-    try {
-      const serialized = JSON.stringify(data);
-      localStorage.setItem(this.getStorageKey(key), serialized);
-    } catch (error) {
-      throw new StorageError(
-        `Failed to save to localStorage: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'save'
-      );
-    }
-  }
-
-  async loadFromLocalStorage(key: string): Promise<any | null> {
-    try {
-      const serialized = localStorage.getItem(this.getStorageKey(key));
-      if (!serialized) {
-        return null;
+  saveToLocalStorage(key: string, data: unknown): Promise<void> {
+    return Promise.resolve().then(() => {
+      try {
+        const serialized = JSON.stringify(data);
+        localStorage.setItem(this.getStorageKey(key), serialized);
+      } catch (error) {
+        throw new StorageError(
+          `Failed to save to localStorage: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'save'
+        );
       }
-
-      return JSON.parse(serialized);
-    } catch (error) {
-      throw new StorageError(
-        `Failed to load from localStorage: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'load'
-      );
-    }
+    });
   }
 
-  async removeFromLocalStorage(key: string): Promise<void> {
-    try {
-      localStorage.removeItem(this.getStorageKey(key));
-    } catch (error) {
-      throw new StorageError(
-        `Failed to remove from localStorage: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'remove'
-      );
-    }
-  }
+  loadFromLocalStorage<T = unknown>(key: string): Promise<T | null> {
+    return Promise.resolve().then(() => {
+      try {
+        const serialized = localStorage.getItem(this.getStorageKey(key));
+        if (!serialized) {
+          return null;
+        }
 
-  async clearLocalStorage(): Promise<void> {
-    try {
-      const keys = Object.keys(localStorage);
-      const appKeys = keys.filter((key) => key.startsWith(STORAGE_KEY_PREFIX));
-
-      for (const key of appKeys) {
-        localStorage.removeItem(key);
+        return JSON.parse(serialized);
+      } catch (error) {
+        throw new StorageError(
+          `Failed to load from localStorage: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'load'
+        );
       }
-    } catch (error) {
-      throw new StorageError(
-        `Failed to clear localStorage: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'clear'
-      );
-    }
+    });
+  }
+
+  removeFromLocalStorage(key: string): Promise<void> {
+    return Promise.resolve().then(() => {
+      try {
+        localStorage.removeItem(this.getStorageKey(key));
+      } catch (error) {
+        throw new StorageError(
+          `Failed to remove from localStorage: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'remove'
+        );
+      }
+    });
+  }
+
+  clearLocalStorage(): Promise<void> {
+    return Promise.resolve().then(() => {
+      try {
+        const keys = Object.keys(localStorage);
+        const appKeys = keys.filter((key) =>
+          key.startsWith(STORAGE_KEY_PREFIX)
+        );
+
+        for (const key of appKeys) {
+          localStorage.removeItem(key);
+        }
+      } catch (error) {
+        throw new StorageError(
+          `Failed to clear localStorage: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'clear'
+        );
+      }
+    });
   }
 
   serializeWorkspace(workspace: WorkspaceState): SavedWorkspace {
@@ -128,13 +138,39 @@ class BrowserStorageManager implements StorageManager {
     }
   }
 
+  private getDefaultActivityProgress() {
+    return {
+      totalCards: 40,
+      assignedCards: 0,
+      pairedCards: 0,
+      completionPercentage: 0,
+      timeSpent: 0,
+      milestones: [],
+    };
+  }
+
+  private createWorkspaceFromSaved(workspace: WorkspaceState): WorkspaceState {
+    const now = new Date().toISOString();
+    return {
+      sessionId: workspace.sessionId || `restored-${Date.now()}`,
+      name: workspace.name,
+      createdAt: workspace.createdAt || now,
+      lastModified: workspace.lastModified || now,
+      stageAssignments: workspace.stageAssignments || [],
+      cardPairs: workspace.cardPairs || [],
+      selectedCardIds: workspace.selectedCardIds || [],
+      customAnnotations: workspace.customAnnotations || {},
+      completedStages: workspace.completedStages || [],
+      activityProgress:
+        workspace.activityProgress || this.getDefaultActivityProgress(),
+      currentStage: workspace.currentStage || 1,
+      completedActivityStages: workspace.completedActivityStages || [],
+      biasRiskAssignments: workspace.biasRiskAssignments || [],
+    };
+  }
+
   deserializeWorkspace(savedWorkspace: SavedWorkspace): WorkspaceState {
     try {
-      // Version compatibility check
-      if (savedWorkspace.version !== APP_VERSION) {
-        // In the future, implement migration logic here
-      }
-
       // Validate required fields
       if (!savedWorkspace.workspace) {
         throw new SerializationError(
@@ -142,31 +178,7 @@ class BrowserStorageManager implements StorageManager {
         );
       }
 
-      const workspace = savedWorkspace.workspace;
-
-      // Ensure all required fields exist with defaults
-      return {
-        sessionId: workspace.sessionId || `restored-${Date.now()}`,
-        name: workspace.name,
-        createdAt: workspace.createdAt || new Date().toISOString(),
-        lastModified: workspace.lastModified || new Date().toISOString(),
-        stageAssignments: workspace.stageAssignments || [],
-        cardPairs: workspace.cardPairs || [],
-        selectedCardIds: workspace.selectedCardIds || [],
-        customAnnotations: workspace.customAnnotations || {},
-        completedStages: workspace.completedStages || [],
-        activityProgress: workspace.activityProgress || {
-          totalCards: 40,
-          assignedCards: 0,
-          pairedCards: 0,
-          completionPercentage: 0,
-          timeSpent: 0,
-          milestones: [],
-        },
-        currentStage: workspace.currentStage || 1,
-        completedActivityStages: workspace.completedActivityStages || [],
-        biasRiskAssignments: workspace.biasRiskAssignments || [],
-      };
+      return this.createWorkspaceFromSaved(savedWorkspace.workspace);
     } catch (error) {
       throw new SerializationError(
         `Failed to deserialize workspace: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -175,20 +187,22 @@ class BrowserStorageManager implements StorageManager {
     }
   }
 
-  async listSavedSessions(): Promise<string[]> {
-    try {
-      const keys = Object.keys(localStorage);
-      const sessionKeys = keys
-        .filter((key) => key.startsWith(this.getStorageKey('session:')))
-        .map((key) => key.replace(this.getStorageKey('session:'), ''));
+  listSavedSessions(): Promise<string[]> {
+    return Promise.resolve().then(() => {
+      try {
+        const keys = Object.keys(localStorage);
+        const sessionKeys = keys
+          .filter((key) => key.startsWith(this.getStorageKey('session:')))
+          .map((key) => key.replace(this.getStorageKey('session:'), ''));
 
-      return sessionKeys;
-    } catch (error) {
-      throw new StorageError(
-        `Failed to list saved sessions: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        'list'
-      );
-    }
+        return sessionKeys;
+      } catch (error) {
+        throw new StorageError(
+          `Failed to list saved sessions: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          'list'
+        );
+      }
+    });
   }
 
   async saveSession(
@@ -218,7 +232,9 @@ class BrowserStorageManager implements StorageManager {
     return window.setInterval(async () => {
       try {
         await this.saveSession(workspace.sessionId, workspace);
-      } catch (_error) {}
+      } catch (_error) {
+        // Handle error silently
+      }
     }, intervalSeconds * 1000);
   }
 

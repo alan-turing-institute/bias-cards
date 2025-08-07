@@ -4,6 +4,9 @@ import type { BiasCard, LifecycleStage, MitigationCard } from '@/lib/types';
  * Matching score calculation for bias-mitigation pairs
  */
 
+// Top-level regex for splitting words
+const WORD_SPLIT_REGEX = /\s+/;
+
 interface MatchingScore {
   mitigationId: string;
   score: number;
@@ -104,98 +107,104 @@ const STAGE_RELEVANCE: Record<string, LifecycleStage[]> = {
   'skills-and-training': ['user-training', 'system-implementation'],
 };
 
-/**
- * Calculate how well a mitigation matches a specific bias
- */
-export function calculateMatchingScore(
+// Helper function for category matching
+function calculateCategoryScore(
   bias: BiasCard,
-  mitigation: MitigationCard,
-  currentStage?: LifecycleStage
-): MatchingScore {
-  const reasons: string[] = [];
-  let score = 0;
-
-  // 1. Category-based matching (30 points max)
+  mitigationText: string
+): { score: number; reason?: string } {
   const biasKeywords = BIAS_CATEGORY_KEYWORDS[bias.category] || [];
-  const biasText = `${bias.description} ${bias.example}`.toLowerCase();
-  const mitigationText =
-    `${mitigation.description} ${mitigation.example}`.toLowerCase();
-
   let categoryMatchCount = 0;
-  biasKeywords.forEach((keyword) => {
+
+  for (const keyword of biasKeywords) {
     if (mitigationText.includes(keyword)) {
       categoryMatchCount++;
     }
-  });
-
-  if (categoryMatchCount > 0) {
-    score += Math.min(30, categoryMatchCount * 10);
-    reasons.push(`Addresses ${bias.category.replace('-', ' ')} concerns`);
   }
 
-  // 2. Keyword matching between bias and mitigation (30 points max)
-  const biasWords = new Set(biasText.split(/\s+/).filter((w) => w.length > 4));
+  if (categoryMatchCount > 0) {
+    return {
+      score: Math.min(30, categoryMatchCount * 10),
+      reason: `Addresses ${bias.category.replace('-', ' ')} concerns`,
+    };
+  }
+  return { score: 0 };
+}
+
+// Helper function for keyword overlap
+function calculateKeywordOverlapScore(
+  biasText: string,
+  mitigationText: string
+): { score: number; reason?: string } {
+  const biasWords = new Set(
+    biasText.split(WORD_SPLIT_REGEX).filter((w) => w.length > 4)
+  );
   const mitigationWords = new Set(
-    mitigationText.split(/\s+/).filter((w) => w.length > 4)
+    mitigationText.split(WORD_SPLIT_REGEX).filter((w) => w.length > 4)
   );
 
   let keywordOverlap = 0;
-  biasWords.forEach((word) => {
+  for (const word of biasWords) {
     if (mitigationWords.has(word)) {
       keywordOverlap++;
     }
-  });
-
-  if (keywordOverlap > 0) {
-    score += Math.min(30, keywordOverlap * 5);
-    reasons.push('Directly addresses bias characteristics');
   }
 
-  // 3. Mitigation type analysis (20 points max)
+  if (keywordOverlap > 0) {
+    return {
+      score: Math.min(30, keywordOverlap * 5),
+      reason: 'Directly addresses bias characteristics',
+    };
+  }
+  return { score: 0 };
+}
+
+// Helper function for mitigation type matching
+function calculateMitigationTypeScore(
+  bias: BiasCard,
+  mitigation: MitigationCard,
+  mitigationText: string
+): { score: number; reason?: string } {
   let mitigationTypeScore = 0;
-  Object.entries(MITIGATION_KEYWORDS).forEach(([type, keywords]) => {
+
+  for (const [type, keywords] of Object.entries(MITIGATION_KEYWORDS)) {
     const typeMatch = keywords.some(
       (keyword) =>
         mitigation.name.toLowerCase().includes(keyword) ||
         mitigationText.includes(keyword)
     );
 
-    if (typeMatch) {
-      // Check if this mitigation type is relevant to the bias category
-      if (
-        (type === 'review' && bias.category === 'cognitive-bias') ||
+    if (
+      typeMatch &&
+      ((type === 'review' && bias.category === 'cognitive-bias') ||
         (type === 'diversity' && bias.category === 'social-bias') ||
         (type === 'data' && bias.category === 'statistical-bias') ||
         (type === 'human' && bias.category !== 'statistical-bias') ||
-        (type === 'technical' && bias.category === 'statistical-bias')
-      ) {
-        mitigationTypeScore += 10;
-      }
+        (type === 'technical' && bias.category === 'statistical-bias'))
+    ) {
+      mitigationTypeScore += 10;
     }
-  });
+  }
 
   if (mitigationTypeScore > 0) {
-    score += Math.min(20, mitigationTypeScore);
-    reasons.push('Mitigation type matches bias nature');
+    return {
+      score: Math.min(20, mitigationTypeScore),
+      reason: 'Mitigation type matches bias nature',
+    };
   }
+  return { score: 0 };
+}
 
-  // 4. Stage relevance (20 points max)
-  if (currentStage) {
-    const relevantStages = STAGE_RELEVANCE[mitigation.title] || [];
-    if (relevantStages.includes(currentStage)) {
-      score += 20;
-      reasons.push('Highly relevant to current lifecycle stage');
-    }
-  }
-
-  // 5. Special case bonuses
+// Helper function for special case bonuses
+function calculateSpecialCaseBonus(
+  bias: BiasCard,
+  mitigation: MitigationCard
+): { score: number; reason?: string } {
   // Peer review is good for all cognitive biases
   if (
     bias.category === 'cognitive-bias' &&
     mitigation.title === 'peer-review'
   ) {
-    score += 10;
-    reasons.push('Peer review helps identify cognitive biases');
+    return { score: 10, reason: 'Peer review helps identify cognitive biases' };
   }
 
   // Stakeholder engagement is crucial for social biases
@@ -205,8 +214,10 @@ export function calculateMatchingScore(
       mitigation.title
     )
   ) {
-    score += 10;
-    reasons.push('Community involvement essential for social bias');
+    return {
+      score: 10,
+      reason: 'Community involvement essential for social bias',
+    };
   }
 
   // Data techniques are key for statistical biases
@@ -218,27 +229,93 @@ export function calculateMatchingScore(
       'quality-control-procedures',
     ].includes(mitigation.title)
   ) {
-    score += 10;
-    reasons.push('Data-focused approach for statistical bias');
+    return { score: 10, reason: 'Data-focused approach for statistical bias' };
   }
 
-  // Calculate predicted effectiveness (1-5 scale)
-  let predictedEffectiveness = 1;
+  return { score: 0 };
+}
+
+// Helper function to calculate effectiveness
+function calculateEffectiveness(score: number): number {
   if (score >= 80) {
-    predictedEffectiveness = 5;
-  } else if (score >= 60) {
-    predictedEffectiveness = 4;
-  } else if (score >= 40) {
-    predictedEffectiveness = 3;
-  } else if (score >= 20) {
-    predictedEffectiveness = 2;
+    return 5;
   }
+  if (score >= 60) {
+    return 4;
+  }
+  if (score >= 40) {
+    return 3;
+  }
+  if (score >= 20) {
+    return 2;
+  }
+  return 1;
+}
+
+/**
+ * Calculate how well a mitigation matches a specific bias
+ */
+function addScoreResult(
+  result: { score: number; reason?: string },
+  totalScore: number,
+  reasons: string[]
+): number {
+  if (result.score <= 0) {
+    return totalScore;
+  }
+
+  if (result.reason) {
+    reasons.push(result.reason);
+  }
+  return totalScore + result.score;
+}
+
+export function calculateMatchingScore(
+  bias: BiasCard,
+  mitigation: MitigationCard,
+  currentStage?: LifecycleStage
+): MatchingScore {
+  const reasons: string[] = [];
+  let totalScore = 0;
+
+  const biasText = `${bias.description} ${bias.example}`.toLowerCase();
+  const mitigationText =
+    `${mitigation.description} ${mitigation.example}`.toLowerCase();
+
+  // 1. Category-based matching
+  const categoryResult = calculateCategoryScore(bias, mitigationText);
+  totalScore = addScoreResult(categoryResult, totalScore, reasons);
+
+  // 2. Keyword matching
+  const keywordResult = calculateKeywordOverlapScore(biasText, mitigationText);
+  totalScore = addScoreResult(keywordResult, totalScore, reasons);
+
+  // 3. Mitigation type analysis
+  const typeResult = calculateMitigationTypeScore(
+    bias,
+    mitigation,
+    mitigationText
+  );
+  totalScore = addScoreResult(typeResult, totalScore, reasons);
+
+  // 4. Stage relevance
+  if (currentStage) {
+    const relevantStages = STAGE_RELEVANCE[mitigation.title] || [];
+    if (relevantStages.includes(currentStage)) {
+      totalScore += 20;
+      reasons.push('Highly relevant to current lifecycle stage');
+    }
+  }
+
+  // 5. Special case bonuses
+  const specialResult = calculateSpecialCaseBonus(bias, mitigation);
+  totalScore = addScoreResult(specialResult, totalScore, reasons);
 
   return {
     mitigationId: mitigation.id,
-    score,
+    score: totalScore,
     reasons,
-    predictedEffectiveness,
+    predictedEffectiveness: calculateEffectiveness(totalScore),
   };
 }
 

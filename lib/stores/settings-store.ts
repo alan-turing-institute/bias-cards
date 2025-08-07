@@ -40,7 +40,11 @@ export const useSettingsStore = create<SettingsStoreState>()(
           set((state) => ({
             ...state,
             ...settings,
-            settings: { ...state.settings, ...settings },
+            settings: {
+              ...defaultSettings,
+              ...state.settings,
+              ...settings,
+            },
           }));
         },
 

@@ -88,9 +88,15 @@ function PairEditDialog({
 
           {/* Effectiveness Rating */}
           <div className="space-y-2">
-            <label className="font-medium text-sm">Effectiveness Rating</label>
+            <label
+              className="font-medium text-sm"
+              htmlFor="effectiveness-rating"
+            >
+              Effectiveness Rating
+            </label>
             <div className="flex items-center gap-3">
               <EffectivenessRating
+                id="effectiveness-rating"
                 onChange={setEffectivenessRating}
                 size="lg"
                 value={effectivenessRating}
@@ -103,11 +109,15 @@ function PairEditDialog({
 
           {/* Annotation */}
           <div className="space-y-2">
-            <label className="font-medium text-sm">
+            <label
+              className="font-medium text-sm"
+              htmlFor="annotation-textarea"
+            >
               Annotation{' '}
               <span className="text-muted-foreground">(optional)</span>
             </label>
             <Textarea
+              id="annotation-textarea"
               onChange={(e) => setAnnotation(e.target.value)}
               placeholder="Add notes about this pairing..."
               rows={3}

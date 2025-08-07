@@ -106,13 +106,15 @@ export function ActivityProgressIndicator({
                 <Tooltip key={gate.id}>
                   <TooltipTrigger asChild>
                     <div
-                      className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors ${
-                        gate.passed
-                          ? 'border border-green-200 bg-green-50 text-green-700'
-                          : gate.required
-                            ? 'border border-red-200 bg-red-50 text-red-700'
-                            : 'border border-amber-200 bg-amber-50 text-amber-700'
-                      }`}
+                      className={`flex items-center gap-1.5 rounded-md px-2 py-1 text-xs transition-colors ${(() => {
+                        if (gate.passed) {
+                          return 'border border-green-200 bg-green-50 text-green-700';
+                        }
+                        if (gate.required) {
+                          return 'border border-red-200 bg-red-50 text-red-700';
+                        }
+                        return 'border border-amber-200 bg-amber-50 text-amber-700';
+                      })()}`}
                     >
                       {getGateIcon(gate)}
                       <span className="font-medium">{gate.name}</span>
@@ -150,7 +152,10 @@ export function ActivityProgressIndicator({
                 </p>
                 <div className="space-y-1">
                   {validation.missingRequirements.slice(0, 2).map((req, i) => (
-                    <div className="flex items-start gap-2" key={i}>
+                    <div
+                      className="flex items-start gap-2"
+                      key={`missing-requirement-${i}-${req.slice(0, 15)}`}
+                    >
                       <div className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-red-500" />
                       <p className="text-muted-foreground text-xs leading-tight">
                         {req}

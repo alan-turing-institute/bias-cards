@@ -71,11 +71,25 @@ export function DriveSyncButton({
     }
   };
 
-  const getTooltipContent = () => {
-    if (!isAuthenticated) {
-      return 'Sign in to enable cloud sync';
+  const getTimeAgoText = (syncTime: Date) => {
+    const timeAgo = Math.floor((Date.now() - syncTime.getTime()) / 60_000);
+    if (timeAgo < 1) {
+      return 'Just synced';
     }
+    if (timeAgo === 1) {
+      return '1 minute ago';
+    }
+    if (timeAgo < 60) {
+      return `${timeAgo} minutes ago`;
+    }
+    const hoursAgo = Math.floor(timeAgo / 60);
+    if (hoursAgo === 1) {
+      return '1 hour ago';
+    }
+    return `${hoursAgo} hours ago`;
+  };
 
+  const getSyncStatusText = () => {
     switch (syncStatus) {
       case 'syncing':
         return 'Syncing...';
@@ -84,27 +98,25 @@ export function DriveSyncButton({
       case 'error':
         return 'Sync failed';
       default:
-        if (lastSyncTime) {
-          const timeAgo = Math.floor(
-            (Date.now() - lastSyncTime.getTime()) / 60_000
-          );
-          if (timeAgo < 1) {
-            return 'Just synced';
-          }
-          if (timeAgo === 1) {
-            return '1 minute ago';
-          }
-          if (timeAgo < 60) {
-            return `${timeAgo} minutes ago`;
-          }
-          const hoursAgo = Math.floor(timeAgo / 60);
-          if (hoursAgo === 1) {
-            return '1 hour ago';
-          }
-          return `${hoursAgo} hours ago`;
-        }
-        return 'Sync to Google Drive';
+        return null;
     }
+  };
+
+  const getTooltipContent = () => {
+    if (!isAuthenticated) {
+      return 'Sign in to enable cloud sync';
+    }
+
+    const statusText = getSyncStatusText();
+    if (statusText) {
+      return statusText;
+    }
+
+    if (lastSyncTime) {
+      return getTimeAgoText(lastSyncTime);
+    }
+
+    return 'Sync to Google Drive';
   };
 
   return (

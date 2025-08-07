@@ -10,13 +10,13 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 
-export interface BreadcrumbItem {
+export interface PageBreadcrumbItem {
   label: string;
   href?: string;
 }
 
 interface PageHeaderProps {
-  breadcrumbs?: BreadcrumbItem[];
+  breadcrumbs?: PageBreadcrumbItem[];
   title?: string;
   description?: string;
   children?: ReactNode;

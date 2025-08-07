@@ -82,7 +82,6 @@ export function ActivityCombobox({
         <Button
           aria-expanded={open}
           className={cn('w-full justify-between', className)}
-          role="combobox"
           variant="outline"
         >
           {selectedActivity ? (

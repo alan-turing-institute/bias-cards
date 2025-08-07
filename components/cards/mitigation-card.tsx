@@ -53,7 +53,7 @@ export function MitigationCard({
                   ? colors.bg.replace('bg-', 'bg-').replace('/10', '')
                   : 'bg-gray-200'
               )}
-              key={`effectiveness-${i}`}
+              key={`effectiveness-${card.id}-${i}`}
             />
           ))}
         </div>

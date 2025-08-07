@@ -15,8 +15,24 @@ interface AnimatedCardProps extends HTMLAttributes<HTMLDivElement> {
 const cardVariants: Variants = {
   hidden: (direction: string) => ({
     opacity: 0,
-    x: direction === 'left' ? -50 : direction === 'right' ? 50 : 0,
-    y: direction === 'up' ? -50 : direction === 'down' ? 50 : 0,
+    x: (() => {
+      if (direction === 'left') {
+        return -50;
+      }
+      if (direction === 'right') {
+        return 50;
+      }
+      return 0;
+    })(),
+    y: (() => {
+      if (direction === 'up') {
+        return -50;
+      }
+      if (direction === 'down') {
+        return 50;
+      }
+      return 0;
+    })(),
   }),
   visible: {
     opacity: 1,

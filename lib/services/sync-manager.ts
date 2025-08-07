@@ -1,6 +1,8 @@
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useReportsStore } from '@/lib/stores/reports-store';
 import { useWorkspaceStore } from '@/lib/stores/workspace-store';
+import type { Activity } from '@/lib/types/activity';
+import type { Report } from '@/lib/types/reports';
 import { googleDriveService } from './google-drive';
 
 export interface SyncResult {
@@ -29,6 +31,80 @@ class SyncManager {
       SyncManager.instance = new SyncManager();
     }
     return SyncManager.instance;
+  }
+
+  private async syncActivities(
+    folderId: string | null,
+    errors: string[]
+  ): Promise<void> {
+    try {
+      const activityStore = useActivityStore.getState();
+      const activities = activityStore.activities;
+
+      if (activities.length > 0) {
+        await googleDriveService.saveFile({
+          fileName: 'activities-backup.json',
+          content: JSON.stringify(activities, null, 2),
+          folderId: folderId || undefined,
+        });
+      }
+    } catch (error) {
+      errors.push(`Failed to sync activities: ${error}`);
+    }
+  }
+
+  private async syncWorkspaces(
+    folderId: string | null,
+    errors: string[]
+  ): Promise<void> {
+    try {
+      const workspaceStore = useWorkspaceStore.getState();
+      // Save the current workspace state
+      const workspaceData = {
+        sessionId: workspaceStore.sessionId,
+        name: workspaceStore.name,
+        createdAt: workspaceStore.createdAt,
+        lastModified: workspaceStore.lastModified,
+        activityId: workspaceStore.activityId,
+        currentStage: workspaceStore.currentStage,
+        completedActivityStages: workspaceStore.completedActivityStages,
+        biasRiskAssignments: workspaceStore.biasRiskAssignments,
+        stageAssignments: workspaceStore.stageAssignments,
+        cardPairs: workspaceStore.cardPairs,
+        selectedCardIds: workspaceStore.selectedCardIds,
+        customAnnotations: workspaceStore.customAnnotations,
+        completedStages: workspaceStore.completedStages,
+        activityProgress: workspaceStore.activityProgress,
+      };
+
+      await googleDriveService.saveFile({
+        fileName: 'workspace-backup.json',
+        content: JSON.stringify(workspaceData, null, 2),
+        folderId: folderId || undefined,
+      });
+    } catch (error) {
+      errors.push(`Failed to sync workspaces: ${error}`);
+    }
+  }
+
+  private async syncReports(
+    folderId: string | null,
+    errors: string[]
+  ): Promise<void> {
+    try {
+      const reportsStore = useReportsStore.getState();
+      const reports = reportsStore.reports;
+
+      if (reports.length > 0) {
+        await googleDriveService.saveFile({
+          fileName: 'reports-backup.json',
+          content: JSON.stringify(reports, null, 2),
+          folderId: folderId || undefined,
+        });
+      }
+    } catch (error) {
+      errors.push(`Failed to sync reports: ${error}`);
+    }
   }
 
   async syncToGoogleDrive(
@@ -66,56 +142,17 @@ class SyncManager {
 
       // Sync activities
       if (options.activities) {
-        try {
-          const activityStore = useActivityStore.getState();
-          const activities = activityStore.activities;
-
-          if (activities.length > 0) {
-            await googleDriveService.saveFile({
-              fileName: 'activities-backup.json',
-              content: JSON.stringify(activities, null, 2),
-              folderId: activitiesFolder || undefined,
-            });
-          }
-        } catch (error) {
-          errors.push(`Failed to sync activities: ${error}`);
-        }
+        await this.syncActivities(activitiesFolder, errors);
       }
 
       // Sync workspaces
       if (options.workspaces) {
-        try {
-          const workspaceStore = useWorkspaceStore.getState();
-          const workspaces = workspaceStore.workspaces;
-
-          if (workspaces.length > 0) {
-            await googleDriveService.saveFile({
-              fileName: 'workspaces-backup.json',
-              content: JSON.stringify(workspaces, null, 2),
-              folderId: workspacesFolder || undefined,
-            });
-          }
-        } catch (error) {
-          errors.push(`Failed to sync workspaces: ${error}`);
-        }
+        await this.syncWorkspaces(workspacesFolder, errors);
       }
 
       // Sync reports
       if (options.reports) {
-        try {
-          const reportsStore = useReportsStore.getState();
-          const reports = reportsStore.reports;
-
-          if (reports.length > 0) {
-            await googleDriveService.saveFile({
-              fileName: 'reports-backup.json',
-              content: JSON.stringify(reports, null, 2),
-              folderId: reportsFolder || undefined,
-            });
-          }
-        } catch (error) {
-          errors.push(`Failed to sync reports: ${error}`);
-        }
+        await this.syncReports(reportsFolder, errors);
       }
 
       // Save sync metadata
@@ -159,6 +196,82 @@ class SyncManager {
     }
   }
 
+  private async loadActivities(errors: string[]): Promise<void> {
+    try {
+      const activitiesData = await googleDriveService.loadFile({
+        fileName: 'activities-backup.json',
+      });
+
+      if (activitiesData) {
+        const activities = JSON.parse(activitiesData);
+        const activityStore = useActivityStore.getState();
+
+        // Merge or replace activities based on timestamp
+        for (const activity of activities as Activity[]) {
+          const existing = activityStore.getActivity(activity.id);
+          if (
+            !existing ||
+            new Date(activity.lastModified) > new Date(existing.lastModified)
+          ) {
+            activityStore.updateActivity(activity.id, activity);
+          }
+        }
+      }
+    } catch (error) {
+      errors.push(`Failed to load activities: ${error}`);
+    }
+  }
+
+  private async loadWorkspaces(errors: string[]): Promise<void> {
+    try {
+      const workspaceData = await googleDriveService.loadFile({
+        fileName: 'workspace-backup.json',
+      });
+
+      if (workspaceData) {
+        const workspace = JSON.parse(workspaceData);
+        const workspaceStore = useWorkspaceStore.getState();
+
+        // Update the workspace if the backup is newer
+        if (
+          !workspaceStore.lastModified ||
+          new Date(workspace.lastModified) >
+            new Date(workspaceStore.lastModified)
+        ) {
+          // Reset and restore workspace state
+          workspaceStore.resetWorkspace();
+          Object.assign(workspaceStore, workspace);
+        }
+      }
+    } catch (error) {
+      errors.push(`Failed to load workspaces: ${error}`);
+    }
+  }
+
+  private async loadReports(errors: string[]): Promise<void> {
+    try {
+      const reportsData = await googleDriveService.loadFile({
+        fileName: 'reports-backup.json',
+      });
+
+      if (reportsData) {
+        const reports = JSON.parse(reportsData);
+        const reportsStore = useReportsStore.getState();
+
+        // Merge or replace reports
+        for (const report of reports as Report[]) {
+          const existing = reportsStore.getReport(report.id);
+          if (!existing) {
+            // Add report if it doesn't exist
+            reportsStore.reports.push(report);
+          }
+        }
+      }
+    } catch (error) {
+      errors.push(`Failed to load reports: ${error}`);
+    }
+  }
+
   async loadFromGoogleDrive(
     accessToken: string,
     options: SyncOptions = {
@@ -181,85 +294,16 @@ class SyncManager {
     try {
       googleDriveService.setAccessToken(accessToken);
 
-      // Load activities
       if (options.activities) {
-        try {
-          const activitiesData = await googleDriveService.loadFile({
-            fileName: 'activities-backup.json',
-          });
-
-          if (activitiesData) {
-            const activities = JSON.parse(activitiesData);
-            const activityStore = useActivityStore.getState();
-
-            // Merge or replace activities based on timestamp
-            activities.forEach((activity: any) => {
-              const existing = activityStore.getActivity(activity.id);
-              if (
-                !existing ||
-                new Date(activity.lastModified) >
-                  new Date(existing.lastModified)
-              ) {
-                activityStore.updateActivity(activity.id, activity);
-              }
-            });
-          }
-        } catch (error) {
-          errors.push(`Failed to load activities: ${error}`);
-        }
+        await this.loadActivities(errors);
       }
 
-      // Load workspaces
       if (options.workspaces) {
-        try {
-          const workspacesData = await googleDriveService.loadFile({
-            fileName: 'workspaces-backup.json',
-          });
-
-          if (workspacesData) {
-            const workspaces = JSON.parse(workspacesData);
-            const workspaceStore = useWorkspaceStore.getState();
-
-            // Merge or replace workspaces
-            workspaces.forEach((workspace: any) => {
-              const existing = workspaceStore.getWorkspace(workspace.id);
-              if (
-                !existing ||
-                new Date(workspace.lastModified) >
-                  new Date(existing.lastModified)
-              ) {
-                workspaceStore.updateWorkspace(workspace.id, workspace);
-              }
-            });
-          }
-        } catch (error) {
-          errors.push(`Failed to load workspaces: ${error}`);
-        }
+        await this.loadWorkspaces(errors);
       }
 
-      // Load reports
       if (options.reports) {
-        try {
-          const reportsData = await googleDriveService.loadFile({
-            fileName: 'reports-backup.json',
-          });
-
-          if (reportsData) {
-            const reports = JSON.parse(reportsData);
-            const reportsStore = useReportsStore.getState();
-
-            // Merge or replace reports
-            reports.forEach((report: any) => {
-              const existing = reportsStore.getReport(report.id);
-              if (!existing) {
-                // Add report if it doesn't exist
-                reportsStore.reports.push(report);
-              }
-            });
-          }
-        } catch (error) {
-          errors.push(`Failed to load reports: ${error}`);
-        }
+        await this.loadReports(errors);
       }
 
       this.lastSyncTime = new Date();
@@ -285,7 +329,7 @@ class SyncManager {
     }
   }
 
-  async performAutoSync(accessToken: string): Promise<SyncResult> {
+  performAutoSync(accessToken: string): Promise<SyncResult> {
     // Check last sync time
     if (this.lastSyncTime) {
       const timeSinceLastSync = Date.now() - this.lastSyncTime.getTime();

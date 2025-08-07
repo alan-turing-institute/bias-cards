@@ -98,6 +98,7 @@ export function ToastProvider({ children }: ToastProviderProps) {
                   <button
                     className="flex-shrink-0 opacity-70 transition-opacity hover:opacity-100"
                     onClick={() => removeToast(toast.id)}
+                    type="button"
                   >
                     <X className="h-4 w-4" />
                   </button>

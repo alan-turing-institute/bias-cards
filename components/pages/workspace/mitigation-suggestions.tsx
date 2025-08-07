@@ -16,17 +16,26 @@ interface MitigationSuggestionsProps {
   className?: string;
 }
 
+function getScoreColorClass(score: number): string {
+  if (score >= 80) {
+    return 'text-green-700';
+  }
+  if (score >= 60) {
+    return 'text-amber-700';
+  }
+  if (score >= 40) {
+    return 'text-orange-700';
+  }
+  return 'text-gray-700';
+}
+
 export function MitigationSuggestions({
   biasId,
   className,
 }: MitigationSuggestionsProps) {
   const { biasCards } = useCardsStore();
-  const {
-    getSuggestedMitigationsForBias,
-    createCardPair,
-    cardPairs,
-    getPairsForBias,
-  } = useWorkspaceStore();
+  const { getSuggestedMitigationsForBias, createCardPair, getPairsForBias } =
+    useWorkspaceStore();
 
   const bias = biasCards.find((b) => b.id === biasId);
   const suggestions = getSuggestedMitigationsForBias(biasId);
@@ -92,13 +101,7 @@ export function MitigationSuggestions({
                         <span
                           className={cn(
                             'font-medium text-xs',
-                            score >= 80
-                              ? 'text-green-700'
-                              : score >= 60
-                                ? 'text-amber-700'
-                                : score >= 40
-                                  ? 'text-orange-700'
-                                  : 'text-gray-700'
+                            getScoreColorClass(score)
                           )}
                         >
                           {matchQuality}
@@ -116,7 +119,10 @@ export function MitigationSuggestions({
                   {/* Match reasons */}
                   <div className="mt-2 space-y-1">
                     {reasons.slice(0, 2).map((reason, idx) => (
-                      <div className="flex items-start gap-1" key={idx}>
+                      <div
+                        className="flex items-start gap-1"
+                        key={`${mitigation.id}-reason-${idx}`}
+                      >
                         <Info className="mt-0.5 h-3 w-3 text-muted-foreground" />
                         <span className="text-muted-foreground text-xs">
                           {reason}

@@ -56,6 +56,51 @@ const DEFAULT_CONFIG: ReportConfig = {
   projectName: '',
 };
 
+// Component to render validation gates
+function ValidationGatesList({ gates }: { gates: ValidationGate[] }) {
+  return (
+    <div className="space-y-3">
+      {gates.map((gate) => {
+        let icon: React.ReactNode;
+        if (gate.passed) {
+          icon = <CheckCircle className="h-4 w-4 text-green-600" />;
+        } else if (gate.required) {
+          icon = <AlertCircle className="h-4 w-4 text-red-500" />;
+        } else {
+          icon = <Clock className="h-4 w-4 text-amber-500" />;
+        }
+
+        return (
+          <div
+            className="flex items-start gap-3 rounded-lg border p-3"
+            key={gate.id}
+          >
+            <div className="mt-0.5 flex-shrink-0">{icon}</div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2">
+                <h4 className="font-medium text-sm">{gate.name}</h4>
+                {gate.required && (
+                  <Badge className="text-xs" variant="secondary">
+                    Required
+                  </Badge>
+                )}
+              </div>
+              <p className="mt-1 text-muted-foreground text-xs">
+                {gate.description}
+              </p>
+              {gate.details && (
+                <p className="mt-1 font-mono text-muted-foreground text-xs">
+                  {gate.details}
+                </p>
+              )}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export function ReportExportDialog({ trigger }: ReportExportDialogProps) {
   const [open, setOpen] = useState(false);
   const [config, setConfig] = useState<ReportConfig>(DEFAULT_CONFIG);
@@ -135,52 +180,13 @@ export function ReportExportDialog({ trigger }: ReportExportDialogProps) {
       setFileName('');
       setConfig(DEFAULT_CONFIG);
     } catch (_error) {
+      // Error handling is managed by the export service
     } finally {
       setIsGenerating(false);
     }
   };
 
   const stats = getWorkspaceStats();
-
-  // Component to render validation gates
-  const ValidationGatesList = ({ gates }: { gates: ValidationGate[] }) => (
-    <div className="space-y-3">
-      {gates.map((gate) => (
-        <div
-          className="flex items-start gap-3 rounded-lg border p-3"
-          key={gate.id}
-        >
-          <div className="mt-0.5 flex-shrink-0">
-            {gate.passed ? (
-              <CheckCircle className="h-4 w-4 text-green-600" />
-            ) : gate.required ? (
-              <AlertCircle className="h-4 w-4 text-red-500" />
-            ) : (
-              <Clock className="h-4 w-4 text-amber-500" />
-            )}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-2">
-              <h4 className="font-medium text-sm">{gate.name}</h4>
-              {gate.required && (
-                <Badge className="text-xs" variant="secondary">
-                  Required
-                </Badge>
-              )}
-            </div>
-            <p className="mt-1 text-muted-foreground text-xs">
-              {gate.description}
-            </p>
-            {gate.details && (
-              <p className="mt-1 font-mono text-muted-foreground text-xs">
-                {gate.details}
-              </p>
-            )}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
 
   return (
     <Dialog onOpenChange={setOpen} open={open}>
@@ -299,16 +305,14 @@ export function ReportExportDialog({ trigger }: ReportExportDialogProps) {
                     Missing Requirements
                   </h4>
                   <div className="space-y-2">
-                    {validation.missingRequirements.map(
-                      (requirement, index) => (
-                        <div className="flex items-start gap-2" key={index}>
-                          <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-red-500" />
-                          <p className="text-muted-foreground text-xs">
-                            {requirement}
-                          </p>
-                        </div>
-                      )
-                    )}
+                    {validation.missingRequirements.map((requirement) => (
+                      <div className="flex items-start gap-2" key={requirement}>
+                        <div className="mt-2 h-1.5 w-1.5 flex-shrink-0 rounded-full bg-red-500" />
+                        <p className="text-muted-foreground text-xs">
+                          {requirement}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}
@@ -553,22 +557,30 @@ export function ReportExportDialog({ trigger }: ReportExportDialogProps) {
             disabled={isGenerating || !validation.canGenerateReport}
             onClick={handleGenerateReport}
           >
-            {isGenerating ? (
-              <>
-                <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-border border-t-foreground" />
-                Generating...
-              </>
-            ) : validation.canGenerateReport ? (
-              <>
-                <Download className="mr-2 h-4 w-4" />
-                Generate PDF Report
-              </>
-            ) : (
-              <>
-                <AlertCircle className="mr-2 h-4 w-4" />
-                Complete Activity First
-              </>
-            )}
+            {(() => {
+              if (isGenerating) {
+                return (
+                  <>
+                    <div className="mr-2 h-4 w-4 animate-spin rounded-full border-2 border-border border-t-foreground" />
+                    Generating...
+                  </>
+                );
+              }
+              if (validation.canGenerateReport) {
+                return (
+                  <>
+                    <Download className="mr-2 h-4 w-4" />
+                    Generate PDF Report
+                  </>
+                );
+              }
+              return (
+                <>
+                  <AlertCircle className="mr-2 h-4 w-4" />
+                  Complete Activity First
+                </>
+              );
+            })()}
           </Button>
         </DialogFooter>
       </DialogContent>

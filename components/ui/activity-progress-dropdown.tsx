@@ -161,7 +161,10 @@ export function ActivityProgressDropdown({
                 </h4>
                 <div className="space-y-1">
                   {validation.missingRequirements.slice(0, 3).map((req, i) => (
-                    <div className="flex items-start gap-2" key={i}>
+                    <div
+                      className="flex items-start gap-2"
+                      key={`missing-req-${i}-${req.slice(0, 20)}`}
+                    >
                       <div className="mt-1.5 h-1 w-1 flex-shrink-0 rounded-full bg-red-500" />
                       <p className="text-muted-foreground text-xs leading-tight">
                         {req}

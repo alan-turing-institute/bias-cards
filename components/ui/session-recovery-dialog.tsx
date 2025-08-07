@@ -86,12 +86,15 @@ export function SessionRecoveryDialog({
     [activities, router, workspaceStore, handleOpenChange]
   );
 
+  // Redirect to dashboard if no activities exist
+  useEffect(() => {
+    if (!mostRecentActivity) {
+      router.push('/dashboard?new=true');
+    }
+  }, [mostRecentActivity, router]);
+
   // If no activities exist, don't show the dialog
   if (!mostRecentActivity) {
-    // Redirect to dashboard to create new activity
-    useEffect(() => {
-      router.push('/dashboard?new=true');
-    }, [router]);
     return null;
   }
 
@@ -157,7 +160,9 @@ export function SessionRecoveryDialog({
               <Button
                 className="w-full sm:w-auto"
                 disabled={!selectedActivityId}
-                onClick={() => handleSelectActivity(selectedActivityId!)}
+                onClick={() =>
+                  selectedActivityId && handleSelectActivity(selectedActivityId)
+                }
               >
                 Resume Selected Activity
               </Button>

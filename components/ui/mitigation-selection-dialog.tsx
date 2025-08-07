@@ -33,7 +33,7 @@ interface MitigationSelectionDialogProps {
 }
 
 export function MitigationSelectionDialog({
-  biasCardId,
+  biasCardId: _biasCardId,
   biasCardName,
   mitigationCards,
   selectedMitigations,

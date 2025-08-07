@@ -31,7 +31,7 @@ export interface Report {
   description: string;
   completedAt: string;
   exportFormats: ('pdf' | 'json')[];
-  data: any; // Will be defined more specifically later
+  data: unknown; // Will be defined more specifically later
 }
 
 export interface ActivityTemplate {

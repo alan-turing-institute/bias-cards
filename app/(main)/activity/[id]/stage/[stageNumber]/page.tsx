@@ -2,7 +2,7 @@
 export const dynamic = 'force-dynamic';
 
 // Server component for static generation
-export async function generateStaticParams() {
+export function generateStaticParams() {
   // Return empty array to allow dynamic generation
   return [];
 }

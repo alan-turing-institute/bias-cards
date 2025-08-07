@@ -22,8 +22,7 @@ export function CommentBadge({
   className,
   onClick,
 }: CommentBadgeProps) {
-  const { getCommentCount, getCommentCountByCategory, getCommentSummary } =
-    useCommentsStore();
+  const { getCommentCount, getCommentSummary } = useCommentsStore();
 
   const totalComments = getCommentCount(cardId);
   const summary = getCommentSummary(cardId);

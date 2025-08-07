@@ -96,8 +96,8 @@ export function CardModalRedesigned({
                     : 'Deliberative Prompts'}
                 </h3>
                 <ul className="space-y-3">
-                  {card.prompts.map((prompt, index) => (
-                    <li className="flex gap-3" key={index}>
+                  {card.prompts.map((prompt, _index) => (
+                    <li className="flex gap-3" key={prompt}>
                       <ChevronRight
                         className={cn(
                           'mt-0.5 h-5 w-5 flex-shrink-0',

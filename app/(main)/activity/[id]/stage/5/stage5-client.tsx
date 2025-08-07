@@ -129,20 +129,31 @@ function PairEditModal({
   }
 
   return (
-    <div
+    <button
+      aria-label="Close dialog overlay"
       className={cn(
-        'fixed inset-0 z-50 bg-black/50 transition-opacity',
+        'fixed inset-0 z-50 cursor-pointer border-none bg-black/50 transition-opacity',
         open ? 'opacity-100' : 'pointer-events-none opacity-0'
       )}
       onClick={() => onOpenChange(false)}
+      onKeyDown={(e) => {
+        if (e.key === 'Escape') {
+          onOpenChange(false);
+        }
+      }}
+      type="button"
     >
       <div
+        aria-labelledby="dialog-title"
+        aria-modal="true"
         className="-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg bg-white shadow-lg"
-        onClick={(e) => e.stopPropagation()}
+        role="dialog"
       >
         <div className="p-6">
           <div className="mb-6">
-            <h2 className="mb-2 font-semibold text-xl">Edit Pair Details</h2>
+            <h2 className="mb-2 font-semibold text-xl" id="dialog-title">
+              Edit Pair Details
+            </h2>
             <div className="flex items-center gap-2 text-muted-foreground text-sm">
               <span className="font-medium">{pair.biasCard.name}</span>
               <span>→</span>
@@ -241,7 +252,7 @@ function PairEditModal({
           </div>
         </div>
       </div>
-    </div>
+    </button>
   );
 }
 
@@ -326,7 +337,6 @@ export default function Stage5Client() {
     getBiasRiskAssignments,
     cardPairs,
     updateCardPair,
-    removeCardPair,
     completeActivityStage: completeWorkspaceStage,
   } = useWorkspaceStore();
 

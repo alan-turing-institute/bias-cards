@@ -34,13 +34,7 @@ export function SaveLoadDialog({ trigger }: SaveLoadDialogProps) {
   const [dragOver, setDragOver] = useState(false);
 
   const workspaceStore = useWorkspaceStore();
-  const {
-    name: workspaceName,
-    updateWorkspaceName,
-    stageAssignments,
-    cardPairs,
-    sessionId,
-  } = workspaceStore;
+  const { stageAssignments, cardPairs, sessionId } = workspaceStore;
 
   const handleDownload = useCallback(async () => {
     const finalFileName =
@@ -71,7 +65,9 @@ export function SaveLoadDialog({ trigger }: SaveLoadDialogProps) {
       // Reset form
       setFileName('');
       setDescription('');
-    } catch (_error) {}
+    } catch (_error) {
+      // Handle error silently
+    }
   }, [fileName, workspaceStore]);
 
   const handleFileUpload = useCallback(async (file: File) => {
@@ -184,7 +180,8 @@ export function SaveLoadDialog({ trigger }: SaveLoadDialogProps) {
           </TabsContent>
 
           <TabsContent className="space-y-4" value="load">
-            <div
+            <button
+              aria-label="Drag and drop area for workspace file upload"
               className={`rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
                 dragOver
                   ? 'border-blue-500 bg-blue-50'
@@ -193,6 +190,7 @@ export function SaveLoadDialog({ trigger }: SaveLoadDialogProps) {
               onDragLeave={handleDragLeave}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
+              type="button"
             >
               <Upload className="mx-auto h-8 w-8 text-gray-400" />
               <p className="mt-2 text-muted-foreground text-sm">
@@ -204,7 +202,7 @@ export function SaveLoadDialog({ trigger }: SaveLoadDialogProps) {
                 onChange={handleFileInputChange}
                 type="file"
               />
-            </div>
+            </button>
 
             {uploadError && (
               <div className="rounded-lg bg-red-50 p-3">

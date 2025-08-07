@@ -261,7 +261,9 @@ export function CardLayoutsDemo() {
                   );
                   return getCardNumber(index);
                 }}
-                onCardClick={(_card) => {}}
+                onCardClick={(_card) => {
+                  // Demo component - no action needed
+                }}
               />
             </div>
             <Separator />
@@ -275,7 +277,9 @@ export function CardLayoutsDemo() {
                   );
                   return getCardNumber(index);
                 }}
-                onCardClick={(_card) => {}}
+                onCardClick={(_card) => {
+                  // Demo component - no action needed
+                }}
               />
             </div>
           </CardContent>

@@ -1,7 +1,6 @@
 'use client';
 
 import Image from 'next/image';
-import * as React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Carousel,
@@ -16,7 +15,7 @@ import {
 // TODO: Migrate these to use TutorialCarousel component
 
 // Placeholder data for Stage 1 (migrated to MDX)
-const stage1Slides = [
+const _stage1Slides = [
   {
     id: 1,
     title: 'Initial View',
@@ -68,7 +67,7 @@ const stage1Slides = [
 ];
 
 // Stage 2: Lifecycle Assignment
-const stage2Slides = [
+const _stage2Slides = [
   {
     id: 1,
     title: 'Initial View',

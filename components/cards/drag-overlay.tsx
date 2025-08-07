@@ -27,14 +27,33 @@ export function CardDragOverlay({ activeCard }: CardDragOverlayProps) {
             showCategory={false}
           />
         ) : (
-          <BiasCardList
-            card={activeCard as any}
-            cardNumber={
-              activeCard.displayNumber || String(activeCard.id).padStart(2, '0')
+          (() => {
+            // Check if it's a bias card (has category field)
+            if ('category' in activeCard) {
+              return (
+                <BiasCardList
+                  card={activeCard}
+                  cardNumber={
+                    activeCard.displayNumber ||
+                    String(activeCard.id).padStart(2, '0')
+                  }
+                  className="shadow-2xl"
+                  showCategory={false}
+                />
+              );
             }
-            className="shadow-2xl"
-            showCategory={false}
-          />
+            return (
+              <MitigationCardList
+                card={activeCard}
+                cardNumber={
+                  activeCard.displayNumber ||
+                  String(activeCard.id).padStart(2, '0')
+                }
+                className="shadow-2xl"
+                showCategory={false}
+              />
+            );
+          })()
         )}
       </div>
     </DragOverlay>
