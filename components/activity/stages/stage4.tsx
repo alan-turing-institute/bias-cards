@@ -1,7 +1,6 @@
 'use client';
 
 import { ChevronDown, ChevronUp, FileText, X } from 'lucide-react';
-import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { MitigationCardList } from '@/components/cards/mitigation-card-list';
 import { StageFooter } from '@/components/stage-footer';
@@ -20,6 +19,7 @@ import { StageGroupHeader } from '@/components/ui/stage-group-header';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
+import { useHashRouter } from '@/lib/routing/hash-router';
 import { navigateToActivity } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
@@ -230,9 +230,10 @@ function SelectedMitigations({
 }
 
 export default function Stage4Client() {
-  const params = useParams();
+  const { currentRoute } = useHashRouter();
 
-  const activityId = params.id as string;
+  const workspaceActivityId = useWorkspaceStore((s) => s.activityId);
+  const activityId = (currentRoute.activityId || workspaceActivityId) as string;
 
   const { completeActivityStage } = useActivityStore();
   const { biasCards, mitigationCards, loadCards } = useCardsStore();

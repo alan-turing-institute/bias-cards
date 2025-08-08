@@ -1,62 +1,80 @@
 // Navigation helper functions for hash-based routing
 
 // Define regex patterns at module level for performance
-const ACTIVITY_ID_PATTERN = /^\/activity\/([^/]+)/;
+const ACTIVITY_ID_PATTERN = /^\/([^/]+)/;
 const STAGE_NUMBER_PATTERN = /\/stage\/(\d+)$/;
 
 export function navigateToActivity(id: string, stage = 1): void {
   if (typeof window !== 'undefined') {
     const validStage = stage < 1 || stage > 5 ? 1 : stage;
-    // If we're not on the activity page, navigate there first with the hash
-    if (window.location.pathname.includes('/activity')) {
-      // If we're already on the activity page, just update the hash
-      window.location.hash = `/activity/${id}/stage/${validStage}`;
+    // Check if we're on the activities page
+    const pathname = window.location.pathname;
+    const isOnActivitiesPage =
+      pathname === '/activities' || pathname.endsWith('/activities/');
+
+    if (isOnActivitiesPage) {
+      // If we're already on the activities page, just update the hash
+      window.location.hash = `/${id}/stage/${validStage}`;
     } else {
-      window.location.href = `/activity#/activity/${id}/stage/${validStage}`;
+      // Navigate to the activities page with the hash
+      window.location.href = `/activities/#/${id}/stage/${validStage}`;
     }
   }
 }
 
 export function navigateToReport(activityId: string): void {
   if (typeof window !== 'undefined') {
-    // If we're not on the activity page, navigate there first with the hash
-    if (window.location.pathname.includes('/activity')) {
-      // If we're already on the activity page, just update the hash
-      window.location.hash = `/activity/${activityId}/report`;
+    // Check if we're on the activities page
+    const pathname = window.location.pathname;
+    const isOnActivitiesPage =
+      pathname === '/activities' || pathname.endsWith('/activities/');
+
+    if (isOnActivitiesPage) {
+      // If we're already on the activities page, just update the hash
+      window.location.hash = `/${activityId}/report`;
     } else {
-      window.location.href = `/activity#/activity/${activityId}/report`;
+      // Navigate to the activities page with the hash
+      window.location.href = `/activities/#/${activityId}/report`;
     }
   }
 }
 
 export function navigateToDashboard(): void {
-  // Navigate to dashboard using Next.js router would be handled by the component
+  // Navigate to activities dashboard using Next.js router would be handled by the component
   // This is a client-side navigation to a static route
   if (typeof window !== 'undefined') {
-    window.location.href = '/dashboard';
+    window.location.href = '/activities';
   }
 }
 
 export function getActivityUrl(id: string, stage?: number): string {
   if (stage !== undefined && stage >= 1 && stage <= 5) {
-    return `#/activity/${id}/stage/${stage}`;
+    return `#/${id}/stage/${stage}`;
   }
-  return `#/activity/${id}/stage/1`;
+  return `#/${id}/stage/1`;
 }
 
 export function getReportUrl(activityId: string): string {
-  return `#/activity/${activityId}/report`;
+  return `#/${activityId}/report`;
 }
 
 export function isActivityHash(hash: string): boolean {
   const cleanHash = hash.startsWith('#') ? hash.substring(1) : hash;
-  return cleanHash.startsWith('/activity/');
+  // Check if it's a valid activity hash (starts with / followed by activity ID)
+  return cleanHash.startsWith('/') && !cleanHash.startsWith('//');
 }
 
 export function clearActivityHash(): void {
-  // If we're on an activity hash, clear it and go to dashboard
+  // If we're on an activity hash, clear it to show the dashboard
   if (typeof window !== 'undefined' && isActivityHash(window.location.hash)) {
-    window.location.href = '/dashboard';
+    // If we're already on /activities, just clear the hash
+    const pathname = window.location.pathname;
+    if (pathname === '/activities' || pathname.endsWith('/activities/')) {
+      window.location.hash = '';
+    } else {
+      // Otherwise navigate to activities dashboard
+      window.location.href = '/activities';
+    }
   }
 }
 

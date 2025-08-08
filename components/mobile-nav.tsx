@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 const navigationItems = [
   {
     title: 'Dashboard',
-    href: '/dashboard',
+    href: '/activities',
     icon: LayoutDashboard,
   },
   {

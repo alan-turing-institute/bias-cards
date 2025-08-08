@@ -3,6 +3,11 @@ import { persist } from 'zustand/middleware';
 import { DEMO_ACTIVITIES } from '@/lib/data/demo-content';
 import type { Activity, Report } from '@/lib/types/activity';
 import type { ActivityStage } from '@/lib/types/cards';
+import {
+  type ImportData,
+  validateImportData,
+  validateImportFile,
+} from '@/lib/types/import';
 
 interface ActivityStore {
   // State
@@ -10,6 +15,7 @@ interface ActivityStore {
   reports: Report[];
   demoDataInitialized: boolean;
   deletedDemoIds: string[];
+  hasHydrated: boolean;
 
   // Actions
   createActivity: (
@@ -33,9 +39,15 @@ interface ActivityStore {
 
   // Utility actions
   exportActivity: (id: string, format: 'pdf' | 'json') => void;
+  importActivity: (
+    file: File
+  ) => Promise<{ success: boolean; message: string; activityId?: string }>;
 
   // Demo data actions
   initializeDemoData: () => void;
+
+  // Hydration actions
+  markAsHydrated: () => void;
 }
 
 export const useActivityStore = create<ActivityStore>()(
@@ -45,6 +57,7 @@ export const useActivityStore = create<ActivityStore>()(
       reports: [],
       demoDataInitialized: false,
       deletedDemoIds: [],
+      hasHydrated: false,
 
       createActivity: (activityData) => {
         const id = `activity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -123,13 +136,16 @@ export const useActivityStore = create<ActivityStore>()(
         set((state) => ({
           activities: state.activities.map((activity) => {
             if (activity.id === id) {
-              const newCompleted = Math.max(activity.progress.completed, stage);
+              const newCompleted = Math.max(
+                activity.progress?.completed || 0,
+                stage
+              );
               const nextStage = Math.min(stage + 1, 5); // Cap at stage 5
               return {
                 ...activity,
                 currentStage: nextStage as ActivityStage,
                 progress: {
-                  ...activity.progress,
+                  ...(activity.progress || { total: 5 }),
                   completed: newCompleted,
                 },
                 status: newCompleted >= 5 ? 'completed' : 'in-progress',
@@ -152,8 +168,12 @@ export const useActivityStore = create<ActivityStore>()(
           return true;
         }
 
-        // Can advance if previous stage is completed
-        return activity.progress.completed >= targetStage - 1;
+        // Can navigate to any stage up to and including current stage
+        // OR advance if previous stage is completed
+        return (
+          targetStage <= activity.currentStage ||
+          (activity.progress?.completed || 0) >= targetStage - 1
+        );
       },
 
       createReport: (activityId) => {
@@ -195,10 +215,28 @@ export const useActivityStore = create<ActivityStore>()(
           return;
         }
 
+        // Check if there's workspace data for this activity
+        let workspaceData = null;
+        try {
+          // Access workspace store data from localStorage
+          const workspaceStore = JSON.parse(
+            localStorage.getItem('workspace-store') || '{}'
+          );
+          const workspaceState = workspaceStore.state;
+
+          // If current workspace matches this activity, include the workspace data
+          if (workspaceState && workspaceState.activityId === id) {
+            workspaceData = workspaceState;
+          }
+        } catch (error) {
+          console.warn('Could not access workspace data for export:', error);
+        }
+
         const exportData = {
           activity,
+          workspace: workspaceData,
           exportedAt: new Date().toISOString(),
-          format,
+          format: workspaceData ? 'complete-workspace-json' : format,
         };
 
         if (format === 'json') {
@@ -217,6 +255,144 @@ export const useActivityStore = create<ActivityStore>()(
           // For now, we'll just alert that PDF export is not yet implemented
           // In a real implementation, you'd use a library like jsPDF or similar
           alert('PDF export functionality coming soon!');
+        }
+      },
+
+      importActivity: async (file) => {
+        // First validate the file itself
+        const fileValidation = validateImportFile(file);
+        if (!fileValidation.isValid) {
+          return {
+            success: false,
+            message: fileValidation.errors[0] || 'Invalid file format',
+          };
+        }
+
+        try {
+          const text = await file.text();
+          let importData;
+
+          try {
+            importData = JSON.parse(text);
+          } catch (parseError) {
+            return {
+              success: false,
+              message:
+                'Invalid JSON format. The file appears to be corrupted or is not valid JSON.',
+            };
+          }
+
+          // Comprehensive validation of import data
+          const validation = validateImportData(importData);
+          if (!validation.isValid) {
+            const errorDetails = validation.errors.join('. ');
+            return {
+              success: false,
+              message: `Import validation failed: ${errorDetails}`,
+            };
+          }
+
+          const { activity, workspace } = importData as ImportData;
+
+          // Generate new IDs to avoid conflicts
+          const newActivityId = `activity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+          const now = new Date().toISOString();
+
+          // Create the imported activity with new ID
+          const importedActivity: Activity = {
+            ...activity,
+            id: newActivityId,
+            createdAt: now,
+            lastModified: now,
+            // Ensure progress is initialized
+            progress: activity.progress || { completed: 0, total: 5 },
+            // Reset progress to allow re-completion
+            status: workspace ? 'in-progress' : 'draft',
+            currentStage: workspace ? activity.currentStage : 1,
+          };
+
+          // Add to activities store
+          set((state) => ({
+            activities: [...state.activities, importedActivity],
+          }));
+
+          // If there's workspace data, we'll import it separately
+          if (workspace) {
+            try {
+              // Access workspace store and import the data
+              const workspaceStore = JSON.parse(
+                localStorage.getItem('workspace-store') || '{}'
+              );
+              const newWorkspaceState = {
+                ...workspace,
+                activityId: newActivityId,
+                sessionId: `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                lastModified: now,
+                // Regenerate assignment IDs to avoid conflicts
+                biasRiskAssignments:
+                  workspace.biasRiskAssignments?.map((assignment: any) => ({
+                    ...assignment,
+                    id: `assignment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                  })) || [],
+                stageAssignments:
+                  workspace.stageAssignments?.map((assignment: any) => ({
+                    ...assignment,
+                    id: `assignment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                  })) || [],
+              };
+
+              // Update workspace store
+              const updatedWorkspaceStore = {
+                ...workspaceStore,
+                state: newWorkspaceState,
+              };
+              localStorage.setItem(
+                'workspace-store',
+                JSON.stringify(updatedWorkspaceStore)
+              );
+
+              // Build success message with any validation warnings
+              let successMessage = `Successfully imported "${activity.title}" with complete workspace data. You can now continue working on this analysis.`;
+              if (validation.warnings.length > 0) {
+                successMessage += ` Note: ${validation.warnings.length} minor issues were detected but the import completed successfully.`;
+              }
+
+              return {
+                success: true,
+                message: successMessage,
+                activityId: newActivityId,
+              };
+            } catch (workspaceError) {
+              console.warn(
+                'Failed to import workspace data, but activity was imported:',
+                workspaceError
+              );
+              return {
+                success: true,
+                message: `Imported "${activity.title}" but could not restore workspace data. You can still access the activity.`,
+                activityId: newActivityId,
+              };
+            }
+          }
+
+          // Build success message with any validation warnings
+          let successMessage = `Successfully imported "${activity.title}".`;
+          if (validation.warnings.length > 0) {
+            successMessage += ` Note: ${validation.warnings.length} minor issues were detected but the import completed successfully.`;
+          }
+
+          return {
+            success: true,
+            message: successMessage,
+            activityId: newActivityId,
+          };
+        } catch (error) {
+          console.error('Error importing activity:', error);
+          return {
+            success: false,
+            message:
+              'Failed to import activity. Please check the file and try again.',
+          };
         }
       },
 
@@ -244,14 +420,23 @@ export const useActivityStore = create<ActivityStore>()(
           });
         }
       },
+
+      markAsHydrated: () => {
+        set({ hasHydrated: true });
+      },
     }),
     {
       name: 'bias-cards-activities',
       version: 1,
-      onRehydrateStorage: () => (state) => {
-        // Initialize demo data after store rehydration if needed
+      onRehydrateStorage: () => (state, error) => {
+        // Silently handle hydration errors in production
+        if (error) {
+          // no-op
+        }
+        // Initialize demo data and mark as hydrated after store rehydration
         if (state) {
           state.initializeDemoData();
+          state.markAsHydrated();
         }
       },
     }

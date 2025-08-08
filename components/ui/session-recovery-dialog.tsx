@@ -60,16 +60,20 @@ export function SessionRecoveryDialog({
       // Set the activity ID in workspace store
       workspaceStore.setActivityId(mostRecentActivity.id);
       // Navigate to the current stage of the activity
-      router.push(
-        `/activity/${mostRecentActivity.id}/stage/${mostRecentActivity.currentStage}`
-      );
+      router.push('/activity');
+      setTimeout(() => {
+        navigateToActivity(
+          mostRecentActivity.id,
+          mostRecentActivity.currentStage
+        );
+      }, 0);
       handleOpenChange(false);
     }
   }, [mostRecentActivity, router, workspaceStore, handleOpenChange]);
 
   const handleStartFresh = useCallback(() => {
     // Navigate to dashboard with intent to create new activity
-    router.push('/dashboard?new=true');
+    router.push('/activities?new=true');
     handleOpenChange(false);
   }, [router, handleOpenChange]);
 
@@ -93,7 +97,7 @@ export function SessionRecoveryDialog({
   // Redirect to dashboard if no activities exist
   useEffect(() => {
     if (!mostRecentActivity) {
-      router.push('/dashboard?new=true');
+      router.push('/activities?new=true');
     }
   }, [mostRecentActivity, router]);
 
@@ -139,7 +143,7 @@ export function SessionRecoveryDialog({
               <div className="mt-2 flex items-center gap-4 text-muted-foreground text-xs">
                 <span>
                   Stage {mostRecentActivity.currentStage} of{' '}
-                  {mostRecentActivity.progress.total}
+                  {mostRecentActivity.progress?.total || 5}
                 </span>
                 <span>
                   {mostRecentActivity.status === 'in-progress'

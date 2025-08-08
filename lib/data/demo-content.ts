@@ -6,65 +6,126 @@ import type { Report, ReportSummary } from '@/lib/types/reports';
 // Demo Activities - Educational examples in different domains
 export const DEMO_ACTIVITIES: Partial<Activity>[] = [
   {
-    id: 'demo-healthcare-ml',
-    title: 'Healthcare AI Diagnostic Tool Assessment',
+    id: 'demo-ai-triage-tool',
+    title: 'AI Risk Assessment Tool',
     isDemo: true,
     description:
-      'Comprehensive bias assessment for an AI-powered diagnostic imaging system designed to detect early-stage lung cancer. This project examines potential biases across the entire ML lifecycle, with particular focus on representation and measurement biases in medical imaging.',
+      'An AI system used by healthcare professionals to triage patients and assess risk as part of a preliminary assessment. The system will be used to support accident and emergency departments.',
     projectType: 'Health & Social Care',
     status: 'in-progress',
-    currentStage: 3,
+    currentStage: 5,
     createdAt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days ago
-    lastModified: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), // 2 days ago
+    lastModified: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString(), // 1 day ago
     progress: {
-      completed: 3,
+      completed: 5,
       total: 5,
     },
     lifecycleStages: {
       'problem-formulation': {
         completed: true,
-        biases: ['confirmation-bias', 'availability-bias', 'naive-realism'],
-        mitigations: [
-          'participatory-design-workshops',
-          'peer-review',
-          'stakeholder-engagement',
+        biases: [
+          '1', // Confirmation Bias
+          '2', // Availability Bias
+          '6', // Naive Realism
+          '18', // Aggregation Bias (was '21')
         ],
+        mitigations: ['4', '3'],
         notes:
-          'Engaged diverse stakeholder groups including radiologists, oncologists, patient advocacy groups, and health equity researchers. Identified key assumptions about diagnostic patterns that may not generalize across different populations.',
+          'Engaged diverse stakeholder groups including radiologists, oncologists, patient advocacy groups, and health equity researchers. Identified key assumptions about diagnostic patterns that may not generalize across different populations. Discovered critical concerns about triage thresholds and pain expression variations across cultures. Community engagement revealed that many vulnerable patients avoid ambulances due to cost fears or immigration concerns, affecting our data representation.',
       },
       'data-extraction-procurement': {
         completed: true,
-        biases: ['selection-bias', 'representation-bias', 'historical-bias'],
-        mitigations: [
-          'additional-data-collection',
-          'identify-underrepresented-groups',
-          'synthetic-data-generation',
+        biases: [
+          '16', // Selection Bias
+          '15', // Representation Bias
+          '12', // Historical Bias
+          '18', // Missing Data Bias
+          '10', // Chronological Bias
+          '14', // Label Bias
         ],
+        mitigations: ['2', '4'], // Additional Data Collection, Stakeholder Engagement
         notes:
-          'Training data primarily from urban academic medical centers. Identified significant underrepresentation of rural populations, certain ethnic groups, and patients with comorbidities. Historical data reflects past diagnostic disparities.',
+          'Training data primarily from urban academic medical centers. Identified significant underrepresentation of rural populations, certain ethnic groups, and patients with comorbidities. Historical data reflects past diagnostic disparities. Demographic audit revealed homeless populations comprised only 0.3% representation despite 2.8% of A&E visits. South Asian women were underrepresented by 71% in cardiac emergency data due to atypical symptom presentations and cultural barriers.',
       },
       'data-analysis': {
         completed: true,
-        biases: ['measurement-bias', 'missing-data-bias', 'survivorship-bias'],
-        mitigations: [
-          'statistical-parity',
-          'identify-proxy-attributes',
-          'external-validation',
+        biases: [
+          '21', // Measurement Bias
+          '18', // Missing Data Bias
+          '24', // Wrong Sample Size Bias (was survivorship)
+          '18', // Aggregation Bias
+          '1', // Confirmation Bias
         ],
+        mitigations: ['6'], // Identify Underrepresented Groups
         notes:
-          'Image quality varies significantly between different scanning equipment. Missing follow-up data for patients who left the healthcare system. Need to account for different imaging protocols across institutions.',
+          'Image quality varies significantly between different scanning equipment. Missing follow-up data for patients who left the healthcare system. Need to account for different imaging protocols across institutions. Comprehensive bias awareness training revealed critical gaps in data interpretation - detection of atypical MI presentations in women improved by 29% after training team to systematically investigate unusual patterns rather than dismissing them.',
       },
       'preprocessing-feature-engineering': {
-        completed: false,
-        biases: [],
-        mitigations: [],
-        notes: '',
+        completed: true,
+        biases: [
+          '11', // De-agentification Bias (closest to proxy discrimination)
+          '13', // Implementation Bias
+        ],
+        mitigations: ['5', '8'],
+        notes:
+          'Identified potential proxy variables for protected characteristics in preprocessing stage. Implemented fairness-aware feature selection to prevent indirect discrimination through correlated features. Addressed excessive scepticism toward AI assistance through targeted stakeholder engagement.',
       },
       'model-selection-training': {
-        completed: false,
-        biases: [],
-        mitigations: [],
-        notes: '',
+        completed: true,
+        biases: [
+          '7', // Decision-Automation Bias
+          '8', // Automation-Distrust Bias
+        ],
+        mitigations: ['4', '7'],
+        notes:
+          'Addressed automation bias concerns through stakeholder engagement and comprehensive training program. Healthcare professionals now maintain appropriate scepticism toward AI recommendations while recognizing genuine value. Established ongoing monitoring to prevent over-reliance on automated decision-making.',
+      },
+      'model-testing-validation': {
+        completed: true,
+        biases: [
+          '23', // Training-Serving Skew
+        ],
+        mitigations: ['11', '9'],
+        notes:
+          'Training-serving skew becomes evident during model testing and validation when evaluating performance on test datasets that may not fully represent real-world A&E conditions. The training data from urban teaching hospitals during standard hours differs dramatically from the reality of weekend nights in under-resourced A&E departments, seasonal flu surges, or pandemic conditions.',
+      },
+      'model-reporting': {
+        completed: true,
+        biases: [
+          '6', // Optimism Bias
+        ],
+        mitigations: ['1', '11'],
+        notes:
+          'Optimism bias manifests during model reporting when teams present overly positive assessments of AI triage system performance, underestimating implementation challenges and timelines for real-world deployment.',
+      },
+      'system-implementation': {
+        completed: true,
+        biases: [
+          '13', // Implementation Bias
+        ],
+        mitigations: ['7', '4'],
+        notes:
+          'Implementation bias poses significant risks when deploying triage AI in real A&E departments. The system designed for decision support might become a de facto decision-maker, with UI design inadvertently pushing clinicians towards AI recommendations.',
+      },
+      'system-use-monitoring': {
+        completed: true,
+        biases: [
+          '7', // Decision-Automation Bias
+          '8', // Automation-Distrust Bias
+        ],
+        mitigations: ['7', '4'],
+        notes:
+          'Decision-automation bias presents a critical risk during ongoing system use in A&E departments. As healthcare professionals become familiar with the triage AI, they may develop excessive trust in its recommendations, particularly during busy periods.',
+      },
+      'project-planning': {
+        completed: true,
+        biases: [
+          '17', // Status Quo Bias
+          '18', // Aggregation Bias
+        ],
+        mitigations: ['3', '6', '9'],
+        notes:
+          'Status quo bias influences project planning when NHS trusts favour existing manual triage processes over AI-assisted systems despite evidence of potential improvements.',
       },
     },
   },

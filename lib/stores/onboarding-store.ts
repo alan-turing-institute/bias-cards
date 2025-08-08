@@ -74,7 +74,7 @@ const ONBOARDING_STEPS: OnboardingStep[] = [
       'Here, you can start a new activity, continue an existing one, or load an in-progress activity from a colleague.\n\n Each activity consists of 5 stages to complete.',
     target: '[data-onboarding="dashboards-nav"]',
     placement: 'right',
-    route: '/dashboard',
+    route: '/activities',
   },
   {
     id: 'dashboards-reports',

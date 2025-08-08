@@ -1,7 +1,6 @@
 'use client';
 
 import { Edit3, FileText, Star } from 'lucide-react';
-import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { StageFooter } from '@/components/stage-footer';
 import { StageNavigation } from '@/components/stage-navigation';
@@ -15,6 +14,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
+import { useHashRouter } from '@/lib/routing/hash-router';
 import { navigateToReport } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
@@ -130,24 +130,32 @@ function PairEditModal({
   }
 
   return (
-    <button
-      aria-label="Close dialog overlay"
-      className={cn(
-        'fixed inset-0 z-50 cursor-pointer border-none bg-black/50 transition-opacity',
-        open ? 'opacity-100' : 'pointer-events-none opacity-0'
-      )}
-      onClick={() => onOpenChange(false)}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') {
-          onOpenChange(false);
-        }
-      }}
-      type="button"
-    >
+    <>
+      {/* Overlay div - not a button */}
+      <div
+        aria-label="Close dialog overlay"
+        className={cn(
+          'fixed inset-0 z-50 cursor-pointer bg-black/50 transition-opacity',
+          open ? 'opacity-100' : 'pointer-events-none opacity-0'
+        )}
+        onClick={() => onOpenChange(false)}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            onOpenChange(false);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+      />
+      {/* Modal content - separate from overlay */}
       <div
         aria-labelledby="dialog-title"
         aria-modal="true"
-        className="-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg bg-white shadow-lg"
+        className={cn(
+          '-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg bg-white shadow-lg',
+          open ? 'opacity-100' : 'pointer-events-none opacity-0'
+        )}
+        onClick={(e) => e.stopPropagation()}
         role="dialog"
       >
         <div className="p-6">
@@ -253,7 +261,7 @@ function PairEditModal({
           </div>
         </div>
       </div>
-    </button>
+    </>
   );
 }
 
@@ -327,8 +335,9 @@ function PairCard({
 }
 
 export default function Stage5Client() {
-  const params = useParams();
-  const activityId = params.id as string;
+  const { currentRoute } = useHashRouter();
+  const workspaceActivityId = useWorkspaceStore((s) => s.activityId);
+  const activityId = (currentRoute.activityId || workspaceActivityId) as string;
 
   const { completeActivityStage } = useActivityStore();
   const { biasCards, mitigationCards, loadCards } = useCardsStore();
@@ -435,7 +444,7 @@ export default function Stage5Client() {
     // Get activity data for report generation
     const activity = useActivityStore.getState().getActivity(activityId);
     if (!activity) {
-      window.location.href = '/dashboard';
+      window.location.href = '/activities';
       return;
     }
 

@@ -106,6 +106,11 @@ interface WorkspaceStoreState extends WorkspaceState {
   updateWorkspaceName: (name: string) => void;
   updateLastModified: () => void;
   setActivityId: (activityId: string) => void;
+  exportWorkspaceData: () => WorkspaceState | null;
+  importWorkspaceData: (
+    workspaceData: Partial<WorkspaceState>,
+    activityId: string
+  ) => boolean;
 
   // Computed properties
   getProgress: () => ActivityProgress;
@@ -594,6 +599,74 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
             activityId,
             lastModified: new Date().toISOString(),
           });
+        },
+
+        exportWorkspaceData: () => {
+          const state = get();
+          // Return current workspace state without history (to reduce size)
+          const { history, ...workspaceData } = state;
+          return workspaceData;
+        },
+
+        importWorkspaceData: (workspaceData, activityId) => {
+          try {
+            const now = new Date().toISOString();
+            const newSessionId = generateSessionId();
+
+            // Validate and sanitize the workspace data
+            const sanitizedData: Partial<WorkspaceState> = {
+              sessionId: newSessionId,
+              activityId,
+              lastModified: now,
+              // Import the main data arrays with ID regeneration for safety
+              biasRiskAssignments:
+                workspaceData.biasRiskAssignments?.map((assignment) => ({
+                  ...assignment,
+                  id: generateAssignmentId(),
+                  timestamp: assignment.timestamp || now,
+                })) || [],
+              stageAssignments:
+                workspaceData.stageAssignments?.map((assignment) => ({
+                  ...assignment,
+                  id: generateAssignmentId(),
+                  timestamp: assignment.timestamp || now,
+                })) || [],
+              cardPairs:
+                workspaceData.cardPairs?.map((pair) => ({
+                  ...pair,
+                  timestamp: pair.timestamp || now,
+                })) || [],
+              // Import other workspace fields
+              name: workspaceData.name,
+              createdAt: workspaceData.createdAt || now,
+              currentStage: workspaceData.currentStage || 1,
+              completedActivityStages:
+                workspaceData.completedActivityStages || [],
+              selectedCardIds: workspaceData.selectedCardIds || [],
+              customAnnotations: workspaceData.customAnnotations || {},
+              completedStages: workspaceData.completedStages || [],
+              activityProgress: workspaceData.activityProgress || {
+                totalCards: 0,
+                assignedCards: 0,
+                pairedCards: 0,
+                completionPercentage: 0,
+                timeSpent: 0,
+                milestones: createInitialMilestones(),
+              },
+            };
+
+            // Set the new workspace state
+            set(() => ({
+              ...createInitialState(),
+              ...sanitizedData,
+              history: createInitialHistory(), // Reset history
+            }));
+
+            return true;
+          } catch (error) {
+            console.error('Error importing workspace data:', error);
+            return false;
+          }
         },
 
         // Computed properties

@@ -35,7 +35,7 @@ function WorkspaceContent() {
   // If no activities exist after initialization, redirect to dashboard (unless onboarding is active)
   useEffect(() => {
     if (isInitialized && !mostRecentActivity && !isOnboardingActive) {
-      router.push('/dashboard?new=true');
+      router.push('/activities?new=true');
     }
   }, [isInitialized, mostRecentActivity, router, isOnboardingActive]);
 

@@ -148,7 +148,7 @@ export function ActivityCombobox({
                       </span>
                       <span>
                         Stage {activity.currentStage} of{' '}
-                        {activity.progress.total}
+                        {activity.progress?.total || 5}
                       </span>
                     </div>
                   </div>

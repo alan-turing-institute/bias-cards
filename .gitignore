@@ -45,6 +45,7 @@ next-env.d.ts
 .claude/
 tasks/
 resources/
+AGENTS.md
 
 # migration backups
 .backup-dynamic-routes/

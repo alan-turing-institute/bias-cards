@@ -27,7 +27,7 @@ export function useHashRouter() {
 }
 
 // Define regex patterns at module level for performance
-const ACTIVITY_PATTERN = /^\/activity\/([^/]+)(?:\/(.+))?$/;
+const ACTIVITY_PATTERN = /^\/([^/]+)(?:\/(.+))?$/;
 const STAGE_PATTERN = /^stage\/(\d+)$/;
 
 export function parseActivityHash(hash: string): HashRoute {
@@ -40,9 +40,9 @@ export function parseActivityHash(hash: string): HashRoute {
   }
 
   // Match patterns like:
-  // /activity/abc123/stage/1
-  // /activity/abc123/report
-  // /activity/abc123
+  // /abc123/stage/1
+  // /abc123/report
+  // /abc123
 
   const activityMatch = cleanHash.match(ACTIVITY_PATTERN);
 
@@ -94,11 +94,9 @@ export function HashRouterProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [currentRoute, setCurrentRoute] = useState<HashRoute>(() =>
-    typeof window !== 'undefined'
-      ? parseActivityHash(window.location.hash)
-      : { isValid: false }
-  );
+  const [currentRoute, setCurrentRoute] = useState<HashRoute>({
+    isValid: false,
+  });
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -106,27 +104,40 @@ export function HashRouterProvider({
       setCurrentRoute(newRoute);
     };
 
+    // Handle popstate events (browser navigation)
+    const handlePopState = () => {
+      // If hash is empty, ensure route is invalid
+      if (!window.location.hash || window.location.hash === '') {
+        setCurrentRoute({ isValid: false });
+      } else {
+        handleHashChange();
+      }
+    };
+
     // Listen for hash changes
     window.addEventListener('hashchange', handleHashChange);
+    // Listen for navigation events (back/forward/link clicks)
+    window.addEventListener('popstate', handlePopState);
 
     // Check initial hash
     handleHashChange();
 
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('popstate', handlePopState);
     };
   }, []);
 
   const navigateToActivity = (id: string, stage = 1) => {
     if (typeof window !== 'undefined') {
       const validStage = stage < 1 || stage > 5 ? 1 : stage;
-      window.location.hash = `/activity/${id}/stage/${validStage}`;
+      window.location.hash = `/${id}/stage/${validStage}`;
     }
   };
 
   const navigateToReport = (activityId: string) => {
     if (typeof window !== 'undefined') {
-      window.location.hash = `/activity/${activityId}/report`;
+      window.location.hash = `/${activityId}/report`;
     }
   };
 

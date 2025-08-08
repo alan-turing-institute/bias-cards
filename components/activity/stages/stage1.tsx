@@ -13,7 +13,6 @@ import {
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Layers, Search } from 'lucide-react';
-import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { BiasCardList } from '@/components/cards/bias-card-list';
 import { CardDragOverlay } from '@/components/cards/drag-overlay';
@@ -46,6 +45,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { useHashRouter } from '@/lib/routing/hash-router';
 import { navigateToActivity } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
@@ -86,8 +86,9 @@ function extractCardFromDragEvent(
 }
 
 export default function Stage1Client() {
-  const params = useParams();
-  const activityId = params.id as string;
+  const { currentRoute } = useHashRouter();
+  const workspaceActivityId = useWorkspaceStore((s) => s.activityId);
+  const activityId = (currentRoute.activityId || workspaceActivityId) as string;
 
   const { completeActivityStage } = useActivityStore();
   const { biasCards, setSearchQuery, filteredCards, loadCards } =

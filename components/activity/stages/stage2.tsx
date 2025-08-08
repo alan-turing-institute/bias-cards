@@ -14,7 +14,6 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Info, Layers, Search, X } from 'lucide-react';
 import Image from 'next/image';
-import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { BiasCardDropped } from '@/components/cards/bias-card-dropped';
 import { BiasCardList } from '@/components/cards/bias-card-list';
@@ -50,6 +49,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
+import { useHashRouter } from '@/lib/routing/hash-router';
 import { navigateToActivity } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
@@ -284,8 +284,9 @@ function StageColumn({
 }
 
 export default function Stage2Client() {
-  const params = useParams();
-  const activityId = params.id as string;
+  const { currentRoute } = useHashRouter();
+  const workspaceActivityId = useWorkspaceStore((s) => s.activityId);
+  const activityId = (currentRoute.activityId || workspaceActivityId) as string;
 
   const { completeActivityStage } = useActivityStore();
   const { biasCards, setSearchQuery, loadCards } = useCardsStore();
@@ -588,10 +589,15 @@ export default function Stage2Client() {
     );
   };
 
-  // Check completion status - cards assigned to lifecycle stages
-  const assignedCards = stageAssignments.length;
+  // Check completion status - count unique cards assigned that are actually available in Stage 1
+  const availableCardIds = new Set(enrichedBiasCards.map((card) => card.id));
+  const validAssignments = stageAssignments.filter((a) =>
+    availableCardIds.has(a.cardId)
+  );
+  const uniqueAssignedCards = new Set(validAssignments.map((a) => a.cardId))
+    .size;
   const isStageComplete =
-    assignedCards >= Math.min(5, enrichedBiasCards.length); // At least 5 cards or all available
+    uniqueAssignedCards >= Math.min(5, enrichedBiasCards.length); // At least 5 unique cards or all available
 
   const handleCompleteStage = () => {
     completeActivityStage(activityId, 2);
@@ -671,9 +677,9 @@ export default function Stage2Client() {
           instructions="Assign categorised bias cards to relevant project lifecycle stages. Consider when each bias is most likely to occur or have impact."
           onCompleteStage={handleCompleteStage}
           progress={{
-            current: assignedCards,
+            current: uniqueAssignedCards,
             total: enrichedBiasCards.length,
-            label: `${assignedCards}/${enrichedBiasCards.length} biases assigned to project lifecycle stages`,
+            label: `${uniqueAssignedCards}/${enrichedBiasCards.length} unique biases assigned (${validAssignments.length} total assignments)`,
           }}
           title="Stage 2: Lifecycle Assignment"
         />

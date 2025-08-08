@@ -85,7 +85,20 @@ export function NavProjects({
                               'data-onboarding': subItem.onboardingId,
                             })}
                           >
-                            <Link href={subItem.url}>
+                            <Link
+                              href={subItem.url}
+                              onClick={() => {
+                                // Clear hash when navigating to activities or reports
+                                if (
+                                  (subItem.url === '/activities' ||
+                                    subItem.url === '/reports') &&
+                                  typeof window !== 'undefined' &&
+                                  window.location.hash
+                                ) {
+                                  window.location.hash = '';
+                                }
+                              }}
+                            >
                               <span>{subItem.title}</span>
                             </Link>
                           </SidebarMenuSubButton>

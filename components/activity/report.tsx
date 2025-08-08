@@ -384,7 +384,7 @@ export default function ReportClient() {
             </div>
             <div className="flex items-center gap-3">
               <Button
-                onClick={() => router.push('/dashboard')}
+                onClick={() => router.push('/activities')}
                 variant="outline"
               >
                 Back to Dashboard

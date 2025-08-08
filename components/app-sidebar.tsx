@@ -97,14 +97,14 @@ const data = {
   activity: [
     {
       name: 'Dashboards',
-      url: '/dashboard',
+      url: '/activities',
       icon: LayoutDashboard,
       isActive: true,
       onboardingId: 'dashboards-nav',
       items: [
         {
           title: 'Activities',
-          url: '/dashboard',
+          url: '/activities',
         },
         {
           title: 'Reports',

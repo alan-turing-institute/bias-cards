@@ -1,7 +1,6 @@
 'use client';
 
 import { Edit3, FileText } from 'lucide-react';
-import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { StageFooter } from '@/components/stage-footer';
 import { StageNavigation } from '@/components/stage-navigation';
@@ -15,6 +14,7 @@ import { StageGroupHeader } from '@/components/ui/stage-group-header';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
+import { useHashRouter } from '@/lib/routing/hash-router';
 import { navigateToActivity } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
@@ -128,9 +128,9 @@ const AssignmentCard = ({
 );
 
 export default function Stage3Client() {
-  const params = useParams();
-
-  const activityId = params.id as string;
+  const { currentRoute } = useHashRouter();
+  const workspaceActivityId = useWorkspaceStore((s) => s.activityId);
+  const activityId = (currentRoute.activityId || workspaceActivityId) as string;
 
   const { completeActivityStage } = useActivityStore();
   const { biasCards, loadCards } = useCardsStore();
