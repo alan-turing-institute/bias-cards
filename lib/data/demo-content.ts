@@ -236,12 +236,17 @@ export const DEMO_REPORTS: Partial<Report>[] = [
           biases: [
             {
               biasCard: {
+                id: 'historical-bias',
                 name: 'Historical Bias',
-                title: 'historical-bias',
+                title: 'Historical Bias',
                 category: 'statistical-bias',
                 description:
                   'Historical lending data reflects past discriminatory practices',
                 caption: 'Past discrimination embedded in training data',
+                icon: 'history',
+                example:
+                  'Past redlining practices reflected in loan approval data',
+                prompts: [],
               } as BiasCard,
               severity: 'high',
               confidence: 'high',
@@ -260,12 +265,17 @@ export const DEMO_REPORTS: Partial<Report>[] = [
             },
             {
               biasCard: {
+                id: 'selection-bias',
                 name: 'Selection Bias',
-                title: 'selection-bias',
+                title: 'Selection Bias',
                 category: 'statistical-bias',
                 description:
                   'Training data not representative of all applicant populations',
                 caption: 'Non-representative sampling in data collection',
+                icon: 'filter',
+                example:
+                  'Only including data from bank customers, excluding unbanked populations',
+                prompts: [],
               } as BiasCard,
               severity: 'high',
               confidence: 'medium',
@@ -289,12 +299,17 @@ export const DEMO_REPORTS: Partial<Report>[] = [
           biases: [
             {
               biasCard: {
+                id: 'proxy-discrimination',
                 name: 'Proxy Discrimination',
-                title: 'proxy-discrimination',
+                title: 'Proxy Discrimination',
                 category: 'social-bias',
                 description:
                   'Non-protected attributes serving as proxies for protected characteristics',
                 caption: 'Indirect discrimination through correlated features',
+                icon: 'link',
+                example:
+                  'Zip code serving as proxy for race in lending decisions',
+                prompts: [],
               } as BiasCard,
               severity: 'high',
               confidence: 'high',
@@ -318,11 +333,16 @@ export const DEMO_REPORTS: Partial<Report>[] = [
           biases: [
             {
               biasCard: {
+                id: 'feedback-loop-bias',
                 name: 'Feedback Loop Bias',
-                title: 'feedback-loop-bias',
+                title: 'Feedback Loop Bias',
                 category: 'statistical-bias',
                 description: 'Model decisions influence future training data',
                 caption: 'Self-reinforcing bias through feedback mechanisms',
+                icon: 'refresh-cw',
+                example:
+                  'Loan denials reduce credit history, affecting future applications',
+                prompts: [],
               } as BiasCard,
               severity: 'medium',
               confidence: 'high',

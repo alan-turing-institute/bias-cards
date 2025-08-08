@@ -45,14 +45,12 @@ export function BiasCard({
         >
           {/* Card Number */}
           <div className="absolute top-6 left-6">
-            <span className="font-bold text-6xl text-white/80">
-              {cardNumber}
-            </span>
+            <span className="font-bold text-6xl text-white">{cardNumber}</span>
           </div>
 
           {/* Icon */}
-          <div className="mt-8">
-            <IconComponent className="h-24 w-24 text-white/40" />
+          <div className="mt-8 [&>svg]:fill-white [&>svg]:stroke-none [&>svg]:opacity-100">
+            <IconComponent className="h-24 w-24" fill="white" stroke="none" />
           </div>
 
           {/* Rotated Category Text */}
@@ -64,7 +62,7 @@ export function BiasCard({
               className="flex origin-center items-center justify-center"
               style={{ transform: 'rotate(-90deg)' }}
             >
-              <span className="whitespace-nowrap font-medium text-sm text-white/60 uppercase tracking-[0.2em]">
+              <span className="whitespace-nowrap font-medium text-sm text-white uppercase tracking-[0.2em]">
                 {categoryLabel}
               </span>
             </div>

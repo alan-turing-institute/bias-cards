@@ -7,13 +7,25 @@ const STAGE_NUMBER_PATTERN = /\/stage\/(\d+)$/;
 export function navigateToActivity(id: string, stage = 1): void {
   if (typeof window !== 'undefined') {
     const validStage = stage < 1 || stage > 5 ? 1 : stage;
-    window.location.hash = `/activity/${id}/stage/${validStage}`;
+    // If we're not on the activity page, navigate there first with the hash
+    if (window.location.pathname.includes('/activity')) {
+      // If we're already on the activity page, just update the hash
+      window.location.hash = `/activity/${id}/stage/${validStage}`;
+    } else {
+      window.location.href = `/activity#/activity/${id}/stage/${validStage}`;
+    }
   }
 }
 
 export function navigateToReport(activityId: string): void {
   if (typeof window !== 'undefined') {
-    window.location.hash = `/activity/${activityId}/report`;
+    // If we're not on the activity page, navigate there first with the hash
+    if (window.location.pathname.includes('/activity')) {
+      // If we're already on the activity page, just update the hash
+      window.location.hash = `/activity/${activityId}/report`;
+    } else {
+      window.location.href = `/activity#/activity/${activityId}/report`;
+    }
   }
 }
 

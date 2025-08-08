@@ -34,14 +34,12 @@ export function MitigationCardCompact({
         <div className={cn('relative h-[190px] p-6', colors.bg)}>
           {/* Card Number */}
           <div className="absolute top-4 left-4">
-            <span className="font-bold text-4xl text-white/90">
-              {cardNumber}
-            </span>
+            <span className="font-bold text-4xl text-white">{cardNumber}</span>
           </div>
 
           {/* Icon */}
           <div className="flex h-full items-center justify-center">
-            <IconComponent className="h-20 w-20 text-white/60" />
+            <IconComponent className="h-20 w-20 text-white" />
           </div>
         </div>
 

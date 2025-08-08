@@ -42,7 +42,7 @@ export function BiasCardCompact({
 
           {/* Icon */}
           <div className="flex h-full items-center justify-center">
-            <IconComponent className="h-20 w-20 text-white/40" />
+            <IconComponent className="h-20 w-20 text-white" />
           </div>
         </div>
 

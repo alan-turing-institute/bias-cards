@@ -37,8 +37,12 @@ export function MitigationCard({
 
       {/* Mitigation-specific icon overlay */}
       {showIcon && (
-        <div className="pointer-events-none absolute top-4 right-4 opacity-30 transition-opacity group-hover:opacity-50">
-          <Shield className={cn('h-5 w-5', colors.text)} />
+        <div className="pointer-events-none absolute top-4 right-4">
+          <Shield
+            className="h-5 w-5 text-white"
+            fill="currentColor"
+            strokeWidth={0}
+          />
         </div>
       )}
 
