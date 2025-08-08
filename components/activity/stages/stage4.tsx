@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDown, ChevronUp, FileText, X } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { MitigationCardList } from '@/components/cards/mitigation-card-list';
 import { StageFooter } from '@/components/stage-footer';
@@ -20,6 +20,7 @@ import { StageGroupHeader } from '@/components/ui/stage-group-header';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
+import { navigateToActivity } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
 import { useWorkspaceStore } from '@/lib/stores/workspace-store';
@@ -230,7 +231,7 @@ function SelectedMitigations({
 
 export default function Stage4Client() {
   const params = useParams();
-  const router = useRouter();
+
   const activityId = params.id as string;
 
   const { completeActivityStage } = useActivityStore();
@@ -337,7 +338,7 @@ export default function Stage4Client() {
   const handleCompleteStage = () => {
     completeActivityStage(activityId, 4);
     completeWorkspaceStage(4);
-    router.push(`/activity/${activityId}/stage/5`);
+    navigateToActivity(activityId, 5);
   };
 
   // Get pairs for a specific bias

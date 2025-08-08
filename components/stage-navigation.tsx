@@ -9,7 +9,6 @@ import {
   Circle,
   Settings2,
 } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -26,6 +25,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { navigateToActivity } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { cn } from '@/lib/utils';
 
@@ -64,7 +64,6 @@ export function StageNavigation({
   canComplete = false,
   completionLabel = 'Complete Stage',
 }: StageNavigationProps) {
-  const router = useRouter();
   const { getActivity, canAdvanceToStage } = useActivityStore();
 
   const activity = getActivity(activityId);
@@ -73,7 +72,7 @@ export function StageNavigation({
 
   const handleStageNavigation = (targetStage: number) => {
     if (canAdvanceToStage(activityId, targetStage)) {
-      router.push(`/activity/${activityId}/stage/${targetStage}`);
+      navigateToActivity(activityId, targetStage);
     }
   };
 

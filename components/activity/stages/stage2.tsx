@@ -14,7 +14,7 @@ import {
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Info, Layers, Search, X } from 'lucide-react';
 import Image from 'next/image';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { BiasCardDropped } from '@/components/cards/bias-card-dropped';
 import { BiasCardList } from '@/components/cards/bias-card-list';
@@ -50,6 +50,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
+import { navigateToActivity } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
 import { useWorkspaceStore } from '@/lib/stores/workspace-store';
@@ -284,7 +285,6 @@ function StageColumn({
 
 export default function Stage2Client() {
   const params = useParams();
-  const router = useRouter();
   const activityId = params.id as string;
 
   const { completeActivityStage } = useActivityStore();
@@ -596,7 +596,7 @@ export default function Stage2Client() {
   const handleCompleteStage = () => {
     completeActivityStage(activityId, 2);
     completeWorkspaceStage(2);
-    router.push(`/activity/${activityId}/stage/3`);
+    navigateToActivity(activityId, 3);
   };
 
   // Show loading state during hydration to prevent mismatch

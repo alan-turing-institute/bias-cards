@@ -1,7 +1,7 @@
 'use client';
 
 import { Edit3, FileText } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { StageFooter } from '@/components/stage-footer';
 import { StageNavigation } from '@/components/stage-navigation';
@@ -15,6 +15,7 @@ import { StageGroupHeader } from '@/components/ui/stage-group-header';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
+import { navigateToActivity } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
 import { useWorkspaceStore } from '@/lib/stores/workspace-store';
@@ -128,7 +129,7 @@ const AssignmentCard = ({
 
 export default function Stage3Client() {
   const params = useParams();
-  const router = useRouter();
+
   const activityId = params.id as string;
 
   const { completeActivityStage } = useActivityStore();
@@ -239,7 +240,7 @@ export default function Stage3Client() {
   const handleCompleteStage = () => {
     completeActivityStage(activityId, 3);
     completeWorkspaceStage(3);
-    router.push(`/activity/${activityId}/stage/4`);
+    navigateToActivity(activityId, 4);
   };
 
   const handleStartEdit = (assignment: StageAssignmentWithCard) => {

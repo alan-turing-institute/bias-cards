@@ -43,6 +43,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Textarea } from '@/components/ui/textarea';
+import { navigateToActivity, navigateToReport } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useOnboardingStore } from '@/lib/stores/onboarding-store';
 import { useReportsStore } from '@/lib/stores/reports-store';
@@ -99,9 +100,7 @@ function ActivityCard({
         className="cursor-pointer"
         onClick={() => {
           if (!isCompleted) {
-            router.push(
-              `/activity/${activity.id}/stage/${activity.currentStage}`
-            );
+            navigateToActivity(activity.id, activity.currentStage);
           }
         }}
       >
@@ -176,12 +175,10 @@ function ActivityCard({
                     router.push(`/reports/view?id=${existingReport.id}`);
                   } else {
                     // Navigate to the activity report page which will create the report
-                    router.push(`/activity/${activity.id}/report`);
+                    navigateToReport(activity.id);
                   }
                 } else {
-                  router.push(
-                    `/activity/${activity.id}/stage/${activity.currentStage}`
-                  );
+                  navigateToActivity(activity.id, activity.currentStage);
                 }
               }}
               size="sm"
@@ -307,8 +304,12 @@ export default function DashboardPage() {
     setActivityForm({ title: '', description: '', projectType: '' });
     setIsNewActivityOpen(false);
 
-    // Redirect to Stage 1 with the new activity
-    router.push(`/activity/${activityId}/stage/1`);
+    // Navigate to the activity page with hash routing
+    router.push('/activity');
+    // Set the hash after navigation
+    setTimeout(() => {
+      navigateToActivity(activityId, 1);
+    }, 0);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {

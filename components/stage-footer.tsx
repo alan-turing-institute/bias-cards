@@ -1,8 +1,8 @@
 'use client';
 
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { navigateToActivity } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 
 interface StageFooterProps {
@@ -20,12 +20,11 @@ export function StageFooter({
   canComplete = false,
   completionLabel = 'Complete Stage',
 }: StageFooterProps) {
-  const router = useRouter();
   const { canAdvanceToStage } = useActivityStore();
 
   const handleStageNavigation = (targetStage: number) => {
     if (canAdvanceToStage(activityId, targetStage)) {
-      router.push(`/activity/${activityId}/stage/${targetStage}`);
+      navigateToActivity(activityId, targetStage);
     }
   };
 

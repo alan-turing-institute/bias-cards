@@ -13,7 +13,7 @@ import {
 } from '@dnd-kit/core';
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable';
 import { Layers, Search } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { BiasCardList } from '@/components/cards/bias-card-list';
 import { CardDragOverlay } from '@/components/cards/drag-overlay';
@@ -46,6 +46,7 @@ import {
   SheetTitle,
   SheetTrigger,
 } from '@/components/ui/sheet';
+import { navigateToActivity } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
 import { useWorkspaceStore } from '@/lib/stores/workspace-store';
@@ -86,7 +87,6 @@ function extractCardFromDragEvent(
 
 export default function Stage1Client() {
   const params = useParams();
-  const router = useRouter();
   const activityId = params.id as string;
 
   const { completeActivityStage } = useActivityStore();
@@ -149,7 +149,7 @@ export default function Stage1Client() {
   const proceedToNextStage = () => {
     completeActivityStage(activityId, 1);
     completeWorkspaceStage(1);
-    router.push(`/activity/${activityId}/stage/2`);
+    navigateToActivity(activityId, 2);
   };
 
   // Drag and drop sensors

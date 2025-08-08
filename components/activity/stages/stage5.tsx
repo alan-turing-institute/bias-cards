@@ -1,7 +1,7 @@
 'use client';
 
 import { Edit3, FileText, Star } from 'lucide-react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { StageFooter } from '@/components/stage-footer';
 import { StageNavigation } from '@/components/stage-navigation';
@@ -15,6 +15,7 @@ import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
+import { navigateToReport } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
 import { useReportsStore } from '@/lib/stores/reports-store';
@@ -327,7 +328,6 @@ function PairCard({
 
 export default function Stage5Client() {
   const params = useParams();
-  const router = useRouter();
   const activityId = params.id as string;
 
   const { completeActivityStage } = useActivityStore();
@@ -435,7 +435,7 @@ export default function Stage5Client() {
     // Get activity data for report generation
     const activity = useActivityStore.getState().getActivity(activityId);
     if (!activity) {
-      router.push('/dashboard');
+      window.location.href = '/dashboard';
       return;
     }
 
@@ -466,10 +466,10 @@ export default function Stage5Client() {
       });
 
       // Redirect to report view
-      router.push(`/reports/view?id=${reportId}`);
+      window.location.href = `/reports/view?id=${reportId}`;
     } catch (_error) {
       // Fallback to activity report page
-      router.push(`/activity/${activityId}/report`);
+      navigateToReport(activityId);
     }
   };
 

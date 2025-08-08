@@ -16,6 +16,7 @@
 # next.js
 /.next/
 /out/
+/.next.backup/
 
 # production
 /build
@@ -44,3 +45,7 @@ next-env.d.ts
 .claude/
 tasks/
 resources/
+
+# migration backups
+.backup-dynamic-routes/
+*.backup

@@ -13,6 +13,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { navigateToActivity } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useWorkspaceStore } from '@/lib/stores/workspace-store';
 
@@ -79,7 +80,10 @@ export function SessionRecoveryDialog({
         // Set the activity ID in workspace store
         workspaceStore.setActivityId(activity.id);
         // Navigate to the current stage of the selected activity
-        router.push(`/activity/${activity.id}/stage/${activity.currentStage}`);
+        router.push('/activity');
+        setTimeout(() => {
+          navigateToActivity(activity.id, activity.currentStage);
+        }, 0);
         handleOpenChange(false);
       }
     },
