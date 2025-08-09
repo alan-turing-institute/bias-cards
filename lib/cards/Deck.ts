@@ -1,11 +1,11 @@
-import type { BaseCard } from './BaseCard';
+import type { BaseCard } from './base-card';
 
 export interface DeckMetadata {
   id: string;
   name: string;
   version: string;
   description: string;
-  categories: string[] | Record<string, any>; // Allow both array and object format
+  categories: string[] | Record<string, unknown>; // Allow both array and object format
   created?: string;
   lastModified?: string;
 }
@@ -129,8 +129,6 @@ export abstract class Deck<T extends BaseCard> {
   protected addCard(card: T): void {
     if (card.validate()) {
       this.cards.set(card.id, card);
-    } else {
-      console.warn(`Invalid card skipped: ${card.id}`);
     }
   }
 

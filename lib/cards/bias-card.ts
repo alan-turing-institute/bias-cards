@@ -1,5 +1,5 @@
 import type { BiasCategory, BiasRiskCategory } from '@/lib/types';
-import { BaseCard, type CardData } from './BaseCard';
+import { BaseCard, type CardData } from './base-card';
 
 const BIAS_CATEGORIES: BiasCategory[] = [
   'cognitive-bias',

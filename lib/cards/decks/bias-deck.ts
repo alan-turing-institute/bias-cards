@@ -1,8 +1,7 @@
 import type { BiasCategory, LifecycleStage } from '@/lib/types';
-import type { BaseCard } from '../BaseCard';
-import { BiasCard, type BiasCardData } from '../BiasCard';
-import { Deck } from '../Deck';
-import { MitigationCard, type MitigationCardData } from '../MitigationCard';
+import { BiasCard, type BiasCardData } from '../bias-card';
+import { Deck } from '../deck';
+import { MitigationCard, type MitigationCardData } from '../mitigation-card';
 
 type BiasDeckCard = BiasCard | MitigationCard;
 
@@ -34,49 +33,52 @@ export class BiasDeck extends Deck<BiasDeckCard> {
 
   async load(): Promise<void> {
     try {
-      // Import the deck data
       const deckData = await import('@/app/data/decks/bias-deck.json');
-
-      // Load bias cards
-      if (deckData.biasCards && Array.isArray(deckData.biasCards)) {
-        for (const cardData of deckData.biasCards) {
-          const card = new BiasCard({
-            ...cardData,
-            id: String(cardData.id), // Ensure ID is a string
-            category: cardData.category as BiasCategory,
-          } as BiasCardData);
-          if (card.validate()) {
-            this.addCard(card);
-          }
-        }
-      }
-
-      // Load mitigation cards
-      if (deckData.mitigationCards && Array.isArray(deckData.mitigationCards)) {
-        for (const cardData of deckData.mitigationCards) {
-          const card = new MitigationCard({
-            ...cardData,
-            id: String(cardData.id), // Ensure ID is a string
-            category: 'mitigation-technique' as const,
-            applicableStages: cardData.applicableStages as LifecycleStage[],
-          } as MitigationCardData);
-          if (card.validate()) {
-            this.addCard(card);
-          }
-        }
-      }
-
-      // Update metadata if provided
-      if (deckData.metadata) {
-        this.metadata = {
-          ...this.metadata,
-          ...deckData.metadata,
-        };
-      }
-    } catch (error) {
-      console.error('Failed to load BiasDeck:', error);
-      // Fallback to loading from individual files if deck doesn't exist yet
+      this.loadBiasCards(deckData);
+      this.loadMitigationCards(deckData);
+      this.updateMetadata(deckData);
+    } catch (_error) {
       await this.loadFromLegacyFiles();
+    }
+  }
+
+  private loadBiasCards(deckData: { biasCards?: unknown }): void {
+    if (deckData.biasCards && Array.isArray(deckData.biasCards)) {
+      for (const cardData of deckData.biasCards) {
+        const card = new BiasCard({
+          ...cardData,
+          id: String(cardData.id),
+          category: cardData.category as BiasCategory,
+        } as BiasCardData);
+        if (card.validate()) {
+          this.addCard(card);
+        }
+      }
+    }
+  }
+
+  private loadMitigationCards(deckData: { mitigationCards?: unknown }): void {
+    if (deckData.mitigationCards && Array.isArray(deckData.mitigationCards)) {
+      for (const cardData of deckData.mitigationCards) {
+        const card = new MitigationCard({
+          ...cardData,
+          id: String(cardData.id),
+          category: 'mitigation-technique' as const,
+          applicableStages: cardData.applicableStages as LifecycleStage[],
+        } as MitigationCardData);
+        if (card.validate()) {
+          this.addCard(card);
+        }
+      }
+    }
+  }
+
+  private updateMetadata(deckData: { metadata?: unknown }): void {
+    if (deckData.metadata) {
+      this.metadata = {
+        ...this.metadata,
+        ...deckData.metadata,
+      };
     }
   }
 
@@ -91,7 +93,9 @@ export class BiasDeck extends Deck<BiasDeckCard> {
         const card = new BiasCard({
           ...legacyCard,
           id: legacyCard.id,
-          tags: this.generateTags(legacyCard),
+          tags: this.generateTags(
+            legacyCard as { category?: string; name?: string }
+          ),
         });
         if (card.validate()) {
           this.addCard(card);
@@ -104,19 +108,24 @@ export class BiasDeck extends Deck<BiasDeckCard> {
           ...legacyCard,
           id: legacyCard.id,
           category: 'mitigation-technique' as const,
-          tags: this.generateTags(legacyCard),
+          tags: this.generateTags(
+            legacyCard as { category?: string; name?: string }
+          ),
         });
         if (card.validate()) {
           this.addCard(card);
         }
       }
-    } catch (error) {
-      console.error('Failed to load from legacy files:', error);
+    } catch (_error) {
       throw new Error('Could not load card data from any source');
     }
   }
 
-  private generateTags(card: any): string[] {
+  private generateTags(card: {
+    category?: string;
+    name?: string;
+    [key: string]: unknown;
+  }): string[] {
     const tags: string[] = [];
 
     // Add category as a tag
@@ -125,8 +134,10 @@ export class BiasDeck extends Deck<BiasDeckCard> {
     }
 
     // Extract keywords from name
-    const nameWords = card.name.toLowerCase().split(' ');
-    tags.push(...nameWords.filter((word: string) => word.length > 3));
+    if (card.name && typeof card.name === 'string') {
+      const nameWords = card.name.toLowerCase().split(' ');
+      tags.push(...nameWords.filter((word: string) => word.length > 3));
+    }
 
     return [...new Set(tags)]; // Remove duplicates
   }
@@ -153,18 +164,12 @@ export class BiasDeck extends Deck<BiasDeckCard> {
 
   validate(): boolean {
     if (this.cards.size === 0) {
-      console.warn('BiasDeck validation failed: No cards loaded');
       return false;
     }
 
     const invalidCards = this.getAllCards().filter((card) => !card.validate());
     if (invalidCards.length > 0) {
-      console.warn(
-        `BiasDeck validation failed: ${invalidCards.length} invalid cards found`
-      );
-      invalidCards.forEach((card) => {
-        console.warn(`  - Invalid card: ${card.id} (${card.name})`);
-      });
+      // Invalid cards found - validation failed
       return false;
     }
 

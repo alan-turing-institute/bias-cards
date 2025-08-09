@@ -1,4 +1,12 @@
 export type {
+  ActivityProgress,
+  BiasActivityData,
+  BiasActivityState,
+  BiasEntry,
+  CompletionStatus,
+  ImplementationNote,
+} from './bias-activity';
+export type {
   ActivityStage,
   BiasCard,
   BiasCategory,
@@ -21,6 +29,22 @@ export type {
   CommentSummary,
 } from './comments';
 export type {
+  ActivityExport,
+  DataValidationResult,
+  IntermediateData,
+  LegacyData,
+  MigrationOptions,
+  MigrationResult,
+  VersionDetectionResult,
+} from './migration';
+// Export utility functions from migration
+export {
+  detectDataVersion,
+  isActivityExport,
+  isIntermediateData,
+  isLegacyData,
+} from './migration';
+export type {
   ProjectInfo,
   ProjectMilestone,
   ProjectTemplate,
@@ -42,12 +66,12 @@ export type {
   ReportTemplate,
 } from './reports';
 export type {
-  ActivityProgress,
   Milestone,
   SavedWorkspace,
   WorkspaceAction,
   WorkspaceFilters,
   WorkspaceHistory,
+  WorkspaceProgress,
   WorkspaceSettings,
   WorkspaceState,
 } from './workspace';

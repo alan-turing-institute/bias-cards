@@ -1,4 +1,4 @@
-import type { Activity } from '@/lib/activities/Activity';
+import type { Activity } from '@/lib/activities/activity';
 
 export interface ReportSummary {
   title: string;

@@ -6,7 +6,6 @@ import {
 } from '@/lib/data/mitigation-matching';
 import { useCardsStore } from '@/lib/stores/cards-store';
 import type {
-  ActivityProgress,
   ActivityStage,
   BiasRiskAssignment,
   BiasRiskCategory,
@@ -17,6 +16,7 @@ import type {
   StageAssignment,
   WorkspaceAction,
   WorkspaceHistory,
+  WorkspaceProgress,
   WorkspaceState,
 } from '@/lib/types';
 import {
@@ -113,7 +113,7 @@ interface WorkspaceStoreState extends WorkspaceState {
   ) => boolean;
 
   // Computed properties
-  getProgress: () => ActivityProgress;
+  getProgress: () => WorkspaceProgress;
 
   // Matching methods
   getSuggestedMitigationsForBias: (
@@ -202,7 +202,7 @@ const createInitialState = (): WorkspaceState => ({
     completionPercentage: 0,
     timeSpent: 0,
     milestones: createInitialMilestones(),
-  },
+  } as WorkspaceProgress,
 });
 
 const generateActionId = (): string => {
@@ -604,6 +604,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
         exportWorkspaceData: () => {
           const state = get();
           // Return current workspace state without history (to reduce size)
+          // biome-ignore lint/correctness/noUnusedVariables: history is intentionally excluded from export
           const { history, ...workspaceData } = state;
           return workspaceData;
         },
@@ -663,8 +664,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
             }));
 
             return true;
-          } catch (error) {
-            console.error('Error importing workspace data:', error);
+          } catch (_error) {
             return false;
           }
         },

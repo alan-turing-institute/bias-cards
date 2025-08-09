@@ -1,5 +1,5 @@
-import type { BaseCard } from '@/lib/cards/BaseCard';
-import type { Deck } from '@/lib/cards/Deck';
+import type { BaseCard } from '@/lib/cards/base-card';
+import type { Deck } from '@/lib/cards/deck';
 
 export interface ActivityMetadata {
   id?: string;
@@ -97,7 +97,7 @@ export abstract class Activity {
     return { ...this.state };
   }
 
-  async save(): Promise<void> {
+  save(): void {
     // Implementation would depend on persistence layer
     // For now, this is a placeholder
     const data = this.export();
@@ -130,7 +130,9 @@ export abstract class Activity {
   }
 
   isExpired(maxAge?: number): boolean {
-    if (!maxAge) return false;
+    if (!maxAge) {
+      return false;
+    }
     const age = Date.now() - this.createdAt.getTime();
     return age > maxAge;
   }

@@ -155,7 +155,6 @@ function PairEditModal({
           '-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg bg-white shadow-lg',
           open ? 'opacity-100' : 'pointer-events-none opacity-0'
         )}
-        onClick={(e) => e.stopPropagation()}
         role="dialog"
       >
         <div className="p-6">

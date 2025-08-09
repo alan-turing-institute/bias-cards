@@ -1,5 +1,5 @@
 import type { LifecycleStage } from '@/lib/types';
-import { BaseCard, type CardData } from './BaseCard';
+import { BaseCard, type CardData } from './base-card';
 
 export interface MitigationCardData extends CardData {
   category: 'mitigation-technique';

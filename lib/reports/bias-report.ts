@@ -1,4 +1,4 @@
-import type { BiasActivity } from '@/lib/activities/BiasActivity';
+import type { BiasActivity } from '@/lib/activities/bias-activity';
 import type { BiasRiskCategory, LifecycleStage } from '@/lib/types';
 import type { BiasEntry } from '@/lib/types/bias-activity';
 import {
@@ -8,7 +8,7 @@ import {
   type ReportMetrics,
   type ReportSection,
   type ReportSummary,
-} from './Report';
+} from './report';
 
 export interface BiasReportSummary extends ReportSummary {
   totalBiases: number;
@@ -167,11 +167,11 @@ ${report.recommendations.map((rec) => this.formatRecommendation(rec)).join('\n\n
 `;
   }
 
-  async exportToPDF(): Promise<Buffer> {
+  exportToPDF(): Promise<Buffer> {
     // PDF export would require a PDF library
     // This is a placeholder implementation
     const markdown = this.exportToMarkdown();
-    return Buffer.from(markdown, 'utf-8');
+    return Promise.resolve(Buffer.from(markdown, 'utf-8'));
   }
 
   // Helper methods
@@ -276,8 +276,12 @@ ${report.recommendations.map((rec) => this.formatRecommendation(rec)).join('\n\n
     const hasNotes = Object.keys(bias.implementationNotes).length > 0;
     const hasMitigations = Object.keys(bias.mitigations).length > 0;
 
-    if (!hasMitigations) return 'Not Started';
-    if (!hasNotes) return 'Planned';
+    if (!hasMitigations) {
+      return 'Not Started';
+    }
+    if (!hasNotes) {
+      return 'Planned';
+    }
 
     // Check implementation note statuses
     const statuses = new Set<string>();
@@ -287,8 +291,12 @@ ${report.recommendations.map((rec) => this.formatRecommendation(rec)).join('\n\n
       }
     }
 
-    if (statuses.has('implemented')) return 'Partially Implemented';
-    if (statuses.has('in-progress')) return 'In Progress';
+    if (statuses.has('implemented')) {
+      return 'Partially Implemented';
+    }
+    if (statuses.has('in-progress')) {
+      return 'In Progress';
+    }
     return 'Planned';
   }
 
@@ -299,15 +307,19 @@ ${report.recommendations.map((rec) => this.formatRecommendation(rec)).join('\n\n
 
     for (const bias of biases) {
       for (const [stage, mitigations] of Object.entries(bias.mitigations)) {
-        if (!byStage[stage]) byStage[stage] = [];
+        if (!byStage[stage]) {
+          byStage[stage] = [];
+        }
         byStage[stage].push(...mitigations);
         totalMitigations += mitigations.length;
       }
 
-      for (const [stage, notes] of Object.entries(bias.implementationNotes)) {
+      for (const [_stage, notes] of Object.entries(bias.implementationNotes)) {
         for (const [mitigationId, note] of Object.entries(notes)) {
           const rating = note.effectivenessRating;
-          if (!byEffectiveness[rating]) byEffectiveness[rating] = [];
+          if (!byEffectiveness[rating]) {
+            byEffectiveness[rating] = [];
+          }
           byEffectiveness[rating].push(mitigationId);
         }
       }
@@ -322,16 +334,24 @@ ${report.recommendations.map((rec) => this.formatRecommendation(rec)).join('\n\n
   }
 
   private estimateEffort(mitigationCount: number): string {
-    if (mitigationCount < 5) return 'Low (1-2 weeks)';
-    if (mitigationCount < 10) return 'Medium (2-4 weeks)';
-    if (mitigationCount < 20) return 'High (1-2 months)';
+    if (mitigationCount < 5) {
+      return 'Low (1-2 weeks)';
+    }
+    if (mitigationCount < 10) {
+      return 'Medium (2-4 weeks)';
+    }
+    if (mitigationCount < 20) {
+      return 'High (1-2 months)';
+    }
     return 'Very High (2+ months)';
   }
 
   private getTimeline(biases: BiasEntry[]): Timeline {
     const stages = new Set<string>();
     for (const bias of biases) {
-      bias.lifecycleAssignments.forEach((stage) => stages.add(stage));
+      for (const stage of bias.lifecycleAssignments) {
+        stages.add(stage);
+      }
     }
 
     const phases: TimelinePhase[] = Array.from(stages).map((stage) => ({
@@ -446,11 +466,21 @@ ${report.recommendations.map((rec) => this.formatRecommendation(rec)).join('\n\n
   private countCompletedItems(biases: BiasEntry[]): number {
     let completed = 0;
     for (const bias of biases) {
-      if (bias.riskCategory) completed++;
-      if (bias.lifecycleAssignments.length > 0) completed++;
-      if (Object.keys(bias.rationale).length > 0) completed++;
-      if (Object.keys(bias.mitigations).length > 0) completed++;
-      if (Object.keys(bias.implementationNotes).length > 0) completed++;
+      if (bias.riskCategory) {
+        completed++;
+      }
+      if (bias.lifecycleAssignments.length > 0) {
+        completed++;
+      }
+      if (Object.keys(bias.rationale).length > 0) {
+        completed++;
+      }
+      if (Object.keys(bias.mitigations).length > 0) {
+        completed++;
+      }
+      if (Object.keys(bias.implementationNotes).length > 0) {
+        completed++;
+      }
     }
     return completed;
   }

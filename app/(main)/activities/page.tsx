@@ -193,7 +193,6 @@ function seedStageAssignments(
   ) => void
 ) {
   const riskByBias = getDemoRiskMapping();
-  console.log('Seeding stage assignments and bias risk assignments');
 
   for (const stageKey of Object.keys(stages) as LifecycleStage[]) {
     const stageInfo = stages[stageKey];
@@ -212,6 +211,46 @@ function seedStageAssignments(
   }
 }
 
+// Helper to clear existing card pairs
+function clearExistingPairs(
+  cardPairs: CardPair[],
+  removeCardPair: (biasId: string, mitigationId: string) => void
+) {
+  for (const pair of cardPairs) {
+    removeCardPair(pair.biasId, pair.mitigationId);
+  }
+}
+
+// Helper to get demo annotation for a pair
+function getDemoPairAnnotation(
+  biasId: string,
+  mitigationId: string,
+  defaultReason: string
+): { annotation: string; rating: number | undefined } {
+  const isFirstConfirmationBiasPair = biasId === '1' && mitigationId === '4';
+  const isFirstSelectionBiasPair = biasId === '16' && mitigationId === '2';
+
+  if (isFirstConfirmationBiasPair) {
+    return {
+      annotation:
+        'The Double Diamond methodology is highly effective for addressing confirmation bias.',
+      rating: 5,
+    };
+  }
+
+  if (isFirstSelectionBiasPair) {
+    return {
+      annotation: 'Data augmentation can help address selection bias.',
+      rating: 3,
+    };
+  }
+
+  return {
+    annotation: defaultReason,
+    rating: undefined,
+  };
+}
+
 // Helper to seed card pairs
 function seedCardPairs(
   stages: Record<string, StageInfo>,
@@ -224,14 +263,9 @@ function seedCardPairs(
   ) => void,
   removeCardPair: (biasId: string, mitigationId: string) => void
 ) {
-  console.log('Seeding card pairs, current cardPairs:', cardPairs.length);
-
   // Clear existing pairs if re-seeding
   if (cardPairs.length > 0) {
-    console.log('Clearing existing card pairs for re-seeding');
-    cardPairs.forEach((pair) => {
-      removeCardPair(pair.biasId, pair.mitigationId);
-    });
+    clearExistingPairs(cardPairs, removeCardPair);
   }
 
   for (const stageKey of Object.keys(stages) as LifecycleStage[]) {
@@ -242,23 +276,11 @@ function seedCardPairs(
 
     const meaningfulPairs = getMeaningfulPairsForStage(stageKey, stageInfo);
     for (const { biasId, mitigationId, reason } of meaningfulPairs) {
-      // Add demo annotations for specific pairs
-      const isFirstConfirmationBiasPair =
-        biasId === '1' && mitigationId === '4';
-      const isFirstSelectionBiasPair = biasId === '16' && mitigationId === '2';
-
-      const rating = isFirstConfirmationBiasPair
-        ? 5
-        : isFirstSelectionBiasPair
-          ? 3
-          : undefined;
-
-      const annotation = isFirstConfirmationBiasPair
-        ? 'The Double Diamond methodology is highly effective for addressing confirmation bias.'
-        : isFirstSelectionBiasPair
-          ? 'Data augmentation can help address selection bias.'
-          : reason;
-
+      const { annotation, rating } = getDemoPairAnnotation(
+        biasId,
+        mitigationId,
+        reason
+      );
       createCardPair(biasId, mitigationId, annotation, rating);
     }
   }
@@ -663,7 +685,7 @@ function DashboardContent() {
           }
         }, 2000);
       }
-    } catch (error) {
+    } catch (_error) {
       setImportStatus({
         loading: false,
         message: 'An unexpected error occurred during import.',
@@ -773,13 +795,15 @@ function DashboardContent() {
                   </div>
                   {importStatus.message && (
                     <div
-                      className={`rounded-md p-3 text-sm ${
-                        importStatus.success === true
-                          ? 'border border-green-200 bg-green-50 text-green-700'
-                          : importStatus.success === false
-                            ? 'border border-red-200 bg-red-50 text-red-700'
-                            : 'border border-blue-200 bg-blue-50 text-blue-700'
-                      }`}
+                      className={`rounded-md p-3 text-sm ${(() => {
+                        if (importStatus.success === true) {
+                          return 'border border-green-200 bg-green-50 text-green-700';
+                        }
+                        if (importStatus.success === false) {
+                          return 'border border-red-200 bg-red-50 text-red-700';
+                        }
+                        return 'border border-blue-200 bg-blue-50 text-blue-700';
+                      })()}`}
                     >
                       {importStatus.message}
                     </div>

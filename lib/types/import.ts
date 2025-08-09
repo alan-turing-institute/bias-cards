@@ -60,22 +60,10 @@ export function validateImportData(data: unknown): ImportValidationResult {
   return result;
 }
 
-function validateActivityData(activity: unknown): ImportValidationResult {
-  const result: ImportValidationResult = {
-    isValid: true,
-    errors: [],
-    warnings: [],
-  };
-
-  if (!activity || typeof activity !== 'object') {
-    result.isValid = false;
-    result.errors.push('Missing or invalid activity data');
-    return result;
-  }
-
-  const act = activity as Partial<Activity>;
-
-  // Required fields
+function validateRequiredActivityFields(
+  act: Partial<Activity>,
+  result: ImportValidationResult
+): void {
   if (
     !act.title ||
     typeof act.title !== 'string' ||
@@ -91,8 +79,12 @@ function validateActivityData(activity: unknown): ImportValidationResult {
     result.isValid = false;
     result.errors.push('Activity ID is required and must be a string');
   }
+}
 
-  // Optional but validated fields
+function validateOptionalActivityFields(
+  act: Partial<Activity>,
+  result: ImportValidationResult
+): void {
   if (act.description !== undefined && typeof act.description !== 'string') {
     result.warnings.push('Activity description should be a string');
   }
@@ -118,7 +110,12 @@ function validateActivityData(activity: unknown): ImportValidationResult {
   ) {
     result.warnings.push('Current stage should be an integer between 1 and 5');
   }
+}
 
+function validateActivityDates(
+  act: Partial<Activity>,
+  result: ImportValidationResult
+): void {
   if (act.createdAt && !isValidISODate(act.createdAt)) {
     result.warnings.push('Created date format is invalid');
   }
@@ -126,6 +123,26 @@ function validateActivityData(activity: unknown): ImportValidationResult {
   if (act.lastModified && !isValidISODate(act.lastModified)) {
     result.warnings.push('Last modified date format is invalid');
   }
+}
+
+function validateActivityData(activity: unknown): ImportValidationResult {
+  const result: ImportValidationResult = {
+    isValid: true,
+    errors: [],
+    warnings: [],
+  };
+
+  if (!activity || typeof activity !== 'object') {
+    result.isValid = false;
+    result.errors.push('Missing or invalid activity data');
+    return result;
+  }
+
+  const act = activity as Partial<Activity>;
+
+  validateRequiredActivityFields(act, result);
+  validateOptionalActivityFields(act, result);
+  validateActivityDates(act, result);
 
   if (act.progress) {
     if (!validateProgress(act.progress)) {
@@ -142,6 +159,7 @@ function validateActivityData(activity: unknown): ImportValidationResult {
   return result;
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Workspace data validation requires comprehensive checks of nested arrays and objects
 function validateWorkspaceData(workspace: unknown): ImportValidationResult {
   const result: ImportValidationResult = {
     isValid: true,
@@ -162,10 +180,13 @@ function validateWorkspaceData(workspace: unknown): ImportValidationResult {
     result.errors.push('Bias risk assignments must be an array');
   } else if (ws.biasRiskAssignments) {
     const invalidAssignments = ws.biasRiskAssignments.filter(
-      (assignment, index) => {
-        if (!assignment || typeof assignment !== 'object') return true;
-        if (!assignment.cardId || typeof assignment.cardId !== 'string')
+      (assignment, _index) => {
+        if (!assignment || typeof assignment !== 'object') {
           return true;
+        }
+        if (!assignment.cardId || typeof assignment.cardId !== 'string') {
+          return true;
+        }
         if (
           !(
             assignment.riskCategory &&
@@ -176,8 +197,9 @@ function validateWorkspaceData(workspace: unknown): ImportValidationResult {
               'needs-discussion',
             ].includes(assignment.riskCategory)
           )
-        )
+        ) {
           return true;
+        }
         return false;
       }
     );
@@ -192,11 +214,15 @@ function validateWorkspaceData(workspace: unknown): ImportValidationResult {
     result.errors.push('Stage assignments must be an array');
   } else if (ws.stageAssignments) {
     const invalidStageAssignments = ws.stageAssignments.filter((assignment) => {
-      if (!assignment || typeof assignment !== 'object') return true;
-      if (!assignment.cardId || typeof assignment.cardId !== 'string')
+      if (!assignment || typeof assignment !== 'object') {
         return true;
-      if (!assignment.stage || typeof assignment.stage !== 'string')
+      }
+      if (!assignment.cardId || typeof assignment.cardId !== 'string') {
         return true;
+      }
+      if (!assignment.stage || typeof assignment.stage !== 'string') {
+        return true;
+      }
       return false;
     });
     if (invalidStageAssignments.length > 0) {
@@ -209,18 +235,25 @@ function validateWorkspaceData(workspace: unknown): ImportValidationResult {
   if (ws.cardPairs && !Array.isArray(ws.cardPairs)) {
     result.errors.push('Card pairs must be an array');
   } else if (ws.cardPairs) {
+    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Card pair validation requires multiple nested checks
     const invalidPairs = ws.cardPairs.filter((pair) => {
-      if (!pair || typeof pair !== 'object') return true;
-      if (!pair.biasId || typeof pair.biasId !== 'string') return true;
-      if (!pair.mitigationId || typeof pair.mitigationId !== 'string')
+      if (!pair || typeof pair !== 'object') {
         return true;
+      }
+      if (!pair.biasId || typeof pair.biasId !== 'string') {
+        return true;
+      }
+      if (!pair.mitigationId || typeof pair.mitigationId !== 'string') {
+        return true;
+      }
       if (
         pair.effectivenessRating !== undefined &&
         (!Number.isInteger(pair.effectivenessRating) ||
           pair.effectivenessRating < 1 ||
           pair.effectivenessRating > 5)
-      )
+      ) {
         return true;
+      }
       return false;
     });
     if (invalidPairs.length > 0) {
@@ -254,8 +287,10 @@ function validateWorkspaceData(workspace: unknown): ImportValidationResult {
 }
 
 function validateProgress(progress: unknown): boolean {
-  if (!progress || typeof progress !== 'object') return false;
-  const prog = progress as any;
+  if (!progress || typeof progress !== 'object') {
+    return false;
+  }
+  const prog = progress as { completed?: unknown; total?: unknown };
   return (
     typeof prog.completed === 'number' &&
     typeof prog.total === 'number' &&
@@ -270,7 +305,7 @@ function isValidISODate(dateString: string): boolean {
   const date = new Date(dateString);
   return (
     date instanceof Date &&
-    !isNaN(date.getTime()) &&
+    !Number.isNaN(date.getTime()) &&
     dateString === date.toISOString()
   );
 }

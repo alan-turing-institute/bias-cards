@@ -1,4 +1,4 @@
-import type { ActivityMetadata } from '@/lib/activities/Activity';
+import type { ActivityMetadata } from '@/lib/activities/activity';
 import type { BiasRiskCategory, LifecycleStage } from '@/lib/types';
 
 export interface BiasActivityData {

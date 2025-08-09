@@ -9,6 +9,110 @@ import {
   validateImportFile,
 } from '@/lib/types/import';
 
+// Helper functions for import functionality
+async function parseImportFile(
+  file: File
+): Promise<{ success: boolean; data?: unknown; message: string }> {
+  try {
+    const text = await file.text();
+    const data = JSON.parse(text);
+    return { success: true, data, message: 'File parsed successfully' };
+  } catch (_parseError) {
+    return {
+      success: false,
+      message:
+        'Invalid JSON format. The file appears to be corrupted or is not valid JSON.',
+    };
+  }
+}
+
+function generateActivityId(): string {
+  return `activity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+function createImportedActivity(
+  activity: Activity,
+  newActivityId: string,
+  hasWorkspace: boolean
+): Activity {
+  const now = new Date().toISOString();
+  return {
+    ...activity,
+    id: newActivityId,
+    createdAt: now,
+    lastModified: now,
+    progress: activity.progress || { completed: 0, total: 5 },
+    status: hasWorkspace ? 'in-progress' : 'draft',
+    currentStage: hasWorkspace ? activity.currentStage : 1,
+  };
+}
+
+function importWorkspaceData(
+  workspace: unknown,
+  newActivityId: string
+): { success: boolean } {
+  try {
+    const workspaceStore = JSON.parse(
+      localStorage.getItem('workspace-store') || '{}'
+    );
+    const now = new Date().toISOString();
+
+    const ws = workspace as Record<string, unknown>;
+    const newWorkspaceState = {
+      ...ws,
+      activityId: newActivityId,
+      sessionId: `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      lastModified: now,
+      biasRiskAssignments: Array.isArray(ws.biasRiskAssignments)
+        ? ws.biasRiskAssignments.map((assignment: unknown) => ({
+            ...(assignment as Record<string, unknown>),
+            id: `assignment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          }))
+        : [],
+      stageAssignments: Array.isArray(ws.stageAssignments)
+        ? ws.stageAssignments.map((assignment: unknown) => ({
+            ...(assignment as Record<string, unknown>),
+            id: `assignment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          }))
+        : [],
+    };
+
+    const updatedWorkspaceStore = {
+      ...workspaceStore,
+      state: newWorkspaceState,
+    };
+
+    localStorage.setItem(
+      'workspace-store',
+      JSON.stringify(updatedWorkspaceStore)
+    );
+    return { success: true };
+  } catch (_error) {
+    return { success: false };
+  }
+}
+
+function buildSuccessMessage(
+  title: string,
+  warnings: string[],
+  activityId: string,
+  hasWorkspace: boolean
+): { success: boolean; message: string; activityId: string } {
+  let successMessage = hasWorkspace
+    ? `Successfully imported "${title}" with complete workspace data. You can now continue working on this analysis.`
+    : `Successfully imported "${title}".`;
+
+  if (warnings.length > 0) {
+    successMessage += ` Note: ${warnings.length} minor issues were detected but the import completed successfully.`;
+  }
+
+  return {
+    success: true,
+    message: successMessage,
+    activityId,
+  };
+}
+
 interface ActivityStore {
   // State
   activities: Activity[];
@@ -216,7 +320,7 @@ export const useActivityStore = create<ActivityStore>()(
         }
 
         // Check if there's workspace data for this activity
-        let workspaceData = null;
+        let workspaceData: unknown = null;
         try {
           // Access workspace store data from localStorage
           const workspaceStore = JSON.parse(
@@ -228,8 +332,8 @@ export const useActivityStore = create<ActivityStore>()(
           if (workspaceState && workspaceState.activityId === id) {
             workspaceData = workspaceState;
           }
-        } catch (error) {
-          console.warn('Could not access workspace data for export:', error);
+        } catch (_error) {
+          // Silent fail - workspace data may not exist
         }
 
         const exportData = {
@@ -259,7 +363,6 @@ export const useActivityStore = create<ActivityStore>()(
       },
 
       importActivity: async (file) => {
-        // First validate the file itself
         const fileValidation = validateImportFile(file);
         if (!fileValidation.isValid) {
           return {
@@ -269,125 +372,51 @@ export const useActivityStore = create<ActivityStore>()(
         }
 
         try {
-          const text = await file.text();
-          let importData;
-
-          try {
-            importData = JSON.parse(text);
-          } catch (parseError) {
-            return {
-              success: false,
-              message:
-                'Invalid JSON format. The file appears to be corrupted or is not valid JSON.',
-            };
+          const importData = await parseImportFile(file);
+          if (!importData.success) {
+            return importData;
           }
 
-          // Comprehensive validation of import data
-          const validation = validateImportData(importData);
+          const validation = validateImportData(importData.data);
           if (!validation.isValid) {
-            const errorDetails = validation.errors.join('. ');
             return {
               success: false,
-              message: `Import validation failed: ${errorDetails}`,
+              message: `Import validation failed: ${validation.errors.join('. ')}`,
             };
           }
 
-          const { activity, workspace } = importData as ImportData;
+          const { activity, workspace } = importData.data as ImportData;
+          const newActivityId = generateActivityId();
+          const importedActivity = createImportedActivity(
+            activity,
+            newActivityId,
+            !!workspace
+          );
 
-          // Generate new IDs to avoid conflicts
-          const newActivityId = `activity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-          const now = new Date().toISOString();
-
-          // Create the imported activity with new ID
-          const importedActivity: Activity = {
-            ...activity,
-            id: newActivityId,
-            createdAt: now,
-            lastModified: now,
-            // Ensure progress is initialized
-            progress: activity.progress || { completed: 0, total: 5 },
-            // Reset progress to allow re-completion
-            status: workspace ? 'in-progress' : 'draft',
-            currentStage: workspace ? activity.currentStage : 1,
-          };
-
-          // Add to activities store
           set((state) => ({
             activities: [...state.activities, importedActivity],
           }));
 
-          // If there's workspace data, we'll import it separately
           if (workspace) {
-            try {
-              // Access workspace store and import the data
-              const workspaceStore = JSON.parse(
-                localStorage.getItem('workspace-store') || '{}'
-              );
-              const newWorkspaceState = {
-                ...workspace,
-                activityId: newActivityId,
-                sessionId: `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                lastModified: now,
-                // Regenerate assignment IDs to avoid conflicts
-                biasRiskAssignments:
-                  workspace.biasRiskAssignments?.map((assignment: any) => ({
-                    ...assignment,
-                    id: `assignment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                  })) || [],
-                stageAssignments:
-                  workspace.stageAssignments?.map((assignment: any) => ({
-                    ...assignment,
-                    id: `assignment-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-                  })) || [],
-              };
-
-              // Update workspace store
-              const updatedWorkspaceStore = {
-                ...workspaceStore,
-                state: newWorkspaceState,
-              };
-              localStorage.setItem(
-                'workspace-store',
-                JSON.stringify(updatedWorkspaceStore)
-              );
-
-              // Build success message with any validation warnings
-              let successMessage = `Successfully imported "${activity.title}" with complete workspace data. You can now continue working on this analysis.`;
-              if (validation.warnings.length > 0) {
-                successMessage += ` Note: ${validation.warnings.length} minor issues were detected but the import completed successfully.`;
-              }
-
-              return {
-                success: true,
-                message: successMessage,
-                activityId: newActivityId,
-              };
-            } catch (workspaceError) {
-              console.warn(
-                'Failed to import workspace data, but activity was imported:',
-                workspaceError
-              );
-              return {
-                success: true,
-                message: `Imported "${activity.title}" but could not restore workspace data. You can still access the activity.`,
-                activityId: newActivityId,
-              };
-            }
+            const workspaceResult = importWorkspaceData(
+              workspace,
+              newActivityId
+            );
+            return buildSuccessMessage(
+              activity.title,
+              validation.warnings,
+              newActivityId,
+              workspaceResult.success
+            );
           }
 
-          // Build success message with any validation warnings
-          let successMessage = `Successfully imported "${activity.title}".`;
-          if (validation.warnings.length > 0) {
-            successMessage += ` Note: ${validation.warnings.length} minor issues were detected but the import completed successfully.`;
-          }
-
-          return {
-            success: true,
-            message: successMessage,
-            activityId: newActivityId,
-          };
-        } catch (error) {
-          console.error('Error importing activity:', error);
+          return buildSuccessMessage(
+            activity.title,
+            validation.warnings,
+            newActivityId,
+            false
+          );
+        } catch (_error) {
           return {
             success: false,
             message:

@@ -1,3 +1,6 @@
+import type { BiasActivity } from '@/lib/activities/bias-activity';
+import type { BiasDeck } from '@/lib/cards/decks/bias-deck';
+import type { BiasActivityData } from './bias-activity';
 import type {
   ActivityStage,
   BiasRiskAssignment,
@@ -14,13 +17,24 @@ export interface WorkspaceState {
   lastModified: string;
   currentStage: ActivityStage;
   completedActivityStages: ActivityStage[];
+
+  // Deck and Activity management (v2.0)
+  currentDeck?: BiasDeck | null;
+  currentActivity?: BiasActivity | null;
+  activities?: BiasActivityData[];
+
+  // Legacy fields (v1.0 - will be deprecated)
   biasRiskAssignments: BiasRiskAssignment[];
   stageAssignments: StageAssignment[];
   cardPairs: CardPair[];
   selectedCardIds: string[];
   customAnnotations: Record<string, string>; // cardId -> annotation
   completedStages: LifecycleStage[];
-  activityProgress: ActivityProgress;
+  activityProgress: WorkspaceProgress;
+
+  // Version tracking
+  dataVersion?: '1.0' | '1.5' | '2.0';
+  migrationStatus?: 'pending' | 'in-progress' | 'completed';
 }
 
 type WorkspaceActionData =
@@ -64,7 +78,7 @@ export interface WorkspaceHistory {
   maxHistorySize: number;
 }
 
-export interface ActivityProgress {
+export interface WorkspaceProgress {
   totalCards: number;
   assignedCards: number;
   pairedCards: number;

@@ -1,4 +1,4 @@
-import type { BiasDeck } from '@/lib/cards/decks/BiasDeck';
+import type { BiasDeck } from '@/lib/cards/decks/bias-deck';
 import type { BiasRiskCategory, LifecycleStage } from '@/lib/types';
 import type {
   ActivityProgress,
@@ -10,11 +10,10 @@ import type {
 } from '@/lib/types/bias-activity';
 import {
   Activity,
-  type ActivityData,
   type ActivityMetadata, // Use the base Activity's metadata type
   type ValidationError,
   type ValidationResult,
-} from './Activity';
+} from './activity';
 
 export class BiasActivity extends Activity {
   protected state!: BiasActivityState; // Use definite assignment assertion since it's initialized in parent
@@ -199,53 +198,75 @@ export class BiasActivity extends Activity {
   validate(): ValidationResult {
     const errors: ValidationError[] = [];
 
-    // Check deck compatibility
+    this.validateDeck(errors);
+    this.validateStageProgression(errors);
+    this.validateMitigationReferences(errors);
+
+    return {
+      valid: errors.length === 0,
+      errors: errors.length > 0 ? errors : undefined,
+    };
+  }
+
+  private validateDeck(errors: ValidationError[]): void {
     if (!this.deck || this.deck.size() === 0) {
       errors.push({
         type: 'deck',
         message: 'No deck loaded or deck is empty',
       });
     }
+  }
 
-    // Validate stage progression
+  private validateStageProgression(errors: ValidationError[]): void {
     for (const [biasId, entry] of Object.entries(this.state.biases)) {
-      // Stage 2 requires Stage 1
-      if (entry.lifecycleAssignments.length > 0 && !entry.riskCategory) {
-        errors.push({
-          type: 'progression',
-          biasId,
-          stage: 2,
-          message: `Bias "${entry.name}" has lifecycle assignments but no risk assessment`,
-        });
-      }
+      this.validateBiasProgression(biasId, entry, errors);
+    }
+  }
 
-      // Stage 3 requires Stage 2
-      if (
-        Object.keys(entry.rationale).length > 0 &&
-        entry.lifecycleAssignments.length === 0
-      ) {
-        errors.push({
-          type: 'progression',
-          biasId,
-          stage: 3,
-          message: `Bias "${entry.name}" has rationale but no lifecycle assignments`,
-        });
-      }
+  private validateBiasProgression(
+    biasId: string,
+    entry: BiasEntry,
+    errors: ValidationError[]
+  ): void {
+    // Stage 2 requires Stage 1
+    if (entry.lifecycleAssignments.length > 0 && !entry.riskCategory) {
+      errors.push({
+        type: 'progression',
+        biasId,
+        stage: 2,
+        message: `Bias "${entry.name}" has lifecycle assignments but no risk assessment`,
+      });
+    }
 
-      // Stage 4 requires Stage 2
-      if (
-        Object.keys(entry.mitigations).length > 0 &&
-        entry.lifecycleAssignments.length === 0
-      ) {
-        errors.push({
-          type: 'progression',
-          biasId,
-          stage: 4,
-          message: `Bias "${entry.name}" has mitigations but no lifecycle assignments`,
-        });
-      }
+    // Stage 3 requires Stage 2
+    if (
+      Object.keys(entry.rationale).length > 0 &&
+      entry.lifecycleAssignments.length === 0
+    ) {
+      errors.push({
+        type: 'progression',
+        biasId,
+        stage: 3,
+        message: `Bias "${entry.name}" has rationale but no lifecycle assignments`,
+      });
+    }
 
-      // Validate mitigation references exist in deck
+    // Stage 4 requires Stage 2
+    if (
+      Object.keys(entry.mitigations).length > 0 &&
+      entry.lifecycleAssignments.length === 0
+    ) {
+      errors.push({
+        type: 'progression',
+        biasId,
+        stage: 4,
+        message: `Bias "${entry.name}" has mitigations but no lifecycle assignments`,
+      });
+    }
+  }
+
+  private validateMitigationReferences(errors: ValidationError[]): void {
+    for (const [, entry] of Object.entries(this.state.biases)) {
       for (const [stage, mitigationIds] of Object.entries(entry.mitigations)) {
         for (const mitigationId of mitigationIds) {
           if (!this.deck.getCard(mitigationId)) {
@@ -257,11 +278,6 @@ export class BiasActivity extends Activity {
         }
       }
     }
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-    };
   }
 
   // Export
@@ -277,7 +293,7 @@ export class BiasActivity extends Activity {
       createdAt: this.createdAt.toISOString(),
       updatedAt: this.updatedAt.toISOString(),
       completedAt: this.completedAt?.toISOString(),
-      metadata: this.metadata as any,
+      metadata: this.metadata,
     };
   }
 
@@ -392,7 +408,9 @@ export class BiasActivity extends Activity {
 
   getStageCompletionPercentage(stage: number): number {
     const biases = Object.values(this.state.biases);
-    if (biases.length === 0) return 0;
+    if (biases.length === 0) {
+      return 0;
+    }
 
     let completed = 0;
     switch (stage) {
@@ -420,6 +438,9 @@ export class BiasActivity extends Activity {
         completed = biases.filter(
           (b) => Object.keys(b.implementationNotes).length > 0
         ).length;
+        break;
+      default:
+        completed = 0;
         break;
     }
 
