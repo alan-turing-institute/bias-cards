@@ -1,0 +1,965 @@
+{
+  "metadata": {
+    "id": "bias-deck-v1",
+    "name": "Bias and Mitigation Cards",
+    "version": "1.0.0",
+    "created": "2025-08-09T04:38:58.642Z",
+    "lastModified": "2025-08-09T04:38:58.643Z",
+    "categories": {
+      "cognitive-bias": {
+        "name": "Cognitive Biases",
+        "description": "Biases arising from mental shortcuts and cognitive limitations",
+        "color": "#FCD34D",
+        "count": 8
+      },
+      "social-bias": {
+        "name": "Social Biases",
+        "description": "Biases reflecting societal inequalities and cultural factors",
+        "color": "#93C5FD",
+        "count": 9
+      },
+      "statistical-bias": {
+        "name": "Statistical Biases",
+        "description": "Biases from data collection, processing, and analysis methods",
+        "color": "#A78BFA",
+        "count": 7
+      },
+      "mitigation-technique": {
+        "name": "Mitigation Techniques",
+        "description": "Strategies to identify and address biases",
+        "color": "#86EFAC",
+        "count": 16
+      }
+    }
+  },
+  "biasCards": [
+    {
+      "name": "Confirmation Bias",
+      "title": "confirmation-bias",
+      "description": "Confirmation bias is the tendency to search for, gather, or interpret information that confirms pre-existing beliefs whilst dismissing contradictory evidence. In AI projects, this can lead teams to favour data, models, or results that align with their assumptions, potentially overlooking important limitations or biases in their systems.",
+      "example": "A team developing a CV screening algorithm believes their model is unbiased because it achieves high accuracy. They focus on metrics that support this view whilst ignoring evidence that the model disproportionately rejects candidates from certain universities or postcodes, dismissing these patterns as coincidental rather than investigating potential discrimination.",
+      "prompts": [
+        "What mechanisms do you have in place within your team that can help ensure a diversity of viewpoints that may mitigate the effects of confirmation bias?",
+        "How do you actively seek out evidence that might contradict your assumptions about your model's performance or fairness?",
+        "When was the last time your team changed direction based on unexpected or unwelcome findings?"
+      ],
+      "category": "cognitive-bias",
+      "caption": "The tendency to search for, gather, or interpret information that confirms pre-existing beliefs whilst dismissing contradictory evidence.",
+      "id": "confirmation-bias",
+      "icon": "confirmation-bias-icon",
+      "displayNumber": "01",
+      "tags": [
+        "cognitive bias",
+        "confirmation",
+        "bias"
+      ]
+    },
+    {
+      "name": "Self-Assessment Bias",
+      "title": "self-assessment-bias",
+      "description": "Self-assessment bias occurs when individuals or teams overestimate their own abilities, knowledge, or performance whilst being overly critical of others. In AI development, this can lead teams to underestimate the complexity of tasks, overlook their knowledge gaps, or dismiss the need for external expertise, potentially resulting in flawed systems or inadequate safeguards against bias and error.",
+      "example": "Consider a project team that is carrying out an assessment about whether they have sufficient skills and resources to develop fair and explainable ML algorithms. Self-assessment bias could create a situation where the team are unlikely to acknowledge or notice gaps in their skills, which may significantly affect their ability to deliver a responsible product.",
+      "prompts": [
+        "As part of the planning for your project, have you considered things that may go wrong or have a negative impact?",
+        "Are you able to be more flexible with your timeline to accommodate for identifying and addressing gaps of knowledge and skills within your team?",
+        "Have you and your project team considered obtaining constructive criticism and suggestions from others?"
+      ],
+      "category": "cognitive-bias",
+      "caption": "A tendency to evaluate one’s abilities in more favourable terms than others, or to be more critical of others than oneself.",
+      "id": "self-assessment-bias",
+      "icon": "self-assessment-bias-icon",
+      "displayNumber": "02",
+      "tags": [
+        "cognitive bias",
+        "self-assessment",
+        "bias",
+        "self",
+        "assessment"
+      ]
+    },
+    {
+      "name": "Availability Bias",
+      "title": "availability-bias",
+      "description": "The tendency to make judgements or decisions based on the information that is most readily available (e.g., more easily recalled). When this information is recalled on multiple occasions, the bias can be reinforced through repetition—known as a ‘cascade.’ This bias can cause issues for project teams throughout the project lifecycle where decisions are influenced by available or oft-repeated information (e.g., hypothesis testing during data analysis).",
+      "example": "If a team uses a dataset that they already have access to, even though it is not actually the best data for their problem, this is a form of availability bias. However, this is different from the form of availability bias that may affect people when recalling certain facts throughout a project’s lifecycle. Here, availability refers to the individual’s ability to recall information, rather than to an ability to access data.",
+      "prompts": [
+        "Have you considered alternative sources, references, datasets, and methods that can help minimise gravitating towards readily available or memorable information?",
+        "Are your design decisions based on comprehensive research or just the most recent or memorable examples you've encountered?",
+        "How might recent high-profile AI failures or successes be unduly influencing your team's approach?"
+      ],
+      "category": "cognitive-bias",
+      "caption": "The tendency to make judgements or decisions based on information that is most readily available or easily recalled.",
+      "id": "availability-bias",
+      "icon": "availability-bias-icon",
+      "displayNumber": "03",
+      "tags": [
+        "cognitive bias",
+        "availability",
+        "bias"
+      ]
+    },
+    {
+      "name": "Law of the Instrument (Maslow’s Hammer)",
+      "title": "law-of-the-instrument",
+      "description": "Known as 'Maslow's Hammer', this bias describes over-reliance on familiar tools or methods. In AI development, teams may default to techniques they know well rather than selecting the most appropriate approach. This can lead to misapplying complex ML solutions to simple problems, or forcing AI into situations where traditional methods would be more effective.",
+      "example": "If an organisation develops a system to parse natural language, and successfully deploys it for one task, but then uses it in a new project without considering whether it is the right tool, they are falling prey to this bias.",
+      "prompts": [
+        "Have you considered simpler alternatives before defaulting to AI/ML solutions for this problem?",
+        "If you're repurposing an existing technology, have you properly evaluated whether it's fit-for-purpose for the new task?",
+        "What evidence do you have that your chosen approach is better than alternatives, rather than just more familiar?"
+      ],
+      "category": "cognitive-bias",
+      "caption": "This bias is best captured by the popular phrase ‘If all you have is a hammer, everything looks like a nail.",
+      "id": "law-of-the-instrument",
+      "icon": "law-of-the-instrument-icon",
+      "displayNumber": "04",
+      "tags": [
+        "cognitive bias",
+        "instrument",
+        "(maslow’s",
+        "hammer)"
+      ]
+    },
+    {
+      "name": "Optimism Bias",
+      "title": "optimism-bias",
+      "description": "Also known as the planning fallacy, optimism bias can lead project teams to under-estimate the amount of time required to adequately implement a new system or plan. In the context of the project lifecycle, this bias may arise during project planning, but can create downstream issues when implementing a model during the ‘system implementation’ stage, due to a failure to recognise possible system engineering barriers.",
+      "example": "During project scoping, a project management team incorrectly assume that it will only take three months to design, develop, and deploy a new algorithmic system, because a previous (and similar) project took this long. However, despite the success of the previous project, their assessment this time turns out to be an underestimate because they did not consult with their developers to fully understand important differences between the two projects.",
+      "prompts": [
+        "Have you and your team been realistic with what can be achieved within the time allocated to the project?",
+        "Are you able to be more flexible with your time and resources, particularly where stakeholder engagement is involved?",
+        "What evidence from similar projects supports your timeline estimates, and what factors might make this project different?"
+      ],
+      "category": "cognitive-bias",
+      "caption": "Also known as the planning fallacy, optimism bias can lead project teams to under-estimate the amount of time required to adequately implement a new system or plan.",
+      "id": "optimism-bias",
+      "icon": "optimism-bias-icon",
+      "displayNumber": "05",
+      "tags": [
+        "cognitive bias",
+        "optimism",
+        "bias"
+      ]
+    },
+    {
+      "name": "Decision-Automation Bias",
+      "title": "decision-automation-bias",
+      "description": "Decision-automation bias occurs when users become over-reliant on automated systems, losing critical judgement through excessive trust. This can manifest as complacency in spotting system errors or blind deference to AI recommendations. Over time, users may lose professional skills and judgement, accepting system outputs without question even when contradicted by other evidence.",
+      "example": "An immigration officer is using facial recognition software, which purportedly claims to detect instances of lying during asylum claim interviews. Over time, the officer stops relying on their own faculties, and leans too heavily on the predictions of this system, despite visual cues that contradict the facial recognition system’s predictions.",
+      "prompts": [
+        "Have you considered user requirements such as transparency or interpretability when designing your model?",
+        "Does the intended context of use demand a greater need for interpretability, and how may this affect the model’s accuracy (e.g. reducing model complexity)?",
+        "Could long-term use of your model or system have a detrimental effect on the professional judgement of users (e.g. leading to deskilling)?"
+      ],
+      "category": "cognitive-bias",
+      "caption": "This bias arises when users of automated decision-support systems become hampered in their critical judgement as a result of their faith in the efficacy of the system.",
+      "id": "decision-automation-bias",
+      "icon": "decision-automation-bias-icon",
+      "displayNumber": "06",
+      "tags": [
+        "cognitive bias",
+        "decision-automation",
+        "bias",
+        "decision",
+        "automation"
+      ]
+    },
+    {
+      "name": "Automation-Distrust Bias",
+      "title": "automation-distrust-bias",
+      "description": "Automation-distrust bias occurs when users reject or underutilise AI systems due to excessive scepticism or preference for human judgement. This can stem from general distrust of technology, overvaluing human intuition, or concerns about AI's lack of moral reasoning. Such bias may prevent organisations from benefiting from evidence-based AI insights that could improve decision-making.",
+      "example": "A hospital refuses to pilot an AI diagnostic tool that has shown excellent results in clinical trials, with doctors citing concerns about 'replacing human expertise'. Their reluctance prevents them from using a system that could help catch rare conditions they might miss, ultimately providing worse patient outcomes than hospitals that thoughtfully integrate AI support.",
+      "prompts": [
+        "Have you engaged the intended users of your system early on in project planning to identify barriers and co-design solutions that would increase the level of trust they have in your system?",
+        "Is there information you could provide to help reduce any concerns users would have about how your model or system operates?",
+        "How can you demonstrate the value of AI assistance whilst respecting legitimate concerns about maintaining human expertise and oversight?"
+      ],
+      "category": "cognitive-bias",
+      "caption": "When users reject or underutilise AI systems due to excessive scepticism or preference for human judgement.",
+      "id": "automation-distrust-bias",
+      "icon": "automation-distrust-bias-icon",
+      "displayNumber": "07",
+      "tags": [
+        "cognitive bias",
+        "automation-distrust",
+        "bias",
+        "automation",
+        "distrust"
+      ]
+    },
+    {
+      "name": "Naive Realism",
+      "title": "naive-realism",
+      "description": "Naive realism is the tendency to believe we see the world objectively, without recognising how our experiences and beliefs shape our perceptions. In AI development, this can lead teams to treat socially constructed concepts as objective facts, embedding cultural assumptions into models whilst believing they are creating neutral, universal systems.",
+      "example": "A team building a creditworthiness model treats factors like 'financial responsibility' as objective measures, using payment history and account balances. They fail to recognise how these metrics reflect systemic inequalities, cultural differences in financial practices, and varying access to traditional banking services across communities.",
+      "prompts": [
+        "Have you identified non-quantifiable or difficult-to-measure qualitative factors that may contribute to and affect your model or decision-making process?",
+        "How are these documented and accounted for?",
+        "Which concepts in your model might be culturally specific rather than universally applicable?"
+      ],
+      "category": "cognitive-bias",
+      "caption": "The tendency to believe we see the world objectively, without recognising how our experiences shape our perceptions.",
+      "id": "naive-realism",
+      "icon": "naive-realism-icon",
+      "displayNumber": "08",
+      "tags": [
+        "cognitive bias",
+        "naive",
+        "realism"
+      ]
+    },
+    {
+      "name": "Historical Bias",
+      "title": "historical-bias",
+      "description": "Historical bias reflects pre-existing societal inequalities embedded in data before any AI development begins. Even with responsible data practices, AI systems can perpetuate or amplify past discrimination patterns. This occurs when training data captures historical injustices, causing technically accurate models to reinforce systemic inequalities rather than promoting fairness.",
+      "example": "A recruitment AI trained on a company's hiring data from the past decade learns to favour CVs from certain universities and postcodes, reflecting historical hiring biases. Despite being 'accurate' in predicting past hiring decisions, the model perpetuates exclusion of qualified candidates from underrepresented backgrounds.",
+      "prompts": [
+        "Which groups and communities will be affected by the use of your model or system?",
+        "Are there groups or communities that will be excluded from your model or experience barriers to using your system?",
+        "Is there a risk of worsening or perpetuating socioeconomic inequalities in the development and deployment of your model?"
+      ],
+      "category": "social-bias",
+      "caption": "Historical biases exist prior to the inception of any AI project, and they can exist even where data are responsibly sampled, collected, and processed.",
+      "id": "historical-bias",
+      "icon": "historical-bias-icon",
+      "displayNumber": "01",
+      "tags": [
+        "social bias",
+        "historical",
+        "bias"
+      ]
+    },
+    {
+      "name": "Representation Bias",
+      "title": "representation-bias",
+      "description": "Representation bias occurs when certain populations are inadequately represented in training data, either through insufficient numbers or inappropriate categorisation. This leads to AI models that perform poorly for underrepresented groups, failing to generalise effectively. The bias often reflects broader issues of data collection methods that systematically exclude or mischaracterise certain communities.",
+      "example": "Representation bias could arise in a symptom checking application that has been trained on data collected exclusively through smartphone use or other online interaction. This dataset would likely underrepresent groups, such as elderly people who may lack access to a smartphone or connectivity.",
+      "prompts": [
+        "How have you measured and evaluated the representativeness of the dataset to ensure that the sample is adequate?",
+        "Have you consulted stakeholder groups to verify that your dataset is representative?",
+        "What data collection methods might systematically exclude certain populations from your dataset?"
+      ],
+      "category": "social-bias",
+      "caption": "When certain populations are inadequately represented in training data, leading to poor model performance for those groups.",
+      "id": "representation-bias",
+      "icon": "representation-bias-icon",
+      "displayNumber": "02",
+      "tags": [
+        "social bias",
+        "representation",
+        "bias"
+      ]
+    },
+    {
+      "name": "Label Bias",
+      "title": "label-bias",
+      "description": "Label bias occurs when the same label or feature carries different meanings across different groups or contexts. This mismatch between designers' intended measurements and diverse populations' lived experiences can lead to discriminatory outcomes. What seems like objective categorisation often reflects the perspectives of those creating the labels rather than those being categorised.",
+      "example": "A loan risk model uses 'job stability' as a key feature, measuring it by years at current employer. This disadvantages gig economy workers or those in seasonal employment who may have stable income through multiple sources. The label fails to capture alternative forms of financial stability, systematically marking certain working patterns as 'high risk'.",
+      "prompts": [
+        "How have you identified problematic labels (or features), which may be imperfect proxies, within your dataset?",
+        "Does your target variable have multiple meanings or interpretations?",
+        "Are labels used across the project lifecycle and have they been clearly defined?"
+      ],
+      "category": "social-bias",
+      "caption": "A label (or feature) used within an algorithmic model may not mean the same thing for all data subjects.",
+      "id": "label-bias",
+      "icon": "label-bias-icon",
+      "displayNumber": "03",
+      "tags": [
+        "social bias",
+        "label",
+        "bias"
+      ]
+    },
+    {
+      "name": "Annotation Bias",
+      "title": "annotation-bias",
+      "description": "Annotation bias arises when human annotators introduce subjective judgements or errors whilst labelling data. This can stem from inadequate training, fatigue, cultural backgrounds, or personal biases. Poor working conditions, tight deadlines, and lack of diversity amongst annotators can amplify these issues, resulting in systematically biased training data that reflects annotators' perspectives rather than objective truth.",
+      "example": "A content moderation dataset is labelled by annotators from one cultural background who consistently mark certain forms of expression as 'offensive' based on their cultural norms. When the AI is deployed globally, it inappropriately censors legitimate discourse from other cultures, reflecting the annotators' biases rather than universal standards.",
+      "prompts": [
+        "Who carried out the annotation of your dataset and what are their backgrounds?",
+        "Were there processes in place to ensure that multiple annotators followed the same standards (e.g. inter-rater reliability)?",
+        "How might annotators' working conditions, training, or cultural perspectives have influenced their labelling decisions?"
+      ],
+      "category": "social-bias",
+      "caption": "Annotation bias occurs when annotators incorporate subjective perceptions or error into the work of annotating data.",
+      "id": "annotation-bias",
+      "icon": "annotation-bias-icon",
+      "displayNumber": "04",
+      "tags": [
+        "social bias",
+        "annotation",
+        "bias"
+      ]
+    },
+    {
+      "name": "Chronological Bias",
+      "title": "chronological-bias",
+      "description": "Chronological bias arises when individuals in the dataset are added at different times, and where this chronological difference results in individuals being subjected to different methods or criteria of data extraction based on the time their data were recorded.",
+      "example": "An example of chronological bias could be where a dataset used to build a predictive risk model in children’s social care has data that spans over several years, in which large-scale care reforms, policy changes, adjustments in relevant statutes (such as changes to legal thresholds or definitions) have occurred. As such, there may also have been changes in data recording methods that could create major inconsistencies in the data points extracted from person to person.",
+      "prompts": [
+        "Have you worked with domain experts to map the data journey and identify systematic variations between groups of data subjects or objects?",
+        "Is there a wide variation in terms of when your data were recorded?",
+        "How have data collection methods, definitions, or standards changed over the timespan of your dataset?"
+      ],
+      "category": "social-bias",
+      "caption": "When data collected at different times reflects changing methods, standards, or contexts, creating inconsistencies.",
+      "id": "chronological-bias",
+      "icon": "chronological-bias-icon",
+      "displayNumber": "05",
+      "tags": [
+        "social bias",
+        "chronological",
+        "bias"
+      ]
+    },
+    {
+      "name": "Selection Bias",
+      "title": "selection-bias",
+      "description": "Selection bias occurs when certain data points are systematically more or less likely to be included in a dataset. This happens when factors like geographic location, socioeconomic status, or access to technology influence who participates in data collection. The resulting dataset fails to represent the full population, leading to models that perform poorly for excluded groups.",
+      "example": "A health monitoring app collects data only from users who own smartphones and have reliable internet. The resulting AI model performs well for affluent, urban populations but fails to detect health patterns in rural or economically disadvantaged communities who lack consistent technology access, despite these groups often having greater health needs.",
+      "prompts": [
+        "Have you examined the different stakeholders that are included or not included within the data and datasets being considered?",
+        "Are there stakeholder groups you can consult with to help minimise the likelihood of you and your team missing key stakeholder considerations?",
+        "What barriers might prevent certain populations from being included in your data collection process?"
+      ],
+      "category": "social-bias",
+      "caption": "Selection bias is a term used for a range of biases that affect the selection or inclusion of data points within a dataset.",
+      "id": "selection-bias",
+      "icon": "selection-bias-icon",
+      "displayNumber": "06",
+      "tags": [
+        "social bias",
+        "selection",
+        "bias"
+      ]
+    },
+    {
+      "name": "Implementation Bias",
+      "title": "implementation-bias",
+      "description": "Implementation bias occurs when AI systems are deployed in ways that differ from their original design intent, creating unintended consequences. System features or interfaces can create 'choice architectures' that nudge users towards certain behaviours. This bias often emerges through mission creep, where systems designed for one purpose are repurposed without proper consideration of new contexts.",
+      "example": "A workplace productivity AI designed to help employees manage tasks is later used by management for performance monitoring. The system's dashboard, originally meant to show personal productivity insights, becomes a surveillance tool that creates stress and changes workplace dynamics in ways never intended by the original designers.",
+      "prompts": [
+        "Has your system been repurposed from another project or team?",
+        "If so, is the system fit-for-purpose?",
+        "Does the use of the system now differ from how it was previously used?"
+      ],
+      "category": "social-bias",
+      "caption": "When AI systems are deployed in ways that differ from their original design intent, creating unintended consequences.",
+      "id": "implementation-bias",
+      "icon": "implementation-bias-icon",
+      "displayNumber": "07",
+      "tags": [
+        "social bias",
+        "implementation",
+        "bias"
+      ]
+    },
+    {
+      "name": "Status Quo Bias",
+      "title": "status-quo-bias",
+      "description": "Status quo bias is the preference for maintaining current systems and processes, even when better alternatives exist. This resistance to change can prevent adoption of more effective AI solutions or the decommissioning of outdated systems. Institutional inertia, risk aversion, and comfort with familiar methods often reinforce this bias, leading organisations to persist with suboptimal approaches.",
+      "example": "A financial institution continues using a decades-old credit scoring system despite evidence that newer ML models would reduce bias and improve accuracy. Decision-makers cite 'regulatory compliance' and 'proven track record' whilst ignoring that the old system perpetuates historical discrimination patterns that newer, fairer alternatives could address.",
+      "prompts": [
+        "Have you assessed how your team members feel about the use or lack of use of technology in your project?",
+        "Is this different to how things have usually been done within your team?",
+        "Are you able to consult with someone outside of your team to see if your project as well as the proposed problem and solution are appropriate?"
+      ],
+      "category": "social-bias",
+      "caption": "The preference for maintaining current systems and processes, even when better alternatives exist.",
+      "id": "status-quo-bias",
+      "icon": "status-quo-bias-icon",
+      "displayNumber": "08",
+      "tags": [
+        "social bias",
+        "status",
+        "bias"
+      ]
+    },
+    {
+      "name": "De-Agentification Bias",
+      "title": "de-agentification-bias",
+      "description": "De-agentification bias occurs when marginalised groups are systematically excluded from participating in AI development and deployment decisions. These communities often lack the resources, representation, or power to influence systems that significantly affect them. This exclusion perpetuates technological solutions that fail to address their needs or actively harm their interests.",
+      "example": "An example is the choice to design, develop, or deploy a system for monitoring historically marginalised communities, such as refugees and religious minorities. Such communities are often not represented in key decisions concerning the adoption and use of such systems though they may be significantly affected by them.",
+      "prompts": [
+        "Have you considered consulting, engaging, and working with protected and marginalised groups as part of your project?",
+        "How have their perspectives and experiences been considered?",
+        "What power imbalances might prevent affected communities from challenging or influencing your system?"
+      ],
+      "category": "social-bias",
+      "caption": "When marginalised groups are systematically excluded from participating in AI development and deployment decisions.",
+      "id": "de-agentification-bias",
+      "icon": "de-agentification-bias-icon",
+      "displayNumber": "09",
+      "tags": [
+        "social bias",
+        "de-agentification",
+        "bias",
+        "agentification"
+      ]
+    },
+    {
+      "name": "Missing Data Bias",
+      "title": "missing-data-bias",
+      "description": "Missing data bias occurs when data is absent in non-random patterns that are informative about the underlying phenomenon. This missingness often reflects social factors like stigma, access barriers, or power dynamics. When models treat missing data as random or simply exclude it, they fail to recognise that the absence itself carries important information about systematic inequalities.",
+      "example": "A mental health app has incomplete mood tracking data for users experiencing severe depression, as they're less likely to log entries during their worst periods. The AI model trained on this data underestimates depression severity because the most critical data points—when users are too unwell to engage—are systematically missing.",
+      "prompts": [
+        "How have you dealt with and recorded your handling of missing data (e.g. choice of imputation or augmentation method)?",
+        "Have you consulted with domain experts to help you identify possible explanations for the missing data and whether they may be informative?",
+        "What social or structural factors might cause certain groups to have more missing data than others?"
+      ],
+      "category": "statistical-bias",
+      "caption": "When data is absent in non-random patterns that are informative about the underlying phenomenon.",
+      "id": "missing-data-bias",
+      "icon": "missing-data-bias-icon",
+      "displayNumber": "01",
+      "tags": [
+        "statistical bias",
+        "missing",
+        "data",
+        "bias"
+      ]
+    },
+    {
+      "name": "Measurement Bias",
+      "title": "measurement-bias",
+      "description": "Measurement bias arises when data collection methods systematically mismeasure or fail to capture important aspects of what they claim to represent. This includes using flawed proxies, inappropriate measurement scales, or collection processes that work differently across populations. The bias often reflects deeper issues about whose perspectives shaped the measurement design.",
+      "example": "A recidivism risk model that uses prior arrests or criminal records of relatives as proxies to predict future criminality may surface measurement bias insofar as patterns of arrest can reflect discriminatory tendencies to over-police certain protected social groups or biased assessments on the part of arresting officers.",
+      "prompts": [
+        "Are there multiple scales that could be used to measure your features?",
+        "Is there reasonable disagreement about which of these scales is preferred?",
+        "If so, how has this disagreement been addressed?"
+      ],
+      "category": "statistical-bias",
+      "caption": "Measurement bias occurs when the measurement method used to collect data and define the features or labels used by a model is flawed or fails to capture relevant information about the objects or subjects being studied.",
+      "id": "measurement-bias",
+      "icon": "measurement-bias-icon",
+      "displayNumber": "02",
+      "tags": [
+        "statistical bias",
+        "measurement",
+        "bias"
+      ]
+    },
+    {
+      "name": "Wrong Sample Size Bias",
+      "title": "wrong-sample-size-bias",
+      "description": "Wrong sample size bias occurs when datasets are too small to capture population variability or too large, yielding statistically significant but practically irrelevant results. In ML contexts, this includes the curse of dimensionality where high-dimensional feature spaces require exponentially more data for reliable performance. Sample size mismatches can lead to overfitting, poor generalisation, and misleading model confidence.",
+      "example": "A fraud detection system trained on only 1,000 transactions shows excellent performance in testing but fails dramatically in production. The small training set couldn't capture the full diversity of legitimate transactions, leading to thousands of false positives that block customers' cards. The model appeared accurate but lacked sufficient data to represent real-world transaction patterns.",
+      "prompts": [
+        "Have you performed power analysis to determine appropriate sample sizes for your use case?",
+        "How does your dataset size compare to the dimensionality of your feature space?",
+        "What validation approaches have you used to assess whether your sample adequately represents the target population?"
+      ],
+      "category": "statistical-bias",
+      "caption": "Using the wrong sample size for the study can lead to chance findings that fail to adequately represent the variability of the underlying data distribution, in the case of small samples, or findings that are statistically significant but not relevant or actionable, in the case of larger samples.",
+      "id": "wrong-sample-size-bias",
+      "icon": "wrong-sample-size-bias-icon",
+      "displayNumber": "03",
+      "tags": [
+        "statistical bias",
+        "wrong",
+        "sample",
+        "size",
+        "bias"
+      ]
+    },
+    {
+      "name": "Aggregation Bias",
+      "title": "aggregation-bias",
+      "description": "Aggregation bias occurs when models apply uniform decision rules across diverse subgroups despite meaningful differences in how features relate to outcomes. This one-size-fits-all approach ignores subgroup-specific patterns, leading to reduced performance for minority groups. The bias emerges when datasets are analysed as homogeneous populations, masking important variations that require tailored modelling approaches for equitable outcomes.",
+      "example": "A loan approval AI trained on aggregated data performs well overall but systematically underperforms for young applicants and immigrants. The model learned patterns primarily from established customers with long credit histories, missing the different risk indicators relevant for these groups. Separate models or stratified approaches would better capture how creditworthiness manifests differently across demographic groups.",
+      "prompts": [
+        "Have you assessed model performance separately for different demographic or contextual subgroups?",
+        "Are there meaningful differences in how features relate to outcomes across different populations in your dataset?",
+        "Would stratified models or subgroup-specific approaches improve fairness and performance for underrepresented groups?"
+      ],
+      "category": "statistical-bias",
+      "caption": "Aggregation bias arises when a “one-size-fits-all” approach is taken to the outputs of a trained algorithmic model even where variations in subgroup characteristics mean that mapping functions from inputs to outputs are not consistent across subgroups.",
+      "id": "aggregation-bias",
+      "icon": "aggregation-bias-icon",
+      "displayNumber": "04",
+      "tags": [
+        "statistical bias",
+        "aggregation",
+        "bias"
+      ]
+    },
+    {
+      "name": "Evaluation Bias",
+      "title": "evaluation-bias",
+      "description": "Evaluation bias emerges when performance metrics or benchmark datasets fail to adequately assess how models will perform across diverse real-world populations. This occurs when evaluation frameworks prioritise aggregate accuracy over fairness metrics or use benchmarks that overrepresent certain demographics. The bias masks differential performance across subgroups, leading to models that appear successful but fail vulnerable populations.",
+      "example": "A medical diagnostic AI achieves 95% accuracy on a standard benchmark but performs poorly for elderly patients and ethnic minorities who are underrepresented in the evaluation dataset. The model passes validation using conventional metrics, but real-world deployment reveals significant disparities in diagnostic accuracy across demographic groups that weren't captured by the evaluation framework.",
+      "prompts": [
+        "Do your evaluation metrics capture performance disparities across different demographic groups?",
+        "How representative are your benchmark datasets of the populations your model will serve?",
+        "Have you considered fairness-aware metrics alongside traditional accuracy measures?"
+      ],
+      "category": "statistical-bias",
+      "caption": "Evaluation bias occurs during model iteration and evaluation, from the application of performance metrics that are insufficient given the intended use of the model and the composition of the dataset on which it is trained.",
+      "id": "evaluation-bias",
+      "icon": "evaluation-bias-icon",
+      "displayNumber": "05",
+      "tags": [
+        "statistical bias",
+        "evaluation",
+        "bias"
+      ]
+    },
+    {
+      "name": "Confounding",
+      "title": "confounding",
+      "description": "Confounding occurs when unmeasured variables simultaneously influence both input features and target outcomes, creating spurious correlations that mislead ML models. These hidden factors cause models to learn false causal relationships, leading to poor generalisation and biased predictions. Confounding is particularly problematic in observational data where controlled experimental conditions cannot eliminate alternative explanations for observed patterns.",
+      "example": "A hiring algorithm trained on historical data shows that employees from prestigious universities perform better. However, this correlation is confounded by socioeconomic status—affluent candidates often attend elite universities and have better career support networks. The model incorrectly attributes success to university prestige rather than the true confounding factor, leading to biased hiring decisions that perpetuate inequality.",
+      "prompts": [
+        "What domain knowledge have you applied to identify potential confounding variables in your dataset?",
+        "Have you used causal inference methods to distinguish correlation from causation in your model?",
+        "How might unmeasured variables be influencing the relationships your model has learned?"
+      ],
+      "category": "statistical-bias",
+      "caption": "Confounding is a well-known causal concept in statistics, and commonly arises in observational studies.",
+      "id": "confounding",
+      "icon": "confounding-icon",
+      "displayNumber": "06",
+      "tags": [
+        "statistical bias",
+        "confounding"
+      ]
+    },
+    {
+      "name": "Training-Serving Skew",
+      "title": "training-serving-skew",
+      "description": "Training-serving skew occurs when models are deployed on populations or data distributions that differ significantly from training data. This mismatch can arise from temporal changes, geographical differences, or demographic shifts between training and deployment contexts. The resulting distribution drift causes models to make poor predictions as they encounter input patterns outside their learned experience, leading to degraded performance and unreliable outcomes.",
+      "example": "A content moderation AI trained on social media posts from 2020 struggles with posts from 2023, failing to recognise new slang, emoji usage, and cultural references. The model was trained during the pandemic when online behaviour patterns were different, causing it to misclassify legitimate content as harmful and miss actual policy violations that use contemporary language patterns.",
+      "prompts": [
+        "How have you assessed whether your deployment population matches your training data distribution?",
+        "What monitoring systems do you have in place to detect distribution drift over time?",
+        "Have you established processes for retraining models when serving populations change significantly?"
+      ],
+      "category": "statistical-bias",
+      "caption": "This bias occurs when the model is deployed on individuals whose data are not similar to or representative of the individuals whose data were used to train, test, and validate the model.",
+      "id": "training-serving-skew",
+      "icon": "training-serving-skew-icon",
+      "displayNumber": "07",
+      "tags": [
+        "statistical bias",
+        "training-serving",
+        "skew",
+        "training",
+        "serving"
+      ]
+    }
+  ],
+  "mitigationCards": [
+    {
+      "name": "Peer Review",
+      "category": "mitigation-technique",
+      "title": "peer-review",
+      "id": "peer-review",
+      "caption": "Targeted review by committees, red teams, or external groups to identify and evaluate bias-related gaps.",
+      "description": "Peer review involves systematic examination of AI systems by independent experts, committees, or red teams to identify biases and ethical issues that development teams might miss. This process can be internal or external and provides critical scrutiny of assumptions, methodology, and potential impacts. Diverse review panels bring different perspectives that help uncover blind spots in bias assessment.",
+      "prompts": [
+        "Who should be involved in the peer review process to provide diverse perspectives on bias?",
+        "What specific aspects of bias and fairness should reviewers focus on in their evaluation?",
+        "How will you incorporate reviewer feedback to address identified bias issues?"
+      ],
+      "example": "A recruitment AI undergoes peer review by a panel including HR professionals, diversity experts, employment lawyers, and affected community representatives. The reviewers identify that the system's 'cultural fit' scoring disproportionately penalises candidates from different ethnic backgrounds. Their recommendations lead to removing subjective culture metrics and implementing more objective skills-based assessments.",
+      "icon": "peer-review-icon",
+      "displayNumber": "01",
+      "applicableStages": [
+        "system-use-monitoring",
+        "model-updating-deprovisioning"
+      ],
+      "tags": [
+        "mitigation technique",
+        "peer",
+        "review"
+      ]
+    },
+    {
+      "name": "Additional Data Collection",
+      "category": "mitigation-technique",
+      "title": "additional-data-collection",
+      "id": "additional-data-collection",
+      "caption": "Return to the data extraction stage to carry out additional data collection or reconsider methods of data extraction.",
+      "description": "This technique involves returning to the data collection phase when existing datasets prove inadequate or biased. It includes gathering more representative samples, filling demographic gaps, and adopting more inclusive collection methods. The approach recognises that many AI biases stem from insufficient or skewed training data, making additional collection a fundamental mitigation strategy for improving model fairness and performance.",
+      "prompts": [
+        "What specific data gaps have you identified that need to be addressed?",
+        "How will new data collection methods be more inclusive than previous approaches?",
+        "What resources and timeline are needed for meaningful additional data collection?"
+      ],
+      "example": "A facial recognition system performs poorly for elderly users and people with darker skin tones. The team returns to data collection, partnering with senior centres and diverse community groups to gather more representative training images. They also revise their collection protocols to ensure better lighting conditions and age diversity, resulting in significantly improved accuracy across all demographic groups.",
+      "icon": "additional-data-collection-icon",
+      "displayNumber": "02",
+      "applicableStages": [
+        "data-extraction-procurement",
+        "data-analysis"
+      ],
+      "tags": [
+        "mitigation technique",
+        "additional",
+        "data",
+        "collection"
+      ]
+    },
+    {
+      "name": "Participatory Design Workshops",
+      "category": "mitigation-technique",
+      "title": "participatory-design-workshops",
+      "id": "participatory-design-workshops",
+      "caption": "Involve stakeholders in the design process to co-create solutions and ensure usability and acceptance.",
+      "description": "Participatory design workshops engage affected communities and stakeholders directly in AI system design decisions. This collaborative approach helps identify bias sources that designers might overlook, ensures solutions address real user needs, and builds trust through inclusive development processes. By involving diverse voices early in design, teams can prevent biases rather than trying to fix them later.",
+      "prompts": [
+        "Which communities and stakeholder groups should be centrally involved in your design process?",
+        "How will you ensure workshops are accessible and inclusive for participants with different abilities and backgrounds?",
+        "What decision-making power will participants have in shaping the final system design?"
+      ],
+      "example": "A public benefits eligibility AI system involves benefit recipients, social workers, and community advocates in design workshops. Participants reveal that current application processes exclude people without reliable internet access. The workshops result in designing offline application options and simplified interfaces. The collaborative process also identifies biased assumptions about 'typical' applicant behaviour, leading to more inclusive system design.",
+      "icon": "participatory-design-workshops-icon",
+      "displayNumber": "03",
+      "applicableStages": [
+        "project-planning",
+        "problem-formulation"
+      ],
+      "tags": [
+        "mitigation technique",
+        "participatory",
+        "design",
+        "workshops"
+      ]
+    },
+    {
+      "name": "Stakeholder Engagement",
+      "category": "mitigation-technique",
+      "title": "stakeholder-engagement",
+      "id": "stakeholder-engagement",
+      "caption": "Carry out meaningful engagement to consult or partner with affected communities and stakeholders.",
+      "description": "Stakeholder engagement involves systematic consultation and collaboration with individuals and communities affected by AI systems. Methods include community forums, surveys, interviews, citizen panels, and ongoing dialogue throughout development and deployment. This approach ensures diverse voices inform system design and helps identify biases that might not be apparent to development teams.",
+      "prompts": [
+        "Which stakeholder groups are most directly affected by your system and should be prioritised for engagement?",
+        "How will you ensure meaningful participation rather than tokenistic consultation from all stakeholders?",
+        "What ongoing engagement processes will maintain stakeholder input after system deployment?"
+      ],
+      "example": "A predictive policing system engages with community leaders, civil rights organisations, and residents from high-crime areas through regular forums. Participants raise concerns about over-policing of minority neighbourhoods, leading to algorithm adjustments that balance crime prevention with community trust. Ongoing engagement reveals deployment impacts and informs continuous system improvements.",
+      "icon": "stakeholder-engagement-icon",
+      "displayNumber": "04",
+      "applicableStages": [
+        "project-planning",
+        "problem-formulation"
+      ],
+      "tags": [
+        "mitigation technique",
+        "stakeholder",
+        "engagement"
+      ]
+    },
+    {
+      "name": "Human-in-the-Loop",
+      "category": "mitigation-technique",
+      "title": "human-in-the-loop",
+      "id": "human-in-the-loop",
+      "caption": "Ensure humans maintain decision-making authority whilst AI systems provide recommendations and automate routine tasks.",
+      "description": "Human-in-the-loop systems maintain human agency and oversight in AI-driven processes, particularly for high-stakes decisions. This approach combines AI efficiency with human judgment, ensuring accountability and enabling bias detection that automated systems might miss. Humans can catch edge cases, apply contextual knowledge, and provide ethical oversight that purely algorithmic approaches cannot deliver.",
+      "prompts": [
+        "At what critical decision points in your system should human oversight be mandatory?",
+        "How will you ensure human reviewers have sufficient information and time to make meaningful decisions?",
+        "What training and support do human reviewers need to identify and address AI bias?"
+      ],
+      "example": "A resume screening AI flags top candidates for human reviewers rather than making final hiring decisions. Recruiters receive explanations of why each candidate was recommended and can override AI decisions. The system tracks override patterns to identify potential biases - if humans consistently reject AI-recommended candidates from certain universities, this triggers bias investigation and model refinement.",
+      "icon": "human-in-the-loop-icon",
+      "displayNumber": "05",
+      "applicableStages": [
+        "user-training",
+        "system-implementation"
+      ],
+      "tags": [
+        "mitigation technique",
+        "human-in-the-loop",
+        "human",
+        "loop"
+      ]
+    },
+    {
+      "name": "Identify Underrepresented Groups",
+      "category": "mitigation-technique",
+      "title": "identify-underrepresented-groups",
+      "id": "identify-underrepresented-groups",
+      "caption": "Analyse demographic gaps in consultation with communities to identify underrepresented groups.",
+      "description": "This technique involves systematic analysis of dataset demographics compared to target populations, identifying groups that are absent or inadequately represented. It requires community engagement to understand representation gaps that statistics alone might miss, including intersectional identities and marginalised communities. The process helps prevent models from being optimised only for majority groups.",
+      "prompts": [
+        "Which demographic groups might be missing or underrepresented in your dataset compared to your target population?",
+        "How will you engage with communities to identify representation gaps that aren't apparent from demographic statistics?",
+        "What intersectional identities might be particularly underrepresented in your data?"
+      ],
+      "example": "A voice recognition system performs poorly for users with speech impediments and non-native speakers. The team conducts demographic analysis and discovers their training data lacks representation from disability communities and recent immigrants. They partner with advocacy groups and language centres to identify specific underrepresented speech patterns and recruit participants for more inclusive data collection.",
+      "icon": "identify-underrepresented-groups-icon",
+      "displayNumber": "06",
+      "applicableStages": [
+        "model-testing-validation",
+        "system-use-monitoring"
+      ],
+      "tags": [
+        "mitigation technique",
+        "identify",
+        "underrepresented",
+        "groups"
+      ]
+    },
+    {
+      "name": "Skills and Training",
+      "category": "mitigation-technique",
+      "title": "skills-and-training",
+      "id": "skills-and-training",
+      "caption": "Organise training events to upskill team members on bias detection, fairness principles, and inclusive design.",
+      "description": "Skills and training programmes build team capabilities in recognising, measuring, and mitigating AI bias. Training covers topics like fairness metrics, inclusive design principles, bias testing methodologies, and ethical decision-making. Regular upskilling ensures teams stay current with evolving best practices and can effectively implement bias mitigation strategies throughout the AI lifecycle.",
+      "prompts": [
+        "What specific bias-related skills gaps exist in your team that training should address?",
+        "How will you measure the effectiveness of training programmes in improving bias mitigation practices?",
+        "What ongoing learning opportunities will keep your team updated on emerging bias issues and solutions?"
+      ],
+      "example": "An AI development team undergoes quarterly bias training covering unconscious bias recognition, fairness metric interpretation, and inclusive user research methods. Training includes hands-on workshops where team members practice identifying bias in real datasets. Post-training assessments show improved detection of representation gaps and more consistent application of fairness evaluation techniques across projects.",
+      "icon": "skills-and-training-icon",
+      "displayNumber": "07",
+      "applicableStages": [
+        "model-selection-training",
+        "model-testing-validation",
+        "user-training",
+        "system-implementation"
+      ],
+      "tags": [
+        "mitigation technique",
+        "skills",
+        "training"
+      ]
+    },
+    {
+      "name": "Data Augmentation",
+      "category": "mitigation-technique",
+      "title": "data-augmentation",
+      "id": "data-augmentation",
+      "caption": "Augment your dataset using techniques appropriate to the objective, such as synthetic data generation or transformation.",
+      "description": "Data augmentation expands training datasets through systematic modifications and synthetic data generation to address sparsity and imbalances. Techniques include rotation, cropping, and noise addition for images, paraphrasing for text, and generative models for creating synthetic samples. This approach helps models generalise better and reduces bias towards overrepresented groups by balancing dataset composition.",
+      "prompts": [
+        "What specific gaps in your dataset need to be addressed through augmentation?",
+        "How will you validate that augmented data maintains realism and doesn't introduce new biases?",
+        "What augmentation techniques are most appropriate for your data type and use case?"
+      ],
+      "example": "A medical AI for detecting skin cancer shows poor performance on darker skin tones due to limited training examples. The team uses data augmentation to generate synthetic images by adjusting lighting, contrast, and skin tone variations of existing lesion images. They validate the augmented data with dermatologists to ensure medical accuracy, significantly improving diagnostic performance across all skin types.",
+      "icon": "data-augmentation-icon",
+      "displayNumber": "08",
+      "applicableStages": [
+        "data-extraction-procurement",
+        "data-analysis"
+      ],
+      "tags": [
+        "mitigation technique",
+        "data",
+        "augmentation"
+      ]
+    },
+    {
+      "name": "Diversify Evaluation Metrics",
+      "category": "mitigation-technique",
+      "title": "diversify-evaluation-metrics",
+      "id": "diversify-evaluation-metrics",
+      "caption": "Use additional evaluation metrics to determine whether model performance applies equally across all subgroups.",
+      "description": "This technique expands evaluation beyond standard accuracy metrics to include fairness measures such as equalized odds, demographic parity, and calibration across subgroups. It involves conducting intersectional analysis of multiple demographic characteristics to uncover hidden biases. By measuring performance disparities across different populations, teams can identify and address systematic inequities in model behaviour.",
+      "prompts": [
+        "What fairness metrics are most relevant for your specific use case and potential harms?",
+        "How will you balance competing metrics when trade-offs exist between different fairness criteria?",
+        "What intersectional analysis will reveal biases not apparent from single demographic characteristics?"
+      ],
+      "example": "A job screening AI is evaluated not just on overall accuracy, but also on equal opportunity (true positive rates) and demographic parity across gender, ethnicity, and age groups. The analysis reveals the model recommends men 1.5 times more often than equally qualified women. Additional metrics like calibration show prediction confidence varies systematically by demographic group, leading to targeted model adjustments.",
+      "icon": "diversify-evaluation-metrics-icon",
+      "displayNumber": "09",
+      "applicableStages": [
+        "model-testing-validation",
+        "system-use-monitoring"
+      ],
+      "tags": [
+        "mitigation technique",
+        "diversify",
+        "evaluation",
+        "metrics"
+      ]
+    },
+    {
+      "name": "Multiple Model Comparison",
+      "category": "mitigation-technique",
+      "title": "multiple-model-comparison",
+      "id": "multiple-model-comparison",
+      "caption": "Train and test multiple models to assess performance differences and identify the least biased approach.",
+      "description": "This technique involves training multiple models using different algorithms, architectures, or preprocessing approaches to compare their bias profiles and fairness characteristics. By evaluating diverse model types, teams can identify approaches that better balance accuracy with fairness across different demographic groups. The comparison process reveals which algorithmic choices contribute to bias and informs model selection decisions.",
+      "prompts": [
+        "Which alternative model architectures and algorithms should you test for fairness comparison?",
+        "What criteria will you use to balance accuracy and fairness when selecting the final model?",
+        "How will you ensure your model comparison includes relevant bias metrics for your use case?"
+      ],
+      "example": "A loan approval system compares logistic regression, random forest, and neural network models. While the neural network achieves highest overall accuracy, the random forest shows more equitable performance across ethnic groups. The logistic regression provides better interpretability for explaining decisions to applicants. The team selects the random forest model, accepting slightly lower accuracy for significantly improved fairness outcomes.",
+      "icon": "multiple-model-comparison-icon",
+      "displayNumber": "10",
+      "applicableStages": [
+        "model-selection-training",
+        "model-testing-validation"
+      ],
+      "tags": [
+        "mitigation technique",
+        "multiple",
+        "model",
+        "comparison"
+      ]
+    },
+    {
+      "name": "External Validation",
+      "category": "mitigation-technique",
+      "title": "external-validation",
+      "id": "external-validation",
+      "caption": "Go beyond internal validation by testing your model on entirely new datasets from different environments.",
+      "description": "External validation tests model performance and fairness using independent datasets from different populations, time periods, or geographical regions. This approach reveals biases that internal validation might miss, particularly those related to distribution shift and overfitting to specific populations. Collaborating with external organisations provides fresh perspectives and validates generalisability across diverse real-world conditions.",
+      "prompts": [
+        "What external datasets can validate your model's fairness across different populations?",
+        "How will you handle distribution shifts when external validation reveals performance gaps?",
+        "Which organisations or research groups could provide independent validation of your model?"
+      ],
+      "example": "A medical diagnostic AI developed in London hospitals shows excellent performance internally but struggles when tested on patient data from rural clinics and international hospitals. External validation reveals the model overfitted to urban demographics and specific equipment types. This prompts data collection partnerships with diverse healthcare settings to improve model robustness.",
+      "icon": "external-validation-icon",
+      "displayNumber": "11",
+      "applicableStages": [
+        "model-selection-training",
+        "model-testing-validation"
+      ],
+      "tags": [
+        "mitigation technique",
+        "external",
+        "validation"
+      ]
+    },
+    {
+      "name": "Double Diamond Methodology",
+      "category": "mitigation-technique",
+      "title": "double-diamond-methodology",
+      "id": "double-diamond-methodology",
+      "caption": "A four-phase design process for creative problem-solving and exploring multiple perspectives.",
+      "description": "The Double Diamond methodology applies structured divergent and convergent thinking to bias mitigation. The four phases are: Discover (explore bias sources broadly), Define (focus on priority bias issues), Develop (generate multiple mitigation strategies), and Deliver (implement and test solutions). This approach ensures comprehensive bias exploration while maintaining focus on actionable solutions, preventing teams from overlooking important bias considerations.",
+      "prompts": [
+        "How can you use the divergent thinking phases to explore multiple bias perspectives across stakeholder groups?",
+        "What criteria will you use in the convergent phases to prioritise bias mitigations?",
+        "How will you gather feedback to iterate on your bias mitigation solutions?"
+      ],
+      "example": "An AI recruitment team uses the Double Diamond to address hiring bias. In Discover, they interview diverse candidates, recruiters, and hiring managers to understand bias experiences. In Define, they prioritise addressing CV screening bias and interview scheduling inequities. In Develop, they prototype blind CV reviews and flexible interview formats. In Deliver, they pilot the new process with one department, gathering feedback to refine the approach.",
+      "icon": "double-diamond-methodology-icon",
+      "displayNumber": "12",
+      "applicableStages": [
+        "model-testing-validation",
+        "system-use-monitoring"
+      ],
+      "tags": [
+        "mitigation technique",
+        "double",
+        "diamond",
+        "methodology"
+      ]
+    },
+    {
+      "name": "Open Documentation",
+      "category": "mitigation-technique",
+      "title": "open-documentation",
+      "id": "open-documentation",
+      "caption": "Document actions and decisions throughout your project to support transparency and accountability.",
+      "description": "Open documentation creates transparent records of AI development decisions, including data sources, model choices, evaluation methods, and bias mitigation efforts. This practice enables external scrutiny, supports reproducibility, and helps users understand system limitations. Comprehensive documentation also facilitates knowledge sharing and helps future projects learn from bias mitigation successes and failures.",
+      "prompts": [
+        "What aspects of your project are most critical to document for bias transparency and accountability?",
+        "How will you make technical documentation accessible to diverse audiences including affected communities?",
+        "What ongoing documentation processes will track bias mitigation efforts over time?"
+      ],
+      "example": "A healthcare AI team publishes model cards documenting their diagnostic system's training data demographics, performance across patient groups, known limitations, and bias testing results. They maintain public repositories with code, evaluation scripts, and detailed methodology. This transparency enables healthcare providers to make informed deployment decisions and helps researchers replicate and improve upon their bias mitigation approaches.",
+      "icon": "open-documentation-icon",
+      "displayNumber": "13",
+      "applicableStages": [
+        "model-reporting"
+      ],
+      "tags": [
+        "mitigation technique",
+        "open",
+        "documentation"
+      ]
+    },
+    {
+      "name": "Regular Auditing",
+      "category": "mitigation-technique",
+      "title": "regular-auditing",
+      "id": "regular-auditing",
+      "caption": "Conduct periodic audits focusing on transparency, data quality, model performance, and equitable impact.",
+      "description": "Regular auditing establishes systematic, ongoing review processes to monitor AI systems for emerging biases and performance drift. Audits examine data quality, model behaviour, user satisfaction, and equitable outcomes across different demographic groups. This proactive approach enables early detection of bias issues and ensures continuous improvement of fairness throughout the system lifecycle.",
+      "prompts": [
+        "How frequently should comprehensive bias audits be conducted based on your system's risk level?",
+        "What specific bias indicators and fairness metrics will you monitor over time?",
+        "Who should conduct these audits to ensure independence and expertise in bias detection?"
+      ],
+      "example": "A financial services company conducts quarterly audits of their credit scoring AI, examining approval rates, default predictions, and customer satisfaction across demographic groups. Six-month audits reveal the model's performance has degraded for recent immigrants due to changing economic conditions. The audit triggers model retraining and policy updates to address the emerging bias.",
+      "icon": "regular-auditing-icon",
+      "displayNumber": "14",
+      "applicableStages": [
+        "system-use-monitoring",
+        "model-updating-deprovisioning"
+      ],
+      "tags": [
+        "mitigation technique",
+        "regular",
+        "auditing"
+      ]
+    },
+    {
+      "name": "Employ Model Interpretability",
+      "category": "mitigation-technique",
+      "title": "employ-model-interpretability",
+      "id": "employ-model-interpretability",
+      "caption": "Use interpretability methods during data analysis, model testing and validation, and system governance.",
+      "description": "Model interpretability techniques make AI decision-making transparent and auditable, enabling bias detection and mitigation. Methods include feature importance analysis, SHAP values, LIME explanations, and attention visualisation. These approaches help identify when models rely on protected attributes, reveal unexpected correlations, and provide evidence for bias remediation efforts. Interpretability supports both technical validation and stakeholder communication about model behaviour.",
+      "prompts": [
+        "Which interpretability methods are most appropriate for your model type and use case?",
+        "How will you communicate model decisions and potential biases to non-technical stakeholders?",
+        "What interpretability insights will trigger model retraining or bias mitigation actions?"
+      ],
+      "example": "A credit scoring model's SHAP analysis reveals it heavily weights postcodes, indirectly discriminating against minority communities in certain areas. The interpretability analysis shows the model learned historical redlining patterns, prompting the team to remove location-based features and retrain with fairness constraints. The transparent analysis also helps explain decisions to rejected applicants and regulators.",
+      "icon": "employ-model-interpretability-icon",
+      "displayNumber": "15",
+      "applicableStages": [
+        "model-selection-training",
+        "model-testing-validation"
+      ],
+      "tags": [
+        "mitigation technique",
+        "employ",
+        "model",
+        "interpretability"
+      ]
+    },
+    {
+      "name": "Quality Control Procedures",
+      "category": "mitigation-technique",
+      "title": "quality-control-procedures",
+      "id": "quality-control-procedures",
+      "caption": "Conduct regular assessments against established quality control procedures to identify bias issues early.",
+      "description": "Quality control procedures integrate bias detection into systematic assessment frameworks that monitor data quality, annotation consistency, and model outputs. These procedures identify issues like annotation bias from time-pressured workers, data entry errors, and drift in model behaviour. By embedding bias checks into routine QC workflows, teams can catch and address bias issues before they impact users.",
+      "prompts": [
+        "What specific quality metrics and thresholds will flag potential bias issues in your system?",
+        "How will you integrate bias detection into existing quality control workflows and processes?",
+        "What corrective actions will be triggered when quality control procedures identify bias concerns?"
+      ],
+      "example": "A content moderation system implements QC procedures that randomly sample 5% of decisions for human review, stratified across demographic groups. Quality checks reveal that the AI flags posts mentioning certain cultural practices as potentially harmful 3x more often than similar posts about majority culture activities. This triggers investigation and retraining to address cultural bias in the moderation algorithms.",
+      "icon": "quality-control-procedures-icon",
+      "displayNumber": "16",
+      "applicableStages": [
+        "model-testing-validation",
+        "system-use-monitoring"
+      ],
+      "tags": [
+        "mitigation technique",
+        "quality",
+        "control",
+        "procedures"
+      ]
+    }
+  ]
+}

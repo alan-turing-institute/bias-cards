@@ -60,6 +60,7 @@ import { useWorkspaceStore } from '@/lib/stores/workspace-store';
 import type {
   ActivityStage,
   BiasRiskCategory,
+  CardPair,
   LifecycleStage,
 } from '@/lib/types';
 import type { Activity } from '@/lib/types/activity';
@@ -67,61 +68,200 @@ import type { ReportSummary } from '@/lib/types/reports';
 
 // Define specific meaningful bias-mitigation pairs for each stage
 // This allows for stage-specific assignments rather than all combinations
-function getMeaningfulPairsForStage(
-  stageKey: LifecycleStage,
-  stageInfo: any
-): Array<{
+type PairInfo = {
   biasId: string;
   mitigationId: string;
   reason: string;
-}> {
-  const pairs: Array<{ biasId: string; mitigationId: string; reason: string }> =
-    [];
+};
 
-  // For Missing Data Bias (ID: '18'), create stage-specific pairs
-  if (stageInfo.biases?.includes('18')) {
-    // Missing Data Bias
-    if (stageKey === 'data-extraction-procurement') {
-      // Missing Data Bias -> Stakeholder Engagement (4) + Additional Data Collection (2)
-      if (stageInfo.mitigations?.includes('4')) {
-        pairs.push({
-          biasId: '18',
-          mitigationId: '4',
-          reason: 'Stakeholder engagement for missing data',
-        });
-      }
-      if (stageInfo.mitigations?.includes('2')) {
-        pairs.push({
-          biasId: '18',
-          mitigationId: '2',
-          reason: 'Additional data collection for missing data',
-        });
-      }
-    } else if (stageKey === 'data-analysis') {
-      // Missing Data Bias -> Identify Underrepresented Groups (6)
-      if (stageInfo.mitigations?.includes('6')) {
-        pairs.push({
-          biasId: '18',
-          mitigationId: '6',
-          reason: 'Identify underrepresented groups for missing data',
-        });
-      }
+type StageInfo = {
+  biases?: string[];
+  mitigations?: string[];
+  notes?: string;
+};
+
+// Helper function to handle Missing Data Bias pairs
+function getMissingDataBiasPairs(
+  stageKey: LifecycleStage,
+  stageInfo: StageInfo
+): PairInfo[] {
+  const pairs: PairInfo[] = [];
+
+  if (!stageInfo.biases?.includes('18')) {
+    return pairs;
+  }
+
+  if (stageKey === 'data-extraction-procurement') {
+    if (stageInfo.mitigations?.includes('4')) {
+      pairs.push({
+        biasId: '18',
+        mitigationId: '4',
+        reason: 'Stakeholder engagement for missing data',
+      });
+    }
+    if (stageInfo.mitigations?.includes('2')) {
+      pairs.push({
+        biasId: '18',
+        mitigationId: '2',
+        reason: 'Additional data collection for missing data',
+      });
     }
   }
 
-  // For other biases, create limited meaningful pairs instead of all combinations
-  // This prevents the explosion of pairs and makes the system more manageable
-  for (const biasId of stageInfo.biases || []) {
-    if (biasId === '18') continue; // Skip Missing Data Bias, already handled above
+  if (stageKey === 'data-analysis' && stageInfo.mitigations?.includes('6')) {
+    pairs.push({
+      biasId: '18',
+      mitigationId: '6',
+      reason: 'Identify underrepresented groups for missing data',
+    });
+  }
 
-    // Only create pairs for the first 1-2 mitigations per bias to avoid overwhelming users
-    const limitedMitigations = (stageInfo.mitigations || []).slice(0, 2);
+  return pairs;
+}
+
+// Helper function to get general bias pairs
+function getGeneralBiasPairs(stageInfo: StageInfo): PairInfo[] {
+  const pairs: PairInfo[] = [];
+  const biases = stageInfo.biases || [];
+  const limitedMitigations = (stageInfo.mitigations || []).slice(0, 2);
+
+  for (const biasId of biases) {
+    if (biasId === '18') {
+      continue; // Skip Missing Data Bias
+    }
+
     for (const mitigationId of limitedMitigations) {
       pairs.push({ biasId, mitigationId, reason: 'selective pairing' });
     }
   }
 
   return pairs;
+}
+
+function getMeaningfulPairsForStage(
+  stageKey: LifecycleStage,
+  stageInfo: StageInfo
+): PairInfo[] {
+  const missingDataPairs = getMissingDataBiasPairs(stageKey, stageInfo);
+  const generalPairs = getGeneralBiasPairs(stageInfo);
+
+  return [...missingDataPairs, ...generalPairs];
+}
+
+// Helper to get risk mapping for demo biases
+function getDemoRiskMapping(): Record<string, BiasRiskCategory> {
+  return {
+    // High Risk
+    '7': 'high-risk', // Decision-Automation Bias
+    '13': 'high-risk', // Implementation Bias
+    '18': 'high-risk', // Missing Data Bias
+    '23': 'high-risk', // Training-Serving Skew
+
+    // Medium Risk
+    '1': 'medium-risk', // Confirmation Bias
+    '10': 'medium-risk', // Chronological Bias
+    '14': 'medium-risk', // Label Bias
+    '16': 'medium-risk', // Selection Bias
+
+    // Low Risk
+    '17': 'low-risk', // Status Quo Bias
+    '8': 'low-risk', // Automation-Distrust Bias
+    '6': 'low-risk', // Optimism Bias
+
+    // Additional biases from demo data
+    '2': 'medium-risk', // Availability Bias
+    '11': 'medium-risk', // De-agentification Bias
+    '12': 'medium-risk', // Historical Bias
+    '15': 'medium-risk', // Representation Bias
+    '21': 'medium-risk', // Measurement Bias
+    '24': 'low-risk', // Wrong Sample Size Bias
+  };
+}
+
+// Helper to seed stage assignments
+function seedStageAssignments(
+  stages: Record<string, StageInfo>,
+  assignCardToStage: (
+    cardId: string,
+    stage: LifecycleStage,
+    note?: string
+  ) => void,
+  assignBiasRisk: (
+    cardId: string,
+    risk: BiasRiskCategory,
+    note?: string
+  ) => void
+) {
+  const riskByBias = getDemoRiskMapping();
+  console.log('Seeding stage assignments and bias risk assignments');
+
+  for (const stageKey of Object.keys(stages) as LifecycleStage[]) {
+    const stageInfo = stages[stageKey];
+    if (!stageInfo) {
+      continue;
+    }
+
+    const note = stageInfo.notes || `Demo rationale for ${stageKey}`;
+
+    // Assign biases to stage and risk category
+    for (const biasId of stageInfo.biases || []) {
+      assignCardToStage(biasId, stageKey, note);
+      const risk = riskByBias[biasId] || 'needs-discussion';
+      assignBiasRisk(biasId, risk);
+    }
+  }
+}
+
+// Helper to seed card pairs
+function seedCardPairs(
+  stages: Record<string, StageInfo>,
+  cardPairs: CardPair[],
+  createCardPair: (
+    biasId: string,
+    mitigationId: string,
+    annotation?: string,
+    rating?: number
+  ) => void,
+  removeCardPair: (biasId: string, mitigationId: string) => void
+) {
+  console.log('Seeding card pairs, current cardPairs:', cardPairs.length);
+
+  // Clear existing pairs if re-seeding
+  if (cardPairs.length > 0) {
+    console.log('Clearing existing card pairs for re-seeding');
+    cardPairs.forEach((pair) => {
+      removeCardPair(pair.biasId, pair.mitigationId);
+    });
+  }
+
+  for (const stageKey of Object.keys(stages) as LifecycleStage[]) {
+    const stageInfo = stages[stageKey];
+    if (!stageInfo) {
+      continue;
+    }
+
+    const meaningfulPairs = getMeaningfulPairsForStage(stageKey, stageInfo);
+    for (const { biasId, mitigationId, reason } of meaningfulPairs) {
+      // Add demo annotations for specific pairs
+      const isFirstConfirmationBiasPair =
+        biasId === '1' && mitigationId === '4';
+      const isFirstSelectionBiasPair = biasId === '16' && mitigationId === '2';
+
+      const rating = isFirstConfirmationBiasPair
+        ? 5
+        : isFirstSelectionBiasPair
+          ? 3
+          : undefined;
+
+      const annotation = isFirstConfirmationBiasPair
+        ? 'The Double Diamond methodology is highly effective for addressing confirmation bias.'
+        : isFirstSelectionBiasPair
+          ? 'Data augmentation can help address selection bias.'
+          : reason;
+
+      createCardPair(biasId, mitigationId, annotation, rating);
+    }
+  }
 }
 
 // Seed demo workspace (Stage 1/2/3) from demo Activity metadata
@@ -158,112 +298,16 @@ function seedDemoWorkspaceIfNeeded(
     return;
   }
 
-  // Risk mapping for demo biases based on user specifications
-  const riskByBias: Record<string, BiasRiskCategory> = {
-    // High Risk
-    '7': 'high-risk', // Decision-Automation Bias
-    '13': 'high-risk', // Implementation Bias
-    '18': 'high-risk', // Missing Data Bias
-    '23': 'high-risk', // Training-Serving Skew
-
-    // Medium Risk
-    '1': 'medium-risk', // Confirmation Bias
-    '10': 'medium-risk', // Chronological Bias
-    '14': 'medium-risk', // Label Bias
-    '16': 'medium-risk', // Selection Bias
-
-    // Low Risk
-    '17': 'low-risk', // Status Quo Bias
-    '8': 'low-risk', // Automation-Distrust Bias
-    '6': 'low-risk', // Optimism Bias
-
-    // Needs Discussion
-    '18': 'needs-discussion', // Aggregation Bias
-
-    // Additional biases from demo data
-    '2': 'medium-risk', // Availability Bias
-    '11': 'medium-risk', // De-agentification Bias
-    '12': 'medium-risk', // Historical Bias
-    '15': 'medium-risk', // Representation Bias
-    '21': 'medium-risk', // Measurement Bias
-    '24': 'low-risk', // Wrong Sample Size Bias
-  };
-
   const stages = activity.lifecycleStages || {};
 
   // Seed stage assignments if needed
   if (shouldSeedStageAssignments) {
-    console.log('Seeding stage assignments and bias risk assignments');
-    for (const stageKey of Object.keys(stages) as LifecycleStage[]) {
-      const stageInfo = stages[stageKey];
-      if (!stageInfo) {
-        continue;
-      }
-      const note = stageInfo.notes || `Demo rationale for ${stageKey}`;
-
-      // Assign biases to stage and risk category
-      for (const biasId of stageInfo.biases || []) {
-        assignCardToStage(biasId, stageKey, note);
-        const risk = riskByBias[biasId] || 'needs-discussion';
-        assignBiasRisk(biasId, risk);
-      }
-    }
+    seedStageAssignments(stages, assignCardToStage, assignBiasRisk);
   }
 
   // Seed card pairs if needed (separate from stage assignments)
   if (shouldSeedCardPairs) {
-    console.log('Seeding card pairs, current cardPairs:', cardPairs.length);
-
-    // Clear existing pairs if re-seeding
-    if (cardPairs.length > 0) {
-      console.log('Clearing existing card pairs for re-seeding');
-      cardPairs.forEach((pair) => {
-        removeCardPair(pair.biasId, pair.mitigationId);
-      });
-    }
-
-    for (const stageKey of Object.keys(stages) as LifecycleStage[]) {
-      const stageInfo = stages[stageKey];
-      if (!stageInfo) {
-        continue;
-      }
-
-      // Create bias-mitigation pairs
-      if (stageInfo.biases && stageInfo.mitigations) {
-        console.log(`Creating pairs for ${stageKey}:`, {
-          biases: stageInfo.biases,
-          mitigations: stageInfo.mitigations,
-        });
-        // Create specific meaningful pairs instead of all combinations
-        // This allows for stage-specific mitigation assignments
-        const meaningfulPairs = getMeaningfulPairsForStage(stageKey, stageInfo);
-
-        for (const { biasId, mitigationId, reason } of meaningfulPairs) {
-          console.log(
-            `Creating meaningful pair: ${biasId} -> ${mitigationId} (${reason})`
-          );
-
-          // Only add rating and annotation for specific pairs to demonstrate functionality
-          const isFirstConfirmationBiasPair =
-            biasId === '1' && mitigationId === '4'; // Confirmation Bias -> Double Diamond
-          const isFirstSelectionBiasPair =
-            biasId === '16' && mitigationId === '2'; // Selection Bias -> Data Augmentation
-
-          const rating = isFirstConfirmationBiasPair
-            ? 5
-            : isFirstSelectionBiasPair
-              ? 3
-              : undefined;
-          const annotation = isFirstConfirmationBiasPair
-            ? 'The Double Diamond methodology is highly effective for addressing confirmation bias by forcing teams to consider alternative hypotheses and validate assumptions through structured divergent and convergent thinking phases.'
-            : isFirstSelectionBiasPair
-              ? 'Data augmentation can help address selection bias by generating synthetic examples that represent underrepresented groups, though careful validation is needed.'
-              : undefined;
-
-          createCardPair(biasId, mitigationId, annotation, rating);
-        }
-      }
-    }
+    seedCardPairs(stages, cardPairs, createCardPair, removeCardPair);
   }
 
   if (currentStage) {
