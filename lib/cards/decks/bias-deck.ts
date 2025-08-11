@@ -47,7 +47,8 @@ export class BiasDeck extends Deck<BiasDeckCard> {
       for (const cardData of deckData.biasCards) {
         const card = new BiasCard({
           ...cardData,
-          id: String(cardData.id),
+          id: cardData.title || String(cardData.id), // Use slug title as ID
+          displayNumber: cardData.id, // Keep numeric ID for display only
           category: cardData.category as BiasCategory,
         } as BiasCardData);
         if (card.validate()) {
@@ -62,7 +63,8 @@ export class BiasDeck extends Deck<BiasDeckCard> {
       for (const cardData of deckData.mitigationCards) {
         const card = new MitigationCard({
           ...cardData,
-          id: String(cardData.id),
+          id: cardData.title || String(cardData.id), // Use slug title as ID
+          displayNumber: cardData.id, // Keep numeric ID for display only
           category: 'mitigation-technique' as const,
           applicableStages: cardData.applicableStages as LifecycleStage[],
         } as MitigationCardData);

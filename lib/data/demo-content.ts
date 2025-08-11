@@ -1,4 +1,7 @@
+import { BiasActivity } from '@/lib/activities/bias-activity';
+import { BiasDeck } from '@/lib/cards/decks/bias-deck';
 import type { Activity } from '@/lib/types/activity';
+import type { BiasActivityData } from '@/lib/types/bias-activity';
 import type { BiasCard, MitigationCard } from '@/lib/types/cards';
 import type { ProjectInfo } from '@/lib/types/project-info';
 import type { Report, ReportSummary } from '@/lib/types/reports';
@@ -700,3 +703,111 @@ export const DEMO_METADATA = {
   helpText:
     'These are example activities and reports to help you get started. You can explore, modify, or delete them at any time.',
 };
+
+// V2.0 Demo Activity Support
+export async function loadDemoActivityV2(
+  demoName: 'ai-risk-assessment' | 'fair-lending'
+): Promise<BiasActivity | null> {
+  try {
+    const deck = await BiasDeck.getInstance();
+
+    // Load the appropriate demo JSON file
+    const filename =
+      demoName === 'ai-risk-assessment'
+        ? 'ai-risk-assessment-tool.json'
+        : 'fair-lending-credit-scoring.json';
+
+    const response = await fetch(`/demo/${filename}`);
+    if (!response.ok) {
+      // Failed to load demo file
+      return null;
+    }
+
+    const demoData = await response.json();
+
+    if (demoData.version !== '2.0' || !demoData.activityData) {
+      // Invalid demo data format
+      return null;
+    }
+
+    // Create a new BiasActivity instance
+    const activityData = demoData.activityData as BiasActivityData;
+    const activity = new BiasActivity(deck, {
+      name: activityData.name,
+      description: activityData.description,
+    });
+
+    // Load the demo data into the activity
+    activity.load(activityData);
+
+    return activity;
+  } catch (_error) {
+    // Error loading demo activity
+    return null;
+  }
+}
+
+export async function loadAllDemoActivitiesV2(): Promise<{
+  aiRiskDemo: BiasActivity | null;
+  fairLendingDemo: BiasActivity | null;
+}> {
+  const [aiRiskDemo, fairLendingDemo] = await Promise.all([
+    loadDemoActivityV2('ai-risk-assessment'),
+    loadDemoActivityV2('fair-lending'),
+  ]);
+
+  return { aiRiskDemo, fairLendingDemo };
+}
+
+// Convert v2.0 BiasActivity to legacy Activity format for backward compatibility
+export function convertV2ToLegacyActivity(
+  biasActivity: BiasActivity
+): Partial<Activity> {
+  const activityData = biasActivity.export();
+  const biases = activityData.biases;
+
+  // Group biases by lifecycle stage for legacy format
+  // biome-ignore lint/suspicious/noExplicitAny: Legacy format compatibility
+  const lifecycleStages: Record<string, any> = {};
+
+  for (const [biasId, biasEntry] of Object.entries(biases)) {
+    for (const stage of biasEntry.lifecycleAssignments) {
+      if (!lifecycleStages[stage]) {
+        lifecycleStages[stage] = {
+          completed: true,
+          biases: [],
+          mitigations: [],
+          notes: '',
+        };
+      }
+
+      lifecycleStages[stage].biases.push(biasId);
+
+      if (biasEntry.mitigations[stage]) {
+        lifecycleStages[stage].mitigations.push(
+          ...biasEntry.mitigations[stage]
+        );
+      }
+
+      if (biasEntry.rationale[stage]) {
+        lifecycleStages[stage].notes += `${biasEntry.rationale[stage]} `;
+      }
+    }
+  }
+
+  return {
+    id: activityData.id,
+    title: activityData.name,
+    description: activityData.description,
+    isDemo: true,
+    currentStage: activityData.state.currentStage as 1 | 2 | 3 | 4 | 5,
+    status: activityData.completedAt ? 'completed' : 'in-progress',
+    createdAt: activityData.createdAt,
+    lastModified: activityData.updatedAt,
+    lifecycleStages,
+    progress: {
+      completed: activityData.state.completedStages.length,
+      total: 5,
+    },
+  };
+}

@@ -181,7 +181,11 @@ function processMitigationStrategies(
   workspaceState: WorkspaceState,
   getCardById: (id: string) => Card | undefined
 ): MitigationStrategy[] {
-  const mitigationStrategies: MitigationStrategy[] = [];
+  // Group mitigations by biasId to avoid duplicate keys
+  const mitigationsByBias = new Map<
+    string,
+    MitigationStrategy['mitigations']
+  >();
 
   for (const pair of workspaceState.cardPairs) {
     const mitigationCard = getCardById(pair.mitigationId);
@@ -189,18 +193,28 @@ function processMitigationStrategies(
       continue;
     }
 
+    // Get or create the mitigation list for this bias
+    if (!mitigationsByBias.has(pair.biasId)) {
+      mitigationsByBias.set(pair.biasId, []);
+    }
+
+    // Add the mitigation to the bias's list
+    mitigationsByBias.get(pair.biasId)!.push({
+      mitigationCard: mitigationCard as MitigationCard,
+      timeline: 'TBD',
+      responsible: 'TBD',
+      successCriteria: 'TBD',
+      priority: 'medium',
+      comments: [],
+    });
+  }
+
+  // Convert map to array of MitigationStrategy objects
+  const mitigationStrategies: MitigationStrategy[] = [];
+  for (const [biasId, mitigations] of mitigationsByBias) {
     mitigationStrategies.push({
-      biasId: pair.biasId,
-      mitigations: [
-        {
-          mitigationCard: mitigationCard as MitigationCard,
-          timeline: 'TBD',
-          responsible: 'TBD',
-          successCriteria: 'TBD',
-          priority: 'medium',
-          comments: [],
-        },
-      ],
+      biasId,
+      mitigations,
     });
   }
 
@@ -376,6 +390,31 @@ export const useReportsStore = create<ReportsStore>()(
 
       setCurrentReport: (reportId) => {
         const report = reportId ? get().getReport(reportId) : null;
+
+        // Fix duplicate mitigation strategies in existing reports
+        if (report && report.analysis.mitigationStrategies) {
+          const deduplicatedStrategies = new Map<string, MitigationStrategy>();
+
+          // Group all mitigations by biasId
+          for (const strategy of report.analysis.mitigationStrategies) {
+            if (deduplicatedStrategies.has(strategy.biasId)) {
+              // Merge mitigations for the same biasId
+              const existing = deduplicatedStrategies.get(strategy.biasId)!;
+              existing.mitigations.push(...strategy.mitigations);
+            } else {
+              deduplicatedStrategies.set(strategy.biasId, {
+                biasId: strategy.biasId,
+                mitigations: [...strategy.mitigations],
+              });
+            }
+          }
+
+          // Replace with deduplicated array
+          report.analysis.mitigationStrategies = Array.from(
+            deduplicatedStrategies.values()
+          );
+        }
+
         set({ currentReport: report });
       },
 

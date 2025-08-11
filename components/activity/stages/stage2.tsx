@@ -76,9 +76,10 @@ const getStageImage = (stage: LifecycleStage): string => {
   return stageImages[stage] || '';
 };
 
-// Regex patterns for drag and drop operations
-const CARD_ID_REGEX = /-card-(\d+)-/;
-const STAGE_CARD_REGEX = /^stage-([^-]+(?:-[^-]+)*)-card-\d+-(.+)$/;
+// Regex patterns for drag and drop operations - updated to handle slug-based card IDs
+const CARD_ID_REGEX = /-card-([^-]+(?:-[^-]+)*)-/; // Updated to capture slug IDs like "confirmation-bias"
+const STAGE_CARD_REGEX =
+  /^stage-([^-]+(?:-[^-]+)*)-card-([^-]+(?:-[^-]+)*)-(.+)$/; // Updated to handle slug-based card IDs
 
 // Define lifecycle stages array at module level
 const lifecycleStages: LifecycleStage[] = [
@@ -298,12 +299,17 @@ export default function Stage2Client() {
     updateStageAssignment,
     getBiasRiskAssignments,
     completeActivityStage: completeWorkspaceStage,
+    getCurrentActivity,
+    getLifecycleAssignmentsFromActivity,
+    setCardAnnotation,
+    hasHydrated,
   } = useWorkspaceStore();
 
   const [activeCard, setActiveCard] = useState<BiasCard | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   // Modal state for card details
   const [selectedCard, setSelectedCard] = useState<BiasCard | null>(null);
@@ -311,11 +317,78 @@ export default function Stage2Client() {
     useState<StageAssignment | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Activity-aware helper methods
+  const _getAssignments = (biasId: string): LifecycleStage[] => {
+    return getLifecycleAssignmentsFromActivity(biasId);
+  };
+
+  const _isActivityReady = (): boolean => {
+    return getCurrentActivity() !== null;
+  };
+
   // Ensure we only render on client to avoid hydration issues
   useEffect(() => {
     setIsClient(true);
     loadCards();
-  }, [loadCards]);
+
+    // Initialize workspace if not ready
+    const initializeWorkspace = async () => {
+      try {
+        // Import stores dynamically to avoid circular dependencies
+        const { useActivityStore } = await import(
+          '@/lib/stores/activity-store'
+        );
+        const { useWorkspaceStore } = await import(
+          '@/lib/stores/workspace-store'
+        );
+
+        const workspaceStore = useWorkspaceStore.getState();
+
+        // Wait for store hydration before checking persisted state
+        const hasPersistedActivityState =
+          hasHydrated && workspaceStore.activityId === activityId;
+
+        console.log('Stage 2: Checking activity state', {
+          hasCurrentActivity: !!workspaceStore.getCurrentActivity(),
+          hasPersistedState: hasPersistedActivityState,
+          activityId,
+        });
+
+        // Check if we need to restore from persisted state
+        if (!workspaceStore.getCurrentActivity() && hasPersistedActivityState) {
+          console.log('Stage 2: Restoring from persisted state');
+          await workspaceStore.initialize();
+          console.log('Stage 2: Restoration complete', {
+            currentActivity: workspaceStore.getCurrentActivity(),
+            biasRiskAssignments: workspaceStore.getBiasRiskAssignments().length,
+          });
+        } else if (!_isActivityReady()) {
+          console.log('Stage 2: Activity not ready, initializing new...');
+          // If no persisted state, initialize normally
+          const activityStore = useActivityStore.getState();
+          const currentActivityData = activityStore.activities.find(
+            (a) => a.id === activityId
+          );
+
+          console.log('Stage 2: Found activity data', currentActivityData);
+
+          if (currentActivityData) {
+            await workspaceStore.initialize(currentActivityData.title);
+            workspaceStore.setActivityId(activityId);
+            console.log('Stage 2: Workspace initialized', {
+              currentActivity: workspaceStore.getCurrentActivity(),
+            });
+          }
+        }
+      } catch (error) {
+        console.error('Failed to initialize workspace:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initializeWorkspace();
+  }, [loadCards, activityId, hasHydrated]);
 
   // Get bias risk assignments from Stage 1
   const biasRiskAssignments = getBiasRiskAssignments();
@@ -406,15 +479,16 @@ export default function Stage2Client() {
       const match = activeIdStr.match(STAGE_CARD_REGEX);
       if (match) {
         const sourceStage = match[1] as LifecycleStage;
-        const timestamp = match[2];
+        const cardId = match[2]; // This is now the card ID from the regex
+        const timestamp = match[3]; // Timestamp moved to third capture group
 
         const assignmentToMove = stageAssignments.find(
-          (a) => a.cardId === card.id && a.timestamp === timestamp
+          (a) => a.cardId === cardId && a.timestamp === timestamp
         );
 
         if (assignmentToMove && sourceStage !== targetStage) {
           removeCardFromStage(assignmentToMove.id);
-          assignCardToStage(card.id, targetStage);
+          assignCardToStage(cardId, targetStage);
         }
       }
     } else {
@@ -470,9 +544,8 @@ export default function Stage2Client() {
   // Handle saving rationale
   const handleSaveRationale = (rationale: string) => {
     if (selectedAssignment) {
-      updateStageAssignment(selectedAssignment.cardId, {
-        annotation: rationale,
-      });
+      // Use setCardAnnotation instead of updateStageAssignment for better persistence
+      setCardAnnotation(selectedAssignment.cardId, rationale);
     }
     setIsModalOpen(false);
   };
@@ -606,7 +679,7 @@ export default function Stage2Client() {
   };
 
   // Show loading state during hydration to prevent mismatch
-  if (!isClient) {
+  if (!isClient || isInitializing) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">

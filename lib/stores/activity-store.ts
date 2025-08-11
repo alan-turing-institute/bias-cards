@@ -50,7 +50,7 @@ function createImportedActivity(
 function importWorkspaceData(
   workspace: unknown,
   newActivityId: string
-): { success: boolean } {
+): { success: boolean; message?: string } {
   try {
     const workspaceStore = JSON.parse(
       localStorage.getItem('workspace-store') || '{}'
@@ -313,35 +313,61 @@ export const useActivityStore = create<ActivityStore>()(
         }));
       },
 
-      exportActivity: (id, format) => {
+      exportActivity: async (id, format) => {
         const activity = get().getActivity(id);
         if (!activity) {
           return;
         }
 
-        // Check if there's workspace data for this activity
-        let workspaceData: unknown = null;
+        // Get the current workspace store for activity data
+        let activityData: unknown = null;
+        let exportData: unknown;
+
         try {
-          // Access workspace store data from localStorage
+          // Access workspace store to get current activity
           const workspaceStore = JSON.parse(
             localStorage.getItem('workspace-store') || '{}'
           );
           const workspaceState = workspaceStore.state;
 
-          // If current workspace matches this activity, include the workspace data
-          if (workspaceState && workspaceState.activityId === id) {
-            workspaceData = workspaceState;
+          // If current workspace matches this activity and has currentActivity
+          if (
+            workspaceState?.activityId === id &&
+            workspaceState.currentActivity
+          ) {
+            // Get the deck instance
+            const { BiasDeck } = await import('@/lib/cards/decks/bias-deck');
+            const deck = await BiasDeck.getInstance();
+
+            // Export using v2.0 format with activity data
+            activityData = workspaceState.currentActivity.export
+              ? workspaceState.currentActivity.export()
+              : workspaceState.activityData;
+
+            exportData = {
+              version: '2.0',
+              deckId: deck.getMetadata().id,
+              deckVersion: deck.getVersion(),
+              activityData,
+              exportedAt: new Date().toISOString(),
+            };
+          } else {
+            // Fall back to legacy export format
+            exportData = {
+              activity,
+              workspace: workspaceState,
+              exportedAt: new Date().toISOString(),
+              format: 'legacy-json',
+            };
           }
         } catch (_error) {
-          // Silent fail - workspace data may not exist
+          // Fall back to basic export if workspace access fails
+          exportData = {
+            activity,
+            exportedAt: new Date().toISOString(),
+            format: 'basic-json',
+          };
         }
-
-        const exportData = {
-          activity,
-          workspace: workspaceData,
-          exportedAt: new Date().toISOString(),
-          format: workspaceData ? 'complete-workspace-json' : format,
-        };
 
         if (format === 'json') {
           const blob = new Blob([JSON.stringify(exportData, null, 2)], {
@@ -385,6 +411,60 @@ export const useActivityStore = create<ActivityStore>()(
             };
           }
 
+          // Use FormatConverter for progressive migration
+          const { FormatConverter } = await import(
+            '@/lib/utils/format-converter'
+          );
+          const { BiasDeck } = await import('@/lib/cards/decks/bias-deck');
+          const { detectDataVersion } = await import('@/lib/types/migration');
+
+          const deck = await BiasDeck.getInstance();
+          const converter = new FormatConverter();
+          const version = detectDataVersion(importData.data);
+
+          // If it's v2.0 or needs migration
+          if (version === '2.0' || version === '1.5' || version === '1.0') {
+            const biasActivity = await converter.migrate(importData.data, deck);
+            const activityData = biasActivity.export();
+
+            // Create activity record for the store
+            const newActivityId = generateActivityId();
+            const importedActivity = createImportedActivity(
+              {
+                id: newActivityId,
+                title: activityData.name,
+                description: activityData.description || '',
+                projectType: 'imported',
+                status: 'draft',
+                currentStage: activityData.state.currentStage,
+                createdAt: activityData.createdAt,
+                updatedAt: activityData.updatedAt,
+                lastModified: activityData.updatedAt,
+                progress: { completed: 0, total: 5 },
+              } as Activity,
+              newActivityId,
+              true
+            );
+
+            set((state) => ({
+              activities: [...state.activities, importedActivity],
+            }));
+
+            // Import the activity data into workspace
+            const workspaceResult = importWorkspaceData(
+              { activityData },
+              newActivityId
+            );
+
+            return buildSuccessMessage(
+              activityData.name,
+              validation.warnings,
+              newActivityId,
+              workspaceResult.success
+            );
+          }
+
+          // Fall back to legacy import for unknown formats
           const { activity, workspace } = importData.data as ImportData;
           const newActivityId = generateActivityId();
           const importedActivity = createImportedActivity(
@@ -455,7 +535,7 @@ export const useActivityStore = create<ActivityStore>()(
       },
     }),
     {
-      name: 'bias-cards-activities',
+      name: 'activity-store',
       version: 1,
       onRehydrateStorage: () => (state, error) => {
         // Silently handle hydration errors in production

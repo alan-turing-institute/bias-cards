@@ -1,5 +1,7 @@
 import type { WorkspaceState } from '@/lib/types';
 import type { Activity } from '@/lib/types/activity';
+import type { BiasActivityData } from '@/lib/types/bias-activity';
+import { detectDataVersion } from '@/lib/types/migration';
 
 // Import data validation schemas
 export interface ImportValidationResult {
@@ -13,6 +15,15 @@ export interface ImportData {
   workspace?: WorkspaceState;
   exportedAt?: string;
   format?: string;
+}
+
+// v2.0 Activity-based export format
+export interface ActivityImportData {
+  version: '2.0';
+  deckId: string;
+  deckVersion: string;
+  activityData: BiasActivityData;
+  exportedAt: string;
 }
 
 // Validation functions
@@ -30,32 +41,136 @@ export function validateImportData(data: unknown): ImportValidationResult {
     return result;
   }
 
-  const importData = data as Partial<ImportData>;
+  // Detect data version
+  const version = detectDataVersion(data);
 
-  // Validate activity object
-  const activityValidation = validateActivityData(importData.activity);
-  if (!activityValidation.isValid) {
-    result.isValid = false;
-    result.errors.push(...activityValidation.errors);
-  }
-  result.warnings.push(...activityValidation.warnings);
+  switch (version) {
+    case '2.0':
+      return validateActivityFormat(data);
+    case '1.5':
+      return validateDeckFormat(data);
+    case '1.0':
+      return validateLegacyFormat(data);
+    default: {
+      // Fall back to legacy validation for backward compatibility
+      const importData = data as Partial<ImportData>;
 
-  // Validate workspace data if present
-  if (importData.workspace) {
-    const workspaceValidation = validateWorkspaceData(importData.workspace);
-    if (!workspaceValidation.isValid) {
-      result.warnings.push(...workspaceValidation.errors);
-      result.warnings.push(
-        'Workspace data appears corrupted - activity will be imported without workspace data'
-      );
+      // Validate activity object
+      const activityValidation = validateActivityData(importData.activity);
+      if (!activityValidation.isValid) {
+        result.isValid = false;
+        result.errors.push(...activityValidation.errors);
+      }
+      result.warnings.push(...activityValidation.warnings);
+
+      // Validate workspace data if present
+      if (importData.workspace) {
+        const workspaceValidation = validateWorkspaceData(importData.workspace);
+        if (!workspaceValidation.isValid) {
+          result.warnings.push(...workspaceValidation.errors);
+          result.warnings.push(
+            'Workspace data appears corrupted - activity will be imported without workspace data'
+          );
+        }
+        result.warnings.push(...workspaceValidation.warnings);
+      }
+
+      // Validate export metadata
+      if (importData.exportedAt && !isValidISODate(importData.exportedAt)) {
+        result.warnings.push('Export date format is invalid');
+      }
+
+      return result;
     }
-    result.warnings.push(...workspaceValidation.warnings);
+  }
+}
+
+// Validate v2.0 activity-based format
+function validateActivityFormat(data: unknown): ImportValidationResult {
+  const result: ImportValidationResult = {
+    isValid: true,
+    errors: [],
+    warnings: [],
+  };
+
+  const activityImport = data as Partial<ActivityImportData>;
+
+  // Check required fields
+  if (!activityImport.version || activityImport.version !== '2.0') {
+    result.warnings.push('Version field should be 2.0');
   }
 
-  // Validate export metadata
-  if (importData.exportedAt && !isValidISODate(importData.exportedAt)) {
-    result.warnings.push('Export date format is invalid');
+  if (!activityImport.deckId) {
+    result.errors.push('Deck ID is required for activity import');
+    result.isValid = false;
   }
+
+  if (!activityImport.deckVersion) {
+    result.warnings.push(
+      'Deck version is missing - compatibility issues may occur'
+    );
+  }
+
+  if (!activityImport.activityData) {
+    result.errors.push('Activity data is required');
+    result.isValid = false;
+    return result;
+  }
+
+  // Validate activity data structure
+  const activityData = activityImport.activityData;
+
+  if (!(activityData.id && activityData.name)) {
+    result.errors.push('Activity must have an ID and name');
+    result.isValid = false;
+  }
+
+  if (!activityData.biases || typeof activityData.biases !== 'object') {
+    result.errors.push('Activity must contain biases object');
+    result.isValid = false;
+  }
+
+  if (!activityData.state) {
+    result.errors.push('Activity must have state information');
+    result.isValid = false;
+  }
+
+  return result;
+}
+
+// Validate v1.5 deck-based format
+function validateDeckFormat(data: unknown): ImportValidationResult {
+  const result: ImportValidationResult = {
+    isValid: true,
+    errors: [],
+    warnings: [],
+  };
+
+  const deckData = data as { dataVersion?: string; deckId?: string };
+
+  if (!deckData.deckId) {
+    result.warnings.push('Deck format detected but deck ID is missing');
+  }
+
+  // Additional v1.5 validation can be added here
+  result.warnings.push('Importing v1.5 format - will be migrated to v2.0');
+
+  return result;
+}
+
+// Validate v1.0 legacy format
+function validateLegacyFormat(_data: unknown): ImportValidationResult {
+  const result: ImportValidationResult = {
+    isValid: true,
+    errors: [],
+    warnings: [],
+  };
+
+  result.warnings.push(
+    'Legacy v1.0 format detected - will be migrated to v2.0'
+  );
+
+  // Additional v1.0 validation can be added here
 
   return result;
 }

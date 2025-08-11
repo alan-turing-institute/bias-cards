@@ -8,10 +8,10 @@ import type {
   CompletionStatus,
   ImplementationNote,
 } from '@/lib/types/bias-activity';
+import { BiasActivityValidator } from '@/lib/validation/bias-activity-validation';
 import {
   Activity,
   type ActivityMetadata, // Use the base Activity's metadata type
-  type ValidationError,
   type ValidationResult,
 } from './activity';
 
@@ -35,6 +35,9 @@ export class BiasActivity extends Activity {
   }
 
   getCurrentStage(): number {
+    if (!this.state) {
+      return 1;
+    }
     return this.state.currentStage;
   }
 
@@ -161,6 +164,9 @@ export class BiasActivity extends Activity {
 
   // Helper methods
   getBias(biasId: string): BiasEntry {
+    if (!(this.state && this.state.biases)) {
+      this.state = this.initializeState();
+    }
     if (!this.state.biases[biasId]) {
       this.state.biases[biasId] = this.createBiasEntry(biasId);
     }
@@ -168,6 +174,9 @@ export class BiasActivity extends Activity {
   }
 
   getBiases(): Record<string, BiasEntry> {
+    if (!(this.state && this.state.biases)) {
+      return {};
+    }
     return { ...this.state.biases };
   }
 
@@ -195,93 +204,36 @@ export class BiasActivity extends Activity {
   }
 
   // Validation
-  validate(): ValidationResult {
-    const errors: ValidationError[] = [];
-
-    this.validateDeck(errors);
-    this.validateStageProgression(errors);
-    this.validateMitigationReferences(errors);
-
-    return {
-      valid: errors.length === 0,
-      errors: errors.length > 0 ? errors : undefined,
-    };
+  validate(strict = false): ValidationResult {
+    const validator = new BiasActivityValidator(this, this.deck, { strict });
+    return validator.validate();
   }
 
-  private validateDeck(errors: ValidationError[]): void {
-    if (!this.deck || this.deck.size() === 0) {
-      errors.push({
-        type: 'deck',
-        message: 'No deck loaded or deck is empty',
-      });
-    }
+  // Check if activity can advance to next stage (delegates to validator)
+  canAdvanceToNextStage(): boolean {
+    const validator = new BiasActivityValidator(this, this.deck);
+    return validator.canAdvanceToStage(this.state.currentStage + 1);
   }
 
-  private validateStageProgression(errors: ValidationError[]): void {
-    for (const [biasId, entry] of Object.entries(this.state.biases)) {
-      this.validateBiasProgression(biasId, entry, errors);
-    }
+  // Get validation warnings for current stage
+  getStageWarnings(): string[] {
+    const validator = new BiasActivityValidator(this, this.deck);
+    return validator.getStageWarnings(this.state.currentStage);
   }
 
-  private validateBiasProgression(
-    biasId: string,
-    entry: BiasEntry,
-    errors: ValidationError[]
-  ): void {
-    // Stage 2 requires Stage 1
-    if (entry.lifecycleAssignments.length > 0 && !entry.riskCategory) {
-      errors.push({
-        type: 'progression',
-        biasId,
-        stage: 2,
-        message: `Bias "${entry.name}" has lifecycle assignments but no risk assessment`,
-      });
-    }
-
-    // Stage 3 requires Stage 2
-    if (
-      Object.keys(entry.rationale).length > 0 &&
-      entry.lifecycleAssignments.length === 0
-    ) {
-      errors.push({
-        type: 'progression',
-        biasId,
-        stage: 3,
-        message: `Bias "${entry.name}" has rationale but no lifecycle assignments`,
-      });
-    }
-
-    // Stage 4 requires Stage 2
-    if (
-      Object.keys(entry.mitigations).length > 0 &&
-      entry.lifecycleAssignments.length === 0
-    ) {
-      errors.push({
-        type: 'progression',
-        biasId,
-        stage: 4,
-        message: `Bias "${entry.name}" has mitigations but no lifecycle assignments`,
-      });
-    }
-  }
-
-  private validateMitigationReferences(errors: ValidationError[]): void {
-    for (const [, entry] of Object.entries(this.state.biases)) {
-      for (const [stage, mitigationIds] of Object.entries(entry.mitigations)) {
-        for (const mitigationId of mitigationIds) {
-          if (!this.deck.getCard(mitigationId)) {
-            errors.push({
-              type: 'reference',
-              message: `Mitigation "${mitigationId}" not found in deck for bias "${entry.name}" at stage "${stage}"`,
-            });
-          }
-        }
-      }
-    }
+  // Get detailed progress metrics
+  getProgressMetrics() {
+    const validator = new BiasActivityValidator(this, this.deck);
+    return validator.getProgressMetrics();
   }
 
   // Export
   export(): BiasActivityData {
+    // Ensure state is initialized
+    if (!this.state) {
+      this.state = this.initializeState();
+    }
+
     return {
       id: this.id,
       name: this.name,
@@ -310,16 +262,8 @@ export class BiasActivity extends Activity {
 
   // Progress tracking
   getCompletionStatus(): CompletionStatus {
-    return {
-      stages: {
-        stage1: this.isStage1Complete(),
-        stage2: this.isStage2Complete(),
-        stage3: this.isStage3Complete(),
-        stage4: this.isStage4Complete(),
-        stage5: this.isStage5Complete(),
-      },
-      overallProgress: this.getProgress(),
-    };
+    const validator = new BiasActivityValidator(this, this.deck);
+    return validator.getCompletionStatus();
   }
 
   getActivityProgress(): ActivityProgress {
@@ -332,49 +276,29 @@ export class BiasActivity extends Activity {
     };
   }
 
-  private isStage1Complete(): boolean {
-    const biases = Object.values(this.state.biases);
-    return biases.length > 0 && biases.every((b) => b.riskCategory !== null);
+  isStage1Complete(): boolean {
+    const validator = new BiasActivityValidator(this, this.deck);
+    return validator.isStage1Complete();
   }
 
-  private isStage2Complete(): boolean {
-    const biases = Object.values(this.state.biases);
-    return (
-      biases.length > 0 &&
-      biases.every((b) => b.lifecycleAssignments.length > 0)
-    );
+  isStage2Complete(): boolean {
+    const validator = new BiasActivityValidator(this, this.deck);
+    return validator.isStage2Complete();
   }
 
-  private isStage3Complete(): boolean {
-    const biases = Object.values(this.state.biases);
-    return (
-      biases.length > 0 &&
-      biases.every((b) => {
-        return b.lifecycleAssignments.every((stage) => b.rationale[stage]);
-      })
-    );
+  isStage3Complete(): boolean {
+    const validator = new BiasActivityValidator(this, this.deck);
+    return validator.isStage3Complete();
   }
 
-  private isStage4Complete(): boolean {
-    const biases = Object.values(this.state.biases);
-    return (
-      biases.length > 0 &&
-      biases.every((b) => {
-        return b.lifecycleAssignments.every(
-          (stage) => b.mitigations[stage] && b.mitigations[stage].length > 0
-        );
-      })
-    );
+  isStage4Complete(): boolean {
+    const validator = new BiasActivityValidator(this, this.deck);
+    return validator.isStage4Complete();
   }
 
-  private isStage5Complete(): boolean {
-    const biases = Object.values(this.state.biases);
-    return (
-      biases.length > 0 &&
-      biases.every((b) => {
-        return Object.keys(b.implementationNotes).length > 0;
-      })
-    );
+  isStage5Complete(): boolean {
+    const validator = new BiasActivityValidator(this, this.deck);
+    return validator.isStage5Complete();
   }
 
   private countMitigations(): number {
@@ -387,23 +311,9 @@ export class BiasActivity extends Activity {
     return count;
   }
 
-  // Utility methods
+  // Legacy method - delegates to new canAdvanceToNextStage
   canAdvanceStage(): boolean {
-    const currentStage = this.getCurrentStage();
-    switch (currentStage) {
-      case 1:
-        return this.isStage1Complete();
-      case 2:
-        return this.isStage2Complete();
-      case 3:
-        return this.isStage3Complete();
-      case 4:
-        return this.isStage4Complete();
-      case 5:
-        return this.isStage5Complete();
-      default:
-        return false;
-    }
+    return this.canAdvanceToNextStage();
   }
 
   getStageCompletionPercentage(stage: number): number {

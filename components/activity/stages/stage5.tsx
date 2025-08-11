@@ -346,6 +346,8 @@ export default function Stage5Client() {
     cardPairs,
     updateCardPair,
     completeActivityStage: completeWorkspaceStage,
+    getCurrentActivity,
+    getImplementationNoteFromActivity,
   } = useWorkspaceStore();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -355,11 +357,72 @@ export default function Stage5Client() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showRated, setShowRated] = useState(true);
   const [showWithNotes, setShowWithNotes] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
-  // Load cards on mount
+  // Activity-aware helper methods
+  const _getImplementationNote = (
+    biasId: string,
+    stage: LifecycleStage,
+    mitigationId: string
+  ) => {
+    return getImplementationNoteFromActivity(biasId, stage, mitigationId);
+  };
+
+  const _isActivityReady = (): boolean => {
+    return getCurrentActivity() !== null;
+  };
+
+  // Load cards on mount and initialize workspace
   useEffect(() => {
+    setIsClient(true);
     loadCards();
-  }, [loadCards]);
+
+    // Initialize workspace if not ready
+    const initializeWorkspace = async () => {
+      try {
+        if (!_isActivityReady()) {
+          // Import stores dynamically to avoid circular dependencies
+          const { useActivityStore } = await import(
+            '@/lib/stores/activity-store'
+          );
+          const { useWorkspaceStore } = await import(
+            '@/lib/stores/workspace-store'
+          );
+
+          const activityStore = useActivityStore.getState();
+          const workspaceStore = useWorkspaceStore.getState();
+
+          const currentActivityData = activityStore.activities.find(
+            (a) => a.id === activityId
+          );
+
+          if (currentActivityData) {
+            await workspaceStore.initialize(currentActivityData.title);
+            workspaceStore.setActivityId(activityId);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to initialize workspace:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initializeWorkspace();
+  }, [loadCards, activityId]);
+
+  // Show loading state during hydration to prevent mismatch
+  if (!isClient || isInitializing) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h2 className="font-semibold text-gray-900 text-lg">Loading...</h2>
+          <p className="text-gray-600 text-sm">Preparing Stage 5</p>
+        </div>
+      </div>
+    );
+  }
 
   // Get bias risk assignments to enrich pairs
   const biasRiskAssignments = getBiasRiskAssignments();

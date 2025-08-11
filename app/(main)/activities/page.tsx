@@ -575,6 +575,7 @@ function DashboardContent() {
   const deleteActivity = useActivityStore((state) => state.deleteActivity);
   const exportActivity = useActivityStore((state) => state.exportActivity);
   const importActivity = useActivityStore((state) => state.importActivity);
+  const workspaceStore = useWorkspaceStore();
   const reports = useReportsStore((state) => state.reports);
 
   // Convert Report[] to ReportSummary[]
@@ -609,7 +610,7 @@ function DashboardContent() {
     (activity) => activity.status === 'completed'
   );
 
-  const handleCreateActivity = (e?: React.FormEvent) => {
+  const handleCreateActivity = async (e?: React.FormEvent) => {
     e?.preventDefault();
 
     if (!activityForm.title.trim()) {
@@ -622,6 +623,10 @@ function DashboardContent() {
       projectType: activityForm.projectType.trim(),
       progress: { completed: 0, total: 5 },
     });
+
+    // Initialize workspace with BiasActivity
+    await workspaceStore.initialize(activityForm.title.trim());
+    workspaceStore.setActivityId(activityId);
 
     // Reset form
     setActivityForm({ title: '', description: '', projectType: '' });

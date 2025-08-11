@@ -1,5 +1,7 @@
 import { create } from 'zustand';
 import { devtools, persist } from 'zustand/middleware';
+import type { BiasActivity } from '@/lib/activities/bias-activity';
+import type { BiasDeck } from '@/lib/cards/decks/bias-deck';
 import {
   calculateMatchingScore,
   getSuggestedMitigations,
@@ -19,14 +21,26 @@ import type {
   WorkspaceProgress,
   WorkspaceState,
 } from '@/lib/types';
+import type { BiasEntry } from '@/lib/types/bias-activity';
 import {
   type ActivityValidationResult,
   validateActivityCompletion,
 } from '@/lib/validation/activity-validation';
 
 interface WorkspaceStoreState extends WorkspaceState {
+  // Core instances
+  currentActivity: BiasActivity | null;
+  currentDeck: BiasDeck | null;
+
   // History management
   history: WorkspaceHistory;
+
+  // Hydration state
+  hasHydrated: boolean;
+
+  // Computed properties for backward compatibility
+  get stageAssignments(): StageAssignment[];
+  get cardPairs(): CardPair[];
 
   // Actions - History
   undo: () => void;
@@ -102,6 +116,7 @@ interface WorkspaceStoreState extends WorkspaceState {
   isStageComplete: (stage: LifecycleStage) => boolean;
 
   // Actions - Workspace management
+  initialize: (activityName?: string) => Promise<void>;
   resetWorkspace: () => void;
   updateWorkspaceName: (name: string) => void;
   updateLastModified: () => void;
@@ -132,6 +147,26 @@ interface WorkspaceStoreState extends WorkspaceState {
   validateActivityCompletion: () => ActivityValidationResult;
   canGenerateReport: () => boolean;
   getCompletionPercentage: () => number;
+
+  // Activity state getters (Phase 3)
+  getCurrentActivity: () => BiasActivity | null;
+  getCurrentDeck: () => BiasDeck | null;
+  getBiasEntry: (biasId: string) => BiasEntry | null;
+  getBiasRiskFromActivity: (biasId: string) => BiasRiskCategory | null;
+  getLifecycleAssignmentsFromActivity: (biasId: string) => LifecycleStage[];
+  getRationaleFromActivity: (
+    biasId: string,
+    stage: LifecycleStage
+  ) => string | null;
+  getMitigationsFromActivity: (
+    biasId: string,
+    stage: LifecycleStage
+  ) => string[];
+  getImplementationNoteFromActivity: (
+    biasId: string,
+    stage: LifecycleStage,
+    mitigationId: string
+  ) => import('@/lib/types/bias-activity').ImplementationNote | null;
 }
 
 const createInitialMilestones = (): Milestone[] => [
@@ -205,7 +240,7 @@ const createInitialState = (): WorkspaceState => ({
   } as WorkspaceProgress,
 });
 
-const generateActionId = (): string => {
+const _generateActionId = (): string => {
   return `action-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
 };
 
@@ -227,12 +262,86 @@ const addActionToHistory = (
   };
 };
 
+// Helper function to create stage assignments from activity
+const createStageAssignmentsFromActivity = (
+  currentActivity: BiasActivity | null,
+  customAnnotations: Record<string, string>
+): StageAssignment[] => {
+  if (!currentActivity) {
+    return [];
+  }
+
+  const biases = currentActivity.getBiases();
+  const assignments: StageAssignment[] = [];
+
+  for (const [biasId, bias] of Object.entries(biases)) {
+    for (const stage of bias.lifecycleAssignments) {
+      assignments.push({
+        id: generateAssignmentId(),
+        cardId: biasId,
+        stage,
+        annotation: customAnnotations[biasId],
+        timestamp: bias.riskAssignedAt || new Date().toISOString(),
+      });
+    }
+  }
+
+  return assignments;
+};
+
+// Helper function to create card pairs from activity
+const createCardPairsFromActivity = (
+  currentActivity: BiasActivity | null
+): CardPair[] => {
+  if (!currentActivity) {
+    return [];
+  }
+
+  const biases = currentActivity.getBiases();
+  const pairs: CardPair[] = [];
+
+  for (const [biasId, bias] of Object.entries(biases)) {
+    for (const stage of bias.lifecycleAssignments) {
+      const mitigations = bias.mitigations[stage] || [];
+      for (const mitigationId of mitigations) {
+        const note = bias.implementationNotes[stage]?.[mitigationId];
+        pairs.push({
+          biasId,
+          mitigationId,
+          annotation: note?.notes,
+          effectivenessRating: note?.effectivenessRating,
+          timestamp: bias.riskAssignedAt || new Date().toISOString(),
+        });
+      }
+    }
+  }
+
+  return pairs;
+};
+
 export const useWorkspaceStore = create<WorkspaceStoreState>()(
   devtools(
     persist(
       (set, get) => ({
         ...createInitialState(),
+        currentActivity: null,
+        currentDeck: null,
         history: createInitialHistory(),
+        hasHydrated: false,
+
+        // Computed properties for backward compatibility
+        get stageAssignments(): StageAssignment[] {
+          const { currentActivity, customAnnotations } = get();
+          return createStageAssignmentsFromActivity(
+            currentActivity,
+            customAnnotations
+          );
+        },
+
+        get cardPairs(): CardPair[] {
+          const { currentActivity } = get();
+          return createCardPairsFromActivity(currentActivity);
+        },
 
         // Activity stage management
         setCurrentActivityStage: (stage) => {
@@ -264,77 +373,225 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
 
         // Bias risk assignment (Stage 1)
         assignBiasRisk: (cardId, riskCategory, annotation) => {
-          const assignmentId = generateAssignmentId();
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            // No current activity - should call initialize() first
+            return;
+          }
 
-          set((state) => ({
-            biasRiskAssignments: [
-              ...state.biasRiskAssignments.filter((a) => a.cardId !== cardId),
-              {
-                id: assignmentId,
-                cardId,
-                riskCategory,
-                annotation,
-                timestamp: new Date().toISOString(),
-              },
-            ],
-            lastModified: new Date().toISOString(),
-          }));
+          // Delegate to activity
+          currentActivity.assignBiasRisk(cardId, riskCategory);
+
+          // Handle annotation separately for now (TODO: add method to BiasActivity)
+          if (annotation) {
+            set((state) => ({
+              customAnnotations: {
+                ...state.customAnnotations,
+                [cardId]: annotation,
+              } as Record<string, string>,
+            }));
+          }
+
+          // Force re-render and persistence by creating a new activity reference
+          // This ensures Zustand's persist middleware detects the change
+          set((state) => {
+            // Create a proper deep clone of the activity to ensure persistence
+            const clonedActivity = Object.assign(
+              Object.create(Object.getPrototypeOf(state.currentActivity)),
+              state.currentActivity
+            );
+            // Update the updatedAt timestamp
+            clonedActivity.updatedAt = new Date();
+            return {
+              currentActivity: clonedActivity,
+              lastModified: new Date().toISOString(),
+            };
+          });
         },
 
         removeBiasRisk: (cardId) => {
-          set((state) => ({
-            biasRiskAssignments: state.biasRiskAssignments.filter(
-              (a) => a.cardId !== cardId
-            ),
-            lastModified: new Date().toISOString(),
-          }));
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return;
+          }
+
+          currentActivity.removeBiasRisk(cardId);
+
+          // Force re-render and persistence
+          set((state) => {
+            const clonedActivity = Object.assign(
+              Object.create(Object.getPrototypeOf(state.currentActivity)),
+              state.currentActivity
+            );
+            clonedActivity.updatedAt = new Date();
+            return {
+              currentActivity: clonedActivity,
+              lastModified: new Date().toISOString(),
+            };
+          });
         },
 
         updateBiasRisk: (cardId, updates) => {
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return;
+          }
+
+          if (updates.riskCategory) {
+            currentActivity.assignBiasRisk(cardId, updates.riskCategory);
+          }
+          if (updates.annotation) {
+            set((state) => ({
+              customAnnotations: {
+                ...state.customAnnotations,
+                [cardId]: updates.annotation,
+              } as Record<string, string>,
+              lastModified: new Date().toISOString(),
+            }));
+          }
+
           set((state) => ({
-            biasRiskAssignments: state.biasRiskAssignments.map((a) =>
-              a.cardId === cardId
-                ? { ...a, ...updates, timestamp: new Date().toISOString() }
-                : a
-            ),
+            currentActivity: state.currentActivity,
             lastModified: new Date().toISOString(),
           }));
         },
 
         getBiasRiskAssignments: () => {
-          return get().biasRiskAssignments;
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return [];
+          }
+
+          // Convert activity biases to workspace format
+          const biases = currentActivity.getBiases();
+          return Object.values(biases)
+            .filter((bias) => bias.riskCategory)
+            .map((bias) => ({
+              id: bias.biasId,
+              cardId: bias.biasId,
+              riskCategory: bias.riskCategory as BiasRiskCategory,
+              timestamp: bias.riskAssignedAt || new Date().toISOString(),
+            }));
         },
 
         getBiasRiskByCategory: (category) => {
-          return get().biasRiskAssignments.filter(
-            (a) => a.riskCategory === category
-          );
+          const assignments = get().getBiasRiskAssignments();
+          return assignments.filter((a) => a.riskCategory === category);
         },
 
         // Stage management
         assignCardToStage: (cardId, stage, annotation) => {
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return;
+          }
+
+          // Delegate to activity
+          currentActivity.assignToLifecycle(cardId, stage);
+
+          // Generate assignment ID and timestamp
           const assignmentId = generateAssignmentId();
+          const timestamp = new Date().toISOString();
 
-          const action: WorkspaceAction = {
-            id: generateActionId(),
-            type: 'ASSIGN_CARD',
-            timestamp: new Date().toISOString(),
-            description: `Assigned card to ${stage}`,
-            data: { assignmentId, cardId, stage, annotation },
-            inverse: {
-              id: generateActionId(),
-              type: 'REMOVE_ASSIGNMENT',
-              timestamp: new Date().toISOString(),
-              description: `Removed card from ${stage}`,
-              data: { assignmentId },
-              inverse: null,
-            },
-          };
+          // Handle annotation separately for now
+          if (annotation) {
+            set((state) => ({
+              customAnnotations: {
+                ...state.customAnnotations,
+                [cardId]: annotation,
+              } as Record<string, string>,
+            }));
+          }
 
-          get().applyAction(action);
+          // Force re-render and persistence - UPDATE BOTH currentActivity AND stageAssignments
+          set((state) => {
+            const clonedActivity = Object.assign(
+              Object.create(Object.getPrototypeOf(state.currentActivity)),
+              state.currentActivity
+            );
+            clonedActivity.updatedAt = new Date();
+
+            // Create new assignment for the stageAssignments array
+            const newAssignment: StageAssignment = {
+              id: assignmentId,
+              cardId,
+              stage,
+              annotation,
+              timestamp,
+            };
+
+            return {
+              currentActivity: clonedActivity,
+              stageAssignments: [...state.stageAssignments, newAssignment],
+              lastModified: timestamp,
+            };
+          });
         },
 
-        removeCardFromStage: (assignmentId) => {
+        removeCardFromStage: (cardIdOrAssignmentId) => {
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return;
+          }
+
+          // For backward compatibility, support both cardId and assignmentId
+          // In activity-based approach, we need cardId and stage
+          const existingAssignment = get().stageAssignments.find(
+            (a) =>
+              a.id === cardIdOrAssignmentId || a.cardId === cardIdOrAssignmentId
+          );
+
+          if (existingAssignment) {
+            currentActivity.removeFromLifecycle(
+              existingAssignment.cardId,
+              existingAssignment.stage
+            );
+          } else {
+            // Fallback: try to use it as cardId directly
+            const biases = currentActivity.getBiases();
+            const bias = biases[cardIdOrAssignmentId];
+            if (bias) {
+              // Remove from all lifecycle stages
+              for (const stage of bias.lifecycleAssignments) {
+                currentActivity.removeFromLifecycle(
+                  cardIdOrAssignmentId,
+                  stage
+                );
+              }
+            }
+          }
+
+          // Force re-render and persistence - UPDATE BOTH currentActivity AND stageAssignments
+          set((state) => {
+            const clonedActivity = Object.assign(
+              Object.create(Object.getPrototypeOf(state.currentActivity)),
+              state.currentActivity
+            );
+            clonedActivity.updatedAt = new Date();
+
+            // Remove from stageAssignments array
+            const updatedAssignments = state.stageAssignments.filter(
+              (a) =>
+                a.id !== cardIdOrAssignmentId &&
+                a.cardId !== cardIdOrAssignmentId
+            );
+
+            return {
+              currentActivity: clonedActivity,
+              stageAssignments: updatedAssignments,
+              lastModified: new Date().toISOString(),
+            };
+          });
+        },
+
+        updateStageAssignment: (assignmentId, updates) => {
+          // For activity-based approach, we need to find the assignment and update accordingly
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return;
+          }
+
+          // Find the existing assignment in legacy format
           const existingAssignment = get().stageAssignments.find(
             (a) => a.id === assignmentId
           );
@@ -343,45 +600,77 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
             return;
           }
 
-          const action: WorkspaceAction = {
-            id: generateActionId(),
-            type: 'REMOVE_ASSIGNMENT',
-            timestamp: new Date().toISOString(),
-            description: `Removed card from ${existingAssignment.stage}`,
-            data: { assignmentId },
-            inverse: {
-              id: generateActionId(),
-              type: 'ASSIGN_CARD',
-              timestamp: new Date().toISOString(),
-              description: `Restored card to ${existingAssignment.stage}`,
-              data: {
-                assignmentId: existingAssignment.id,
-                cardId: existingAssignment.cardId,
-                stage: existingAssignment.stage,
-                annotation: existingAssignment.annotation,
-              },
-              inverse: null,
-            },
-          };
+          if (updates.stage) {
+            // Update the lifecycle assignment
+            currentActivity.removeFromLifecycle(
+              existingAssignment.cardId,
+              existingAssignment.stage
+            );
+            currentActivity.assignToLifecycle(
+              existingAssignment.cardId,
+              updates.stage as LifecycleStage
+            );
+          }
 
-          get().applyAction(action);
-        },
+          // Handle annotation/rationale updates - FIX: Also update BiasActivity rationale
+          if (updates.annotation !== undefined) {
+            // Update BiasActivity rationale
+            currentActivity.setRationale(
+              existingAssignment.cardId,
+              existingAssignment.stage,
+              updates.annotation
+            );
 
-        updateStageAssignment: (assignmentId, updates) => {
-          set((state) => ({
-            stageAssignments: state.stageAssignments.map((a) =>
+            // Update customAnnotations for backward compatibility
+            set((state) => ({
+              customAnnotations: {
+                ...state.customAnnotations,
+                [existingAssignment.cardId]: updates.annotation as string,
+              } as Record<string, string>,
+              lastModified: new Date().toISOString(),
+            }));
+          }
+
+          // Force re-render and persistence - FIX: Update stageAssignments array
+          set((state) => {
+            const clonedActivity = Object.assign(
+              Object.create(Object.getPrototypeOf(state.currentActivity)),
+              state.currentActivity
+            );
+            clonedActivity.updatedAt = new Date();
+
+            // Update the assignment in the array
+            const updatedAssignments = state.stageAssignments.map((a) =>
               a.id === assignmentId
                 ? { ...a, ...updates, timestamp: new Date().toISOString() }
                 : a
-            ),
-            lastModified: new Date().toISOString(),
-          }));
+            );
+
+            return {
+              currentActivity: clonedActivity,
+              stageAssignments: updatedAssignments,
+              lastModified: new Date().toISOString(),
+            };
+          });
         },
 
         getCardsInStage: (stage) => {
-          return get()
-            .stageAssignments.filter((a) => a.stage === stage)
-            .map((a) => a.cardId);
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return [];
+          }
+
+          const biases = currentActivity.getBiases();
+          const cardIds: string[] = [];
+
+          // Find all biases assigned to this lifecycle stage
+          for (const [biasId, bias] of Object.entries(biases)) {
+            if (bias.lifecycleAssignments.includes(stage)) {
+              cardIds.push(biasId);
+            }
+          }
+
+          return cardIds;
         },
 
         // Card pairing
@@ -391,107 +680,241 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
           annotation,
           effectivenessRating
         ) => {
-          const existingPair = get().cardPairs.find(
-            (p) => p.biasId === biasId && p.mitigationId === mitigationId
-          );
-
-          if (existingPair) {
-            return; // Pair already exists
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return;
           }
 
-          const action: WorkspaceAction = {
-            id: generateActionId(),
-            type: 'CREATE_PAIR',
-            timestamp: new Date().toISOString(),
-            description: 'Created pair between bias and mitigation',
-            data: { biasId, mitigationId, annotation, effectivenessRating },
-            inverse: {
-              id: generateActionId(),
-              type: 'REMOVE_PAIR',
-              timestamp: new Date().toISOString(),
-              description: 'Removed pair between bias and mitigation',
-              data: { biasId, mitigationId },
-              inverse: null,
-            },
-          };
+          // In activity-based approach, mitigations are added per lifecycle stage
+          // Get the bias and add mitigation to all its assigned stages
+          const biases = currentActivity.getBiases();
+          const bias = biases[biasId];
 
-          get().applyAction(action);
+          if (!bias) {
+            return;
+          }
+
+          // If bias has no lifecycle assignments, we can't add mitigations
+          if (bias.lifecycleAssignments.length === 0) {
+            return;
+          }
+
+          // Add mitigation to all stages where this bias is assigned
+          for (const stage of bias.lifecycleAssignments) {
+            currentActivity.addMitigation(biasId, stage, mitigationId);
+
+            // Set implementation note with effectiveness rating
+            if (effectivenessRating) {
+              currentActivity.setImplementationNote(
+                biasId,
+                stage,
+                mitigationId,
+                {
+                  effectivenessRating,
+                  notes: annotation || '',
+                  status: 'planned',
+                }
+              );
+            }
+          }
+
+          // Force re-render and persistence - FIX: Update cardPairs array
+          set((state) => {
+            const clonedActivity = Object.assign(
+              Object.create(Object.getPrototypeOf(state.currentActivity)),
+              state.currentActivity
+            );
+            clonedActivity.updatedAt = new Date();
+
+            // Create new pair for the array
+            const newPair: CardPair = {
+              biasId,
+              mitigationId,
+              annotation,
+              effectivenessRating,
+              timestamp: new Date().toISOString(),
+            };
+
+            return {
+              currentActivity: clonedActivity,
+              cardPairs: [...state.cardPairs, newPair],
+              lastModified: new Date().toISOString(),
+            };
+          });
         },
 
         removeCardPair: (biasId, mitigationId) => {
-          const existingPair = get().cardPairs.find(
-            (p) => p.biasId === biasId && p.mitigationId === mitigationId
-          );
-
-          if (!existingPair) {
+          const { currentActivity } = get();
+          if (!currentActivity) {
             return;
           }
 
-          const action: WorkspaceAction = {
-            id: generateActionId(),
-            type: 'REMOVE_PAIR',
-            timestamp: new Date().toISOString(),
-            description: 'Removed pair between bias and mitigation',
-            data: { biasId, mitigationId },
-            inverse: {
-              id: generateActionId(),
-              type: 'CREATE_PAIR',
-              timestamp: new Date().toISOString(),
-              description: 'Restored pair between bias and mitigation',
-              data: {
-                biasId,
-                mitigationId,
-                annotation: existingPair.annotation,
-                effectivenessRating: existingPair.effectivenessRating,
-              },
-              inverse: null,
-            },
-          };
+          // Remove mitigation from all stages for this bias
+          const biases = currentActivity.getBiases();
+          const bias = biases[biasId];
 
-          get().applyAction(action);
+          if (!bias) {
+            return;
+          }
+
+          // Remove mitigation from all stages where it exists
+          for (const stage of bias.lifecycleAssignments) {
+            currentActivity.removeMitigation(biasId, stage, mitigationId);
+            currentActivity.removeImplementationNote(
+              biasId,
+              stage,
+              mitigationId
+            );
+          }
+
+          // Force re-render and persistence - FIX: Update cardPairs array
+          set((state) => {
+            const clonedActivity = Object.assign(
+              Object.create(Object.getPrototypeOf(state.currentActivity)),
+              state.currentActivity
+            );
+            clonedActivity.updatedAt = new Date();
+
+            // Remove the pair from array
+            const updatedPairs = state.cardPairs.filter(
+              (p) => !(p.biasId === biasId && p.mitigationId === mitigationId)
+            );
+
+            return {
+              currentActivity: clonedActivity,
+              cardPairs: updatedPairs,
+              lastModified: new Date().toISOString(),
+            };
+          });
         },
 
         updateCardPair: (biasId, mitigationId, updates) => {
-          const existingPair = get().cardPairs.find(
-            (p) => p.biasId === biasId && p.mitigationId === mitigationId
-          );
-
-          if (!existingPair) {
+          const { currentActivity } = get();
+          if (!currentActivity) {
             return;
           }
 
-          const action: WorkspaceAction = {
-            id: generateActionId(),
-            type: 'UPDATE_PAIR',
-            timestamp: new Date().toISOString(),
-            description: 'Updated pair between bias and mitigation',
-            data: { biasId, mitigationId, updates },
-            inverse: {
-              id: generateActionId(),
-              type: 'UPDATE_PAIR',
-              timestamp: new Date().toISOString(),
-              description: 'Reverted pair update',
-              data: {
-                biasId,
-                mitigationId,
-                updates: {
-                  annotation: existingPair.annotation,
-                  effectivenessRating: existingPair.effectivenessRating,
-                },
-              },
-              inverse: null,
-            },
-          };
+          // In activity-based approach, update implementation notes for all stages
+          const biases = currentActivity.getBiases();
+          const bias = biases[biasId];
 
-          get().applyAction(action);
+          if (!bias) {
+            return;
+          }
+
+          // Update implementation notes for all stages where this mitigation exists
+          for (const stage of bias.lifecycleAssignments) {
+            const stageMitigations = bias.mitigations[stage] || [];
+            if (stageMitigations.includes(mitigationId)) {
+              const currentNote = bias.implementationNotes[stage]?.[
+                mitigationId
+              ] || {
+                effectivenessRating: 3,
+                notes: '',
+                status: 'planned' as const,
+              };
+
+              const updatedNote = {
+                ...currentNote,
+                ...(updates.effectivenessRating && {
+                  effectivenessRating: updates.effectivenessRating as number,
+                }),
+                ...(updates.annotation && {
+                  notes: updates.annotation as string,
+                }),
+              };
+
+              currentActivity.setImplementationNote(
+                biasId,
+                stage,
+                mitigationId,
+                updatedNote
+              );
+            }
+          }
+
+          // Force re-render and persistence - FIX: Update cardPairs array
+          set((state) => {
+            const clonedActivity = Object.assign(
+              Object.create(Object.getPrototypeOf(state.currentActivity)),
+              state.currentActivity
+            );
+            clonedActivity.updatedAt = new Date();
+
+            // Update the pair in the array
+            const updatedPairs = state.cardPairs.map((p) =>
+              p.biasId === biasId && p.mitigationId === mitigationId
+                ? { ...p, ...updates, timestamp: new Date().toISOString() }
+                : p
+            );
+
+            return {
+              currentActivity: clonedActivity,
+              cardPairs: updatedPairs,
+              lastModified: new Date().toISOString(),
+            };
+          });
         },
 
         getPairsForBias: (biasId) => {
-          return get().cardPairs.filter((p) => p.biasId === biasId);
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return [];
+          }
+
+          const biases = currentActivity.getBiases();
+          const bias = biases[biasId];
+
+          if (!bias) {
+            return [];
+          }
+
+          // Convert activity mitigations to workspace CardPair format
+          const pairs: CardPair[] = [];
+          for (const stage of bias.lifecycleAssignments) {
+            const mitigations = bias.mitigations[stage] || [];
+            for (const mitigationId of mitigations) {
+              const note = bias.implementationNotes[stage]?.[mitigationId];
+              pairs.push({
+                biasId,
+                mitigationId,
+                annotation: note?.notes,
+                effectivenessRating: note?.effectivenessRating,
+                timestamp: new Date().toISOString(),
+              });
+            }
+          }
+
+          return pairs;
         },
 
         getPairsForMitigation: (mitigationId) => {
-          return get().cardPairs.filter((p) => p.mitigationId === mitigationId);
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return [];
+          }
+
+          const biases = currentActivity.getBiases();
+          const pairs: CardPair[] = [];
+
+          // Search through all biases for this mitigation
+          for (const [biasId, bias] of Object.entries(biases)) {
+            for (const stage of bias.lifecycleAssignments) {
+              const mitigations = bias.mitigations[stage] || [];
+              if (mitigations.includes(mitigationId)) {
+                const note = bias.implementationNotes[stage]?.[mitigationId];
+                pairs.push({
+                  biasId,
+                  mitigationId,
+                  annotation: note?.notes,
+                  effectivenessRating: note?.effectivenessRating,
+                  timestamp: new Date().toISOString(),
+                });
+              }
+            }
+          }
+
+          return pairs;
         },
 
         // Card selection
@@ -532,7 +955,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
             customAnnotations: {
               ...state.customAnnotations,
               [cardId]: annotation,
-            },
+            } as Record<string, string>,
             lastModified: new Date().toISOString(),
           }));
         },
@@ -577,8 +1000,99 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
         },
 
         // Workspace management
+        initialize: async (activityName = 'New Activity') => {
+          try {
+            const { BiasActivity: BiasActivityClass } = await import(
+              '@/lib/activities/bias-activity'
+            );
+            const { BiasDeck: BiasDeckClass } = await import(
+              '@/lib/cards/decks/bias-deck'
+            );
+
+            const deck = await BiasDeckClass.getInstance();
+
+            // Check if we have persisted activity state to restore
+            const persistedState = (get() as any).activityState;
+            let activity: BiasActivity;
+
+            // More flexible restoration: check if we have persisted state and it's compatible
+            // Don't require exact ID match since IDs can change during transitions
+            if (
+              persistedState &&
+              persistedState.state &&
+              persistedState.state.biases
+            ) {
+              // Restore from persisted state
+              console.log(
+                'Attempting to restore BiasActivity from persisted state',
+                {
+                  persistedId: persistedState.id,
+                  workspaceId: get().activityId,
+                  hasState: !!persistedState.state,
+                  hasBiases: !!persistedState.state?.biases,
+                }
+              );
+
+              activity = new BiasActivityClass(deck, {
+                name: persistedState.name || activityName,
+                id: get().activityId || persistedState.id, // Use workspace ID if available
+              });
+
+              // Restore the internal state
+              (activity as any).state = persistedState.state;
+              (activity as any).createdAt = new Date(persistedState.createdAt);
+              (activity as any).updatedAt = new Date(persistedState.updatedAt);
+
+              console.log(
+                'Successfully restored BiasActivity from persisted state'
+              );
+
+              // Also ensure biasRiskAssignments are populated in the activity
+              const biasRiskAssignments = get().biasRiskAssignments;
+              if (biasRiskAssignments.length > 0) {
+                console.log(
+                  'Syncing biasRiskAssignments to BiasActivity',
+                  biasRiskAssignments.length
+                );
+                for (const assignment of biasRiskAssignments) {
+                  // Ensure the bias entry exists with the risk category
+                  const bias = activity.getBias(assignment.cardId);
+                  if (!bias.riskCategory) {
+                    activity.assignBiasRisk(
+                      assignment.cardId,
+                      assignment.riskCategory
+                    );
+                  }
+                }
+              }
+            } else {
+              // Create new activity
+              activity = new BiasActivityClass(deck, {
+                name: activityName,
+                id: get().activityId, // Use workspace activity ID for new activities
+              });
+              console.log('Created new BiasActivity');
+            }
+
+            set((_state) => ({
+              currentDeck: deck,
+              currentActivity: activity,
+              activityId: activity.id,
+              name: activity.name,
+              lastModified: new Date().toISOString(),
+            }));
+          } catch (error) {
+            console.error('Failed to initialize workspace:', error);
+          }
+        },
+
         resetWorkspace: () => {
-          set(createInitialState());
+          set({
+            ...createInitialState(),
+            currentActivity: null,
+            currentDeck: null,
+            history: createInitialHistory(),
+          });
         },
 
         updateWorkspaceName: (name) => {
@@ -602,11 +1116,47 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
         },
 
         exportWorkspaceData: () => {
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return null;
+          }
+
+          // Export the activity data directly
+          const activityData = currentActivity.export();
           const state = get();
-          // Return current workspace state without history (to reduce size)
-          // biome-ignore lint/correctness/noUnusedVariables: history is intentionally excluded from export
-          const { history, ...workspaceData } = state;
-          return workspaceData;
+
+          // Return workspace state with activity data
+          return {
+            sessionId: state.sessionId,
+            name: activityData.name,
+            activityId: activityData.id,
+            createdAt: activityData.createdAt,
+            lastModified: activityData.updatedAt,
+            currentStage: state.currentStage,
+            completedActivityStages: state.completedActivityStages,
+            // Convert activity data to workspace format for compatibility
+            biasRiskAssignments: state.getBiasRiskAssignments(),
+            stageAssignments: Object.entries(activityData.biases).flatMap(
+              ([biasId, bias]) =>
+                bias.lifecycleAssignments.map((stage) => ({
+                  id: generateAssignmentId(),
+                  cardId: biasId,
+                  stage,
+                  annotation: state.customAnnotations[biasId],
+                  timestamp: bias.riskAssignedAt || new Date().toISOString(),
+                }))
+            ),
+            cardPairs: state.getPairsForBias
+              ? Object.keys(activityData.biases).flatMap((biasId) =>
+                  state.getPairsForBias(biasId)
+                )
+              : [],
+            selectedCardIds: state.selectedCardIds,
+            customAnnotations: state.customAnnotations,
+            completedStages: state.completedStages,
+            activityProgress: state.activityProgress,
+            activityData, // Include the full activity data
+          };
         },
 
         importWorkspaceData: (workspaceData, activityId) => {
@@ -614,12 +1164,52 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
             const now = new Date().toISOString();
             const newSessionId = generateSessionId();
 
-            // Validate and sanitize the workspace data
+            // Import via activity-based approach if activity data exists
+            const importData = workspaceData as typeof workspaceData & {
+              activityData?: import('@/lib/types/bias-activity').BiasActivityData;
+            };
+
+            if (importData.activityData) {
+              // Use BiasActivity.load() for proper v2.0 import
+              get()
+                .initialize(importData.activityData.name || 'Imported Activity')
+                .then(() => {
+                  const { currentActivity } = get();
+                  if (currentActivity && importData.activityData) {
+                    // Use the load method to properly import activity data
+                    currentActivity.load(importData.activityData);
+
+                    // Update workspace state to reflect loaded data
+                    set((state) => ({
+                      ...state,
+                      activityId,
+                      sessionId: newSessionId,
+                      name: importData.activityData?.name,
+                      lastModified: importData.activityData?.updatedAt || now,
+                      currentStage: (importData.activityData?.state
+                        .currentStage || 1) as ActivityStage,
+                      completedActivityStages: (importData.activityData?.state
+                        .completedStages || []) as ActivityStage[],
+                    }));
+                  }
+                })
+                .catch(() => {
+                  // Failed to initialize activity, fall back to legacy import
+                });
+
+              return true;
+            }
+
+            // Legacy import for backward compatibility
             const sanitizedData: Partial<WorkspaceState> = {
               sessionId: newSessionId,
               activityId,
               lastModified: now,
-              // Import the main data arrays with ID regeneration for safety
+              name: workspaceData.name,
+              createdAt: workspaceData.createdAt || now,
+              currentStage: workspaceData.currentStage || 1,
+              completedActivityStages:
+                workspaceData.completedActivityStages || [],
               biasRiskAssignments:
                 workspaceData.biasRiskAssignments?.map((assignment) => ({
                   ...assignment,
@@ -637,12 +1227,6 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
                   ...pair,
                   timestamp: pair.timestamp || now,
                 })) || [],
-              // Import other workspace fields
-              name: workspaceData.name,
-              createdAt: workspaceData.createdAt || now,
-              currentStage: workspaceData.currentStage || 1,
-              completedActivityStages:
-                workspaceData.completedActivityStages || [],
               selectedCardIds: workspaceData.selectedCardIds || [],
               customAnnotations: workspaceData.customAnnotations || {},
               completedStages: workspaceData.completedStages || [],
@@ -660,7 +1244,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
             set(() => ({
               ...createInitialState(),
               ...sanitizedData,
-              history: createInitialHistory(), // Reset history
+              currentActivity: null,
+              currentDeck: null,
+              history: createInitialHistory(),
             }));
 
             return true;
@@ -671,8 +1257,33 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
 
         // Computed properties
         getProgress: () => {
+          const { currentActivity } = get();
           const state = get();
-          const totalCards = 40; // 24 bias + 16 mitigation cards
+
+          if (currentActivity) {
+            // Use activity-based progress calculation
+            const progress = currentActivity.getProgress();
+            return {
+              totalCards: 40, // Keep this for UI consistency
+              assignedCards: Object.keys(currentActivity.getBiases()).length,
+              pairedCards: Object.values(currentActivity.getBiases()).reduce(
+                (count, bias) => {
+                  let newCount = count;
+                  for (const mitigations of Object.values(bias.mitigations)) {
+                    newCount += mitigations.length;
+                  }
+                  return newCount;
+                },
+                0
+              ),
+              completionPercentage: progress,
+              timeSpent: state.activityProgress.timeSpent,
+              milestones: state.activityProgress.milestones,
+            };
+          }
+
+          // Fallback to legacy calculation
+          const totalCards = 40;
           const assignedCards = state.stageAssignments.length;
           const pairedCards = new Set(state.cardPairs.map((p) => p.biasId))
             .size;
@@ -780,6 +1391,83 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
 
         getCompletionPercentage: () => {
           return get().validateActivityCompletion().completionPercentage;
+        },
+
+        // Activity state getters (Phase 3)
+        getCurrentActivity: () => {
+          const state = get();
+
+          // If no current activity but we have persisted state, attempt to restore
+          if (!state.currentActivity && (state as any).activityState) {
+            console.log(
+              'getCurrentActivity: Auto-restoring BiasActivity from persisted state'
+            );
+            // Trigger restoration asynchronously (won't be available on this call but will on next)
+            state.initialize().catch((error) => {
+              console.error('Failed to auto-restore BiasActivity:', error);
+            });
+            return null; // Will be available on next call after restoration completes
+          }
+
+          return state.currentActivity;
+        },
+        getCurrentDeck: () => get().currentDeck,
+
+        getBiasEntry: (biasId: string) => {
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return null;
+          }
+          return currentActivity.getBias(biasId);
+        },
+
+        getBiasRiskFromActivity: (biasId: string) => {
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return null;
+          }
+          const bias = currentActivity.getBias(biasId);
+          return bias?.riskCategory || null;
+        },
+
+        getLifecycleAssignmentsFromActivity: (biasId: string) => {
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return [];
+          }
+          const bias = currentActivity.getBias(biasId);
+          return bias?.lifecycleAssignments || [];
+        },
+
+        getRationaleFromActivity: (biasId: string, stage: LifecycleStage) => {
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return null;
+          }
+          const bias = currentActivity.getBias(biasId);
+          return bias?.rationale?.[stage] || null;
+        },
+
+        getMitigationsFromActivity: (biasId: string, stage: LifecycleStage) => {
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return [];
+          }
+          const bias = currentActivity.getBias(biasId);
+          return bias?.mitigations?.[stage] || [];
+        },
+
+        getImplementationNoteFromActivity: (
+          biasId: string,
+          stage: LifecycleStage,
+          mitigationId: string
+        ) => {
+          const { currentActivity } = get();
+          if (!currentActivity) {
+            return null;
+          }
+          const bias = currentActivity.getBias(biasId);
+          return bias?.implementationNotes?.[stage]?.[mitigationId] || null;
         },
 
         // History methods
@@ -973,7 +1661,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
                 customAnnotations: {
                   ...state.customAnnotations,
                   [cardId]: annotation,
-                },
+                } as Record<string, string>,
                 lastModified: timestamp,
                 history: addToHistory
                   ? addActionToHistory(state.history, action)
@@ -1000,16 +1688,30 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
           currentStage: state.currentStage,
           completedActivityStages: state.completedActivityStages,
           biasRiskAssignments: state.biasRiskAssignments,
-          stageAssignments: state.stageAssignments,
-          cardPairs: state.cardPairs,
           selectedCardIds: state.selectedCardIds,
           customAnnotations: state.customAnnotations,
           completedStages: state.completedStages,
           activityProgress: state.activityProgress,
+          // Exclude computed properties to avoid serialization issues
+          // stageAssignments: computed from currentActivity
+          // cardPairs: computed from currentActivity
+          // Persist the BiasActivity state for restoration
+          activityState: (() => {
+            try {
+              return state.currentActivity
+                ? state.currentActivity.export()
+                : null;
+            } catch (error) {
+              console.warn('Failed to export activity state:', error);
+              return null;
+            }
+          })(),
         }),
         migrate: (persistedState: unknown, _version: number) => {
           // Type guard for persisted state
-          const state = persistedState as Partial<WorkspaceState>;
+          const state = persistedState as Partial<
+            WorkspaceState & { activityState?: any }
+          >;
 
           // Add IDs to existing assignments that don't have them
           if (state?.stageAssignments) {
@@ -1025,7 +1727,33 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
               }
             );
           }
+
+          // Preserve activityState if it exists
+          if ((state as any)?.activityState) {
+            (state as any).activityState = (state as any).activityState;
+          }
+
           return state;
+        },
+        onRehydrateStorage: () => (state) => {
+          // Mark as hydrated
+          if (state) {
+            state.hasHydrated = true;
+          }
+
+          // After rehydration, check if we have activityState but no currentActivity
+          if (state && (state as any).activityState && !state.currentActivity) {
+            console.log(
+              'Auto-restoring BiasActivity from persisted state on rehydration'
+            );
+            // Automatically restore the BiasActivity
+            // We need to call initialize after a small delay to ensure all stores are ready
+            setTimeout(() => {
+              state.initialize().catch((error: unknown) => {
+                console.error('Failed to auto-restore BiasActivity:', error);
+              });
+            }, 100);
+          }
         },
       }
     ),

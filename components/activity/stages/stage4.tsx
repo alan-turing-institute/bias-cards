@@ -244,17 +244,65 @@ export default function Stage4Client() {
     createCardPair,
     removeCardPair,
     completeActivityStage: completeWorkspaceStage,
+    getCurrentActivity,
+    getCurrentDeck,
+    getMitigationsFromActivity,
   } = useWorkspaceStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [showOnlyNeedingMitigation, setShowOnlyNeedingMitigation] =
     useState(false);
   const [showDescriptions, setShowDescriptions] = useState(true);
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [isClient, setIsClient] = useState(false);
 
-  // Load cards on mount
+  // Activity-aware helper methods
+  const _getMitigations = (biasId: string, stage: LifecycleStage): string[] => {
+    return getMitigationsFromActivity(biasId, stage);
+  };
+
+  const _isActivityReady = (): boolean => {
+    return getCurrentActivity() !== null && getCurrentDeck() !== null;
+  };
+
+  // Load cards on mount and initialize workspace
   useEffect(() => {
+    setIsClient(true);
     loadCards();
-  }, [loadCards]);
+
+    // Initialize workspace if not ready
+    const initializeWorkspace = async () => {
+      try {
+        if (!_isActivityReady()) {
+          // Import stores dynamically to avoid circular dependencies
+          const { useActivityStore } = await import(
+            '@/lib/stores/activity-store'
+          );
+          const { useWorkspaceStore } = await import(
+            '@/lib/stores/workspace-store'
+          );
+
+          const activityStore = useActivityStore.getState();
+          const workspaceStore = useWorkspaceStore.getState();
+
+          const currentActivityData = activityStore.activities.find(
+            (a) => a.id === activityId
+          );
+
+          if (currentActivityData) {
+            await workspaceStore.initialize(currentActivityData.title);
+            workspaceStore.setActivityId(activityId);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to initialize workspace:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initializeWorkspace();
+  }, [loadCards, activityId]);
 
   // Get bias risk assignments to enrich with risk categories
   const biasRiskAssignments = getBiasRiskAssignments();
@@ -367,6 +415,18 @@ export default function Stage4Client() {
       }
     }
   };
+
+  // Show loading state during hydration to prevent mismatch
+  if (!isClient || isInitializing) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <h2 className="font-semibold text-gray-900 text-lg">Loading...</h2>
+          <p className="text-gray-600 text-sm">Preparing Stage 4</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-full flex-col">

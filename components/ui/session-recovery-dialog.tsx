@@ -55,8 +55,10 @@ export function SessionRecoveryDialog({
     }
   }, [controlledOpen, mostRecentActivity]);
 
-  const handleResumeActiveSession = useCallback(() => {
+  const handleResumeActiveSession = useCallback(async () => {
     if (mostRecentActivity) {
+      // Initialize workspace with BiasActivity
+      await workspaceStore.initialize(mostRecentActivity.title);
       // Set the activity ID in workspace store
       workspaceStore.setActivityId(mostRecentActivity.id);
       // Navigate to the current stage of the activity
@@ -78,9 +80,11 @@ export function SessionRecoveryDialog({
   }, [router, handleOpenChange]);
 
   const handleSelectActivity = useCallback(
-    (activityId: string) => {
+    async (activityId: string) => {
       const activity = activities.find((a) => a.id === activityId);
       if (activity) {
+        // Initialize workspace with BiasActivity
+        await workspaceStore.initialize(activity.title);
         // Set the activity ID in workspace store
         workspaceStore.setActivityId(activity.id);
         // Navigate to the current stage of the selected activity

@@ -26,7 +26,7 @@ const BIAS_CATEGORIES: BiasCategory[] = [
   'statistical-bias',
 ];
 
-function validateBiasCard(data: unknown, categoryOffset = 0): BiasCard {
+function validateBiasCard(data: unknown): BiasCard {
   if (typeof data !== 'object' || data === null) {
     throw new CardValidationError('Data must be an object', data);
   }
@@ -65,12 +65,8 @@ function validateBiasCard(data: unknown, categoryOffset = 0): BiasCard {
     throw new CardValidationError('Prompts must be an array', data);
   }
 
-  // Apply category offset to make IDs globally unique internally
-  // but preserve the original ID for display purposes
-  const globalId = (cardData.id as number) + categoryOffset;
-
   return {
-    id: String(globalId),
+    id: cardData.title as string, // Use slug title as the primary ID
     name: cardData.name as string,
     title: cardData.title as string,
     category: cardData.category as BiasCategory,
@@ -79,7 +75,7 @@ function validateBiasCard(data: unknown, categoryOffset = 0): BiasCard {
     example: cardData.example as string,
     prompts: cardData.prompts as string[],
     icon: cardData.icon as string,
-    displayNumber: String(cardData.id).padStart(2, '0'), // Original category-specific number
+    displayNumber: String(cardData.id).padStart(2, '0'), // Original category-specific number for display
   };
 }
 
@@ -123,7 +119,7 @@ function validateMitigationCard(data: unknown): MitigationCard {
   }
 
   return {
-    id: String(cardData.id),
+    id: cardData.title as string, // Use slug title as the primary ID
     name: cardData.name as string,
     title: cardData.title as string,
     category: 'mitigation-technique',
@@ -132,6 +128,7 @@ function validateMitigationCard(data: unknown): MitigationCard {
     example: cardData.example as string,
     prompts: cardData.prompts as string[],
     icon: cardData.icon as string,
+    displayNumber: String(cardData.id).padStart(2, '0'), // Original number for display
   };
 }
 
@@ -247,122 +244,68 @@ export async function loadAllCards(): Promise<{
     ]);
 
     const biasCards: BiasCard[] = [
-      // Cognitive biases: offset 0 (IDs 1-8 stay as 1-8)
-      validateBiasCard(
-        {
-          ...automationDistrust.default,
-          category: 'cognitive-bias',
-        },
-        0
-      ),
-      validateBiasCard(
-        { ...availability.default, category: 'cognitive-bias' },
-        0
-      ),
-      validateBiasCard(
-        { ...confirmation.default, category: 'cognitive-bias' },
-        0
-      ),
-      validateBiasCard(
-        {
-          ...decisionAutomation.default,
-          category: 'cognitive-bias',
-        },
-        0
-      ),
-      validateBiasCard(
-        {
-          ...lawOfInstrument.default,
-          category: 'cognitive-bias',
-        },
-        0
-      ),
-      validateBiasCard(
-        { ...naiveRealism.default, category: 'cognitive-bias' },
-        0
-      ),
-      validateBiasCard({ ...optimism.default, category: 'cognitive-bias' }, 0),
-      validateBiasCard(
-        {
-          ...selfAssessment.default,
-          category: 'cognitive-bias',
-        },
-        0
-      ),
+      // Cognitive biases
+      validateBiasCard({
+        ...automationDistrust.default,
+        category: 'cognitive-bias',
+      }),
+      validateBiasCard({ ...availability.default, category: 'cognitive-bias' }),
+      validateBiasCard({ ...confirmation.default, category: 'cognitive-bias' }),
+      validateBiasCard({
+        ...decisionAutomation.default,
+        category: 'cognitive-bias',
+      }),
+      validateBiasCard({
+        ...lawOfInstrument.default,
+        category: 'cognitive-bias',
+      }),
+      validateBiasCard({ ...naiveRealism.default, category: 'cognitive-bias' }),
+      validateBiasCard({ ...optimism.default, category: 'cognitive-bias' }),
+      validateBiasCard({
+        ...selfAssessment.default,
+        category: 'cognitive-bias',
+      }),
 
-      // Social biases: offset 8 (IDs 1-9 become 9-17)
-      validateBiasCard({ ...annotation.default, category: 'social-bias' }, 8),
-      validateBiasCard(
-        { ...chronological.default, category: 'social-bias' },
-        8
-      ),
-      validateBiasCard(
-        {
-          ...deAgentification.default,
-          category: 'social-bias',
-        },
-        8
-      ),
-      validateBiasCard({ ...historical.default, category: 'social-bias' }, 8),
-      validateBiasCard(
-        { ...implementation.default, category: 'social-bias' },
-        8
-      ),
-      validateBiasCard({ ...label.default, category: 'social-bias' }, 8),
-      validateBiasCard(
-        { ...representation.default, category: 'social-bias' },
-        8
-      ),
-      validateBiasCard({ ...selection.default, category: 'social-bias' }, 8),
-      validateBiasCard({ ...statusQuo.default, category: 'social-bias' }, 8),
+      // Social biases
+      validateBiasCard({ ...annotation.default, category: 'social-bias' }),
+      validateBiasCard({ ...chronological.default, category: 'social-bias' }),
+      validateBiasCard({
+        ...deAgentification.default,
+        category: 'social-bias',
+      }),
+      validateBiasCard({ ...historical.default, category: 'social-bias' }),
+      validateBiasCard({ ...implementation.default, category: 'social-bias' }),
+      validateBiasCard({ ...label.default, category: 'social-bias' }),
+      validateBiasCard({ ...representation.default, category: 'social-bias' }),
+      validateBiasCard({ ...selection.default, category: 'social-bias' }),
+      validateBiasCard({ ...statusQuo.default, category: 'social-bias' }),
 
-      // Statistical biases: offset 17 (IDs 1-7 become 18-24)
-      validateBiasCard(
-        {
-          ...aggregation.default,
-          category: 'statistical-bias',
-        },
-        17
-      ),
-      validateBiasCard(
-        {
-          ...confounding.default,
-          category: 'statistical-bias',
-        },
-        17
-      ),
-      validateBiasCard(
-        { ...evaluation.default, category: 'statistical-bias' },
-        17
-      ),
-      validateBiasCard(
-        {
-          ...measurement.default,
-          category: 'statistical-bias',
-        },
-        17
-      ),
-      validateBiasCard(
-        {
-          ...missingData.default,
-          category: 'statistical-bias',
-        },
-        17
-      ),
-      validateBiasCard(
-        {
-          ...trainingServing.default,
-          category: 'statistical-bias',
-        },
-        17
-      ),
-      validateBiasCard(
-        {
-          ...wrongSampleSize.default,
-          category: 'statistical-bias',
-        },
-        17
-      ),
+      // Statistical biases
+      validateBiasCard({
+        ...aggregation.default,
+        category: 'statistical-bias',
+      }),
+      validateBiasCard({
+        ...confounding.default,
+        category: 'statistical-bias',
+      }),
+      validateBiasCard({ ...evaluation.default, category: 'statistical-bias' }),
+      validateBiasCard({
+        ...measurement.default,
+        category: 'statistical-bias',
+      }),
+      validateBiasCard({
+        ...missingData.default,
+        category: 'statistical-bias',
+      }),
+      validateBiasCard({
+        ...trainingServing.default,
+        category: 'statistical-bias',
+      }),
+      validateBiasCard({
+        ...wrongSampleSize.default,
+        category: 'statistical-bias',
+      }),
     ];
 
     const mitigationCards: MitigationCard[] = [
@@ -384,9 +327,8 @@ export async function loadAllCards(): Promise<{
       validateMitigationCard(stakeholderEngagement.default),
     ];
 
-    // Sort cards by ID in ascending order
-    biasCards.sort((a, b) => Number(a.id) - Number(b.id));
-    mitigationCards.sort((a, b) => Number(a.id) - Number(b.id));
+    // Cards are already in the correct order from imports
+    // No need to sort by numeric ID anymore
 
     return { biasCards, mitigationCards };
   } catch (error) {

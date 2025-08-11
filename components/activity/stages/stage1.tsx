@@ -99,6 +99,9 @@ export default function Stage1Client() {
     removeBiasRisk,
     getBiasRiskByCategory,
     completeActivityStage: completeWorkspaceStage,
+    getCurrentActivity,
+    getBiasRiskFromActivity,
+    hasHydrated,
   } = useWorkspaceStore();
 
   const [activeCard, setActiveCard] = useState<Card | null>(null);
@@ -107,18 +110,77 @@ export default function Stage1Client() {
   const [showWarningDialog, setShowWarningDialog] = useState(false);
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [isClient, setIsClient] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Activity-aware helper methods
+  const _getBiasRisk = (biasId: string): BiasRiskCategory | null => {
+    return getBiasRiskFromActivity(biasId);
+  };
+
+  const isActivityReady = (): boolean => {
+    return getCurrentActivity() !== null;
+  };
 
   // Load cards on mount and ensure client-side only rendering
   useEffect(() => {
     setIsClient(true);
     loadCards();
-  }, [loadCards]);
 
-  // Get risk assignments by category
-  const highRiskCards = getBiasRiskByCategory('high-risk');
-  const mediumRiskCards = getBiasRiskByCategory('medium-risk');
-  const lowRiskCards = getBiasRiskByCategory('low-risk');
-  const needsDiscussionCards = getBiasRiskByCategory('needs-discussion');
+    // Initialize workspace if not ready
+    const initializeWorkspace = async () => {
+      try {
+        // Import stores dynamically to avoid circular dependencies
+        const { useActivityStore } = await import(
+          '@/lib/stores/activity-store'
+        );
+        const { useWorkspaceStore } = await import(
+          '@/lib/stores/workspace-store'
+        );
+
+        const workspaceStore = useWorkspaceStore.getState();
+
+        // Wait for store hydration before checking persisted state
+        const hasPersistedActivityState =
+          hasHydrated && workspaceStore.activityId === activityId;
+
+        if (!workspaceStore.getCurrentActivity() && hasPersistedActivityState) {
+          console.log('Stage 1: Restoring from persisted state');
+          await workspaceStore.initialize();
+        } else if (!isActivityReady()) {
+          // If no persisted state, initialize normally
+          const activityStore = useActivityStore.getState();
+          const currentActivityData = activityStore.activities.find(
+            (a) => a.id === activityId
+          );
+
+          if (currentActivityData) {
+            await workspaceStore.initialize(currentActivityData.title);
+            workspaceStore.setActivityId(activityId);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to initialize workspace:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initializeWorkspace();
+  }, [loadCards, activityId, hasHydrated]);
+
+  // Get risk assignments by category (safe to call even if activity not ready)
+  const highRiskCards = isActivityReady()
+    ? getBiasRiskByCategory('high-risk')
+    : [];
+  const mediumRiskCards = isActivityReady()
+    ? getBiasRiskByCategory('medium-risk')
+    : [];
+  const lowRiskCards = isActivityReady()
+    ? getBiasRiskByCategory('low-risk')
+    : [];
+  const needsDiscussionCards = isActivityReady()
+    ? getBiasRiskByCategory('needs-discussion')
+    : [];
 
   // Check completion status
   const totalBiasCards = biasCards.length;
@@ -179,6 +241,12 @@ export default function Stage1Client() {
       const card = extractCardFromDragEvent(active, biasCards);
 
       if (card) {
+        // Validate activity is ready before assigning
+        if (!isActivityReady()) {
+          console.warn('Activity not initialized. Please refresh the page.');
+          return;
+        }
+
         const targetCategory = over.id
           .toString()
           .replace('risk-category-', '') as BiasRiskCategory;
@@ -243,7 +311,7 @@ export default function Stage1Client() {
     card.displayNumber || String(card.id).padStart(2, '0');
 
   // Show loading state during hydration to prevent mismatch
-  if (!isClient) {
+  if (!isClient || isInitializing) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
