@@ -94,11 +94,11 @@ async function exportDocx(
 /**
  * Export to Markdown format
  */
-async function exportMarkdown(
+function exportMarkdown(
   report: Report,
   config: ReportExportConfig,
   filename: string
-): Promise<void> {
+): void {
   const content = getMarkdownContent(report, config);
   const blob = new Blob([content], { type: 'text/markdown' });
   saveAs(blob, filename);
@@ -107,11 +107,11 @@ async function exportMarkdown(
 /**
  * Export to JSON format
  */
-async function exportJSON(
+function exportJSON(
   report: Report,
   config: ReportExportConfig,
   filename: string
-): Promise<void> {
+): void {
   const content = getJSONContent(report, config);
   const blob = new Blob([content], { type: 'application/json' });
   saveAs(blob, filename);

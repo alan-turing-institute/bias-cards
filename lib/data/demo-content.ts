@@ -773,8 +773,15 @@ export function convertV2ToLegacyActivity(
   const biases = activityData.biases;
 
   // Group biases by lifecycle stage for legacy format
-  // biome-ignore lint/suspicious/noExplicitAny: Legacy format compatibility
-  const lifecycleStages: Record<string, any> = {};
+  const lifecycleStages: Record<
+    string,
+    {
+      completed: boolean;
+      biases: string[];
+      mitigations: string[];
+      notes: string;
+    }
+  > = {};
 
   for (const [biasId, biasEntry] of Object.entries(biases)) {
     for (const stage of biasEntry.lifecycleAssignments) {

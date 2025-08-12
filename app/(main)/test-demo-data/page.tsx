@@ -1,7 +1,7 @@
 'use client';
 
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import type { BiasActivity } from '@/lib/activities/bias-activity';
@@ -37,13 +37,16 @@ export default function TestDemoDataPage() {
     null
   );
 
-  const updateTestResult = (name: string, result: Partial<TestResult>) => {
-    setTestResults((prev) =>
-      prev.map((test) => (test.name === name ? { ...test, ...result } : test))
-    );
-  };
+  const updateTestResult = useCallback(
+    (name: string, result: Partial<TestResult>) => {
+      setTestResults((prev) =>
+        prev.map((test) => (test.name === name ? { ...test, ...result } : test))
+      );
+    },
+    []
+  );
 
-  const runTests = async () => {
+  const runTests = useCallback(async () => {
     // Reset all tests
     setTestResults((prev) =>
       prev.map((test) => ({ ...test, status: 'pending' }))
@@ -150,12 +153,11 @@ export default function TestDemoDataPage() {
         )
       );
     }
-  };
+  }, [updateTestResult]);
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: Run only on mount
   useEffect(() => {
     runTests();
-  }, []);
+  }, [runTests]);
 
   const getStatusIcon = (status: TestResult['status']) => {
     switch (status) {

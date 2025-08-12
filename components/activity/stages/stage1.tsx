@@ -94,7 +94,6 @@ export default function Stage1Client() {
     completeStage,
     setCurrentStage,
     isHydrated,
-    initialize,
   } = useUnifiedActivityStore();
 
   const activityId = currentRoute.activityId || currentActivity?.id;
@@ -133,7 +132,7 @@ export default function Stage1Client() {
     loadCards();
 
     // Initialize activity if not ready
-    const initializeActivity = async () => {
+    const initializeActivity = () => {
       if (!currentActivity && isHydrated) {
         setIsInitializing(false);
       } else {
@@ -241,7 +240,9 @@ export default function Stage1Client() {
         setIsSheetOpen(false);
 
         // Check data after a small delay
-        setTimeout(() => {}, 100);
+        setTimeout(() => {
+          // No action needed - just a small delay for UI updates
+        }, 100);
       }
     }
 
@@ -284,13 +285,13 @@ export default function Stage1Client() {
   );
 
   // Sort cards within each category by displayNumber
-  Object.keys(groupedBiasCards).forEach((category) => {
+  for (const category of Object.keys(groupedBiasCards)) {
     groupedBiasCards[category].sort((a, b) => {
       const aNum = Number.parseInt(a.displayNumber || '999', 10);
       const bNum = Number.parseInt(b.displayNumber || '999', 10);
       return aNum - bNum;
     });
-  });
+  }
 
   // Group assigned cards by category for display
   const groupedAssignedCards = assignedBiasCards.reduce(
@@ -306,13 +307,13 @@ export default function Stage1Client() {
   );
 
   // Sort assigned cards within each category by displayNumber
-  Object.keys(groupedAssignedCards).forEach((category) => {
+  for (const category of Object.keys(groupedAssignedCards)) {
     groupedAssignedCards[category].sort((a, b) => {
       const aNum = Number.parseInt(a.displayNumber || '999', 10);
       const bNum = Number.parseInt(b.displayNumber || '999', 10);
       return aNum - bNum;
     });
-  });
+  }
 
   const getCardNumber = (card: Card) =>
     card.displayNumber || String(card.id).padStart(2, '0');

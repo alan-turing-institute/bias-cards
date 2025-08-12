@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useUnifiedActivityStore } from '@/lib/stores/unified-activity-store';
@@ -11,83 +11,188 @@ import {
   restoreFromBackup,
 } from '@/lib/utils/migrate-to-v2';
 
+// Migration Status Card Component
+interface MigrationStatusCardProps {
+  migrationStatus: string;
+  needsMigrationFlag: boolean;
+  onMigrate: () => void;
+  onRestore: () => void;
+  onCleanup: () => void;
+  onRefresh: () => void;
+  onClearAll: () => void;
+}
+
+function MigrationStatusCard({
+  migrationStatus,
+  needsMigrationFlag,
+  onMigrate,
+  onRestore,
+  onCleanup,
+  onRefresh,
+  onClearAll,
+}: MigrationStatusCardProps) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Migration Status</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded bg-muted p-4">
+          <p className="font-mono">{migrationStatus}</p>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button
+            disabled={!needsMigrationFlag}
+            onClick={onMigrate}
+            variant={needsMigrationFlag ? 'default' : 'secondary'}
+          >
+            Migrate to v2
+          </Button>
+          <Button onClick={onRestore} variant="outline">
+            Restore from Backup
+          </Button>
+          <Button onClick={onCleanup} variant="outline">
+            Clean Up Backup
+          </Button>
+          <Button onClick={onRefresh} variant="outline">
+            Refresh Status
+          </Button>
+          <Button onClick={onClearAll} variant="destructive">
+            Clear All Data
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// Type for legacy activity data structure
+interface LegacyActivityData {
+  workspace?: {
+    state?: {
+      activityState?: {
+        name?: string;
+        biases?: Record<string, unknown>;
+        state?: {
+          currentStage?: number;
+        };
+      };
+    };
+  };
+  activity?: {
+    state?: {
+      activities?: Array<{
+        id: string;
+        title?: string;
+        name?: string;
+      }>;
+    };
+  };
+}
+
+interface NewActivityData {
+  version?: string;
+}
+
 export default function TestV2MigrationPage() {
+  return <TestV2MigrationPageContent />;
+}
+
+function TestV2MigrationPageContent() {
+  return <TestV2MigrationPageWithState />;
+}
+
+function TestV2MigrationPageWithState() {
   const [migrationStatus, setMigrationStatus] = useState<string>('Checking...');
-  const [oldData, setOldData] = useState<any>(null);
-  const [newData, setNewData] = useState<unknown>(null);
+  const [oldData, setOldData] = useState<LegacyActivityData | null>(null);
+  const [newData, setNewData] = useState<NewActivityData | null>(null);
   const [needsMigrationFlag, setNeedsMigrationFlag] = useState(false);
 
-  const {
-    currentActivityData,
-    activities,
-    initialize,
-    isHydrated,
-    isLoading,
-    error,
-  } = useUnifiedActivityStore();
+  const { currentActivityData, activities, initialize, isLoading, error } =
+    useUnifiedActivityStore();
 
-  const checkStatus = () => {
-    // Check if migration is needed
-    const migrationNeeded = needsMigration();
-    setNeedsMigrationFlag(migrationNeeded);
-
-    // Get old data if it exists
+  const loadOldData = useCallback((): LegacyActivityData | null => {
     const oldWorkspace = localStorage.getItem('workspace-store');
     const oldActivity = localStorage.getItem('activity-store');
 
     if (oldWorkspace || oldActivity) {
-      setOldData({
+      return {
         workspace: oldWorkspace ? JSON.parse(oldWorkspace) : null,
         activity: oldActivity ? JSON.parse(oldActivity) : null,
-      });
+      };
     }
+    return null;
+  }, []);
 
-    // Get new data if it exists
+  const loadNewData = useCallback((): NewActivityData | null => {
     const newStore = localStorage.getItem('bias-cards-store');
-    if (newStore) {
-      setNewData(JSON.parse(newStore));
+    return newStore ? JSON.parse(newStore) : null;
+  }, []);
+
+  const determineMigrationStatus = useCallback(
+    (
+      migrationNeeded: boolean,
+      activityData: NewActivityData | null
+    ): string => {
+      if (migrationNeeded) {
+        return 'Migration needed - old data detected';
+      }
+      if (activityData) {
+        return 'Already on v2';
+      }
+      return 'No data found';
+    },
+    []
+  );
+
+  const checkStatus = useCallback(() => {
+    const migrationNeeded = needsMigration();
+    setNeedsMigrationFlag(migrationNeeded);
+
+    const loadedOldData = loadOldData();
+    if (loadedOldData) {
+      setOldData(loadedOldData);
     }
 
-    if (migrationNeeded) {
-      setMigrationStatus('Migration needed - old data detected');
-    } else if (newStore) {
-      setMigrationStatus('Already on v2');
-    } else {
-      setMigrationStatus('No data found');
+    const loadedNewData = loadNewData();
+    if (loadedNewData) {
+      setNewData(loadedNewData);
     }
-  };
 
-  const handleMigrate = async () => {
+    setMigrationStatus(
+      determineMigrationStatus(migrationNeeded, loadedNewData)
+    );
+  }, [determineMigrationStatus, loadNewData, loadOldData]);
+
+  const handleMigrate = useCallback(async () => {
     setMigrationStatus('Migrating...');
     const result = await migrateToV2();
 
     if (result.success) {
       setMigrationStatus(`Migration successful! ${result.message}`);
-      // Refresh the data display
       checkStatus();
-      // Initialize the new store
       await initialize();
     } else {
       setMigrationStatus(`Migration failed: ${result.message}`);
     }
-  };
+  }, [checkStatus, initialize]);
 
-  const handleRestore = () => {
+  const handleRestore = useCallback(() => {
     const restored = restoreFromBackup();
+    const status = restored ? 'Restored from backup' : 'No backup found';
+    setMigrationStatus(status);
     if (restored) {
-      setMigrationStatus('Restored from backup');
       checkStatus();
-    } else {
-      setMigrationStatus('No backup found');
     }
-  };
+  }, [checkStatus]);
 
-  const handleCleanup = () => {
+  const handleCleanup = useCallback(() => {
     cleanupBackup();
     setMigrationStatus('Backup cleaned up');
-  };
+  }, []);
 
-  const handleClearAll = () => {
+  const handleClearAll = useCallback(() => {
     if (confirm('This will clear ALL localStorage data. Are you sure?')) {
       localStorage.clear();
       setOldData(null);
@@ -95,48 +200,25 @@ export default function TestV2MigrationPage() {
       setMigrationStatus('All data cleared');
       window.location.reload();
     }
-  };
+  }, []);
 
   useEffect(() => {
     checkStatus();
-  }, []);
+  }, [checkStatus]);
 
   return (
     <div className="container mx-auto space-y-6 p-6">
       <h1 className="font-bold text-3xl">V2 Migration Test Page</h1>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Migration Status</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded bg-muted p-4">
-            <p className="font-mono">{migrationStatus}</p>
-          </div>
-
-          <div className="flex flex-wrap gap-2">
-            <Button
-              disabled={!needsMigrationFlag}
-              onClick={handleMigrate}
-              variant={needsMigrationFlag ? 'default' : 'secondary'}
-            >
-              Migrate to v2
-            </Button>
-            <Button onClick={handleRestore} variant="outline">
-              Restore from Backup
-            </Button>
-            <Button onClick={handleCleanup} variant="outline">
-              Clean Up Backup
-            </Button>
-            <Button onClick={checkStatus} variant="outline">
-              Refresh Status
-            </Button>
-            <Button onClick={handleClearAll} variant="destructive">
-              Clear All Data
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      <MigrationStatusCard
+        migrationStatus={migrationStatus}
+        needsMigrationFlag={needsMigrationFlag}
+        onCleanup={handleCleanup}
+        onClearAll={handleClearAll}
+        onMigrate={handleMigrate}
+        onRefresh={checkStatus}
+        onRestore={handleRestore}
+      />
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
         <Card>
@@ -165,8 +247,12 @@ export default function TestV2MigrationPage() {
                         <p>
                           Stage:{' '}
                           {
-                            oldData.workspace.state.activityState.state
-                              ?.currentStage
+                            (
+                              oldData.workspace.state
+                                .activityState as unknown as {
+                                state?: { currentStage?: number };
+                              }
+                            ).state?.currentStage
                           }
                         </p>
                         <details>
@@ -191,21 +277,18 @@ export default function TestV2MigrationPage() {
                 <div>
                   <h3 className="font-semibold">Activity Store:</h3>
                   <div className="mt-2 max-h-64 overflow-y-auto rounded bg-muted p-2">
-                    {(oldData as any)?.activity?.state?.activities ? (
+                    {oldData?.activity?.state?.activities ? (
                       <div>
                         <p>
                           Activities:{' '}
-                          {(oldData as any)?.activity?.state?.activities
-                            ?.length || 0}
+                          {oldData?.activity?.state?.activities?.length || 0}
                         </p>
                         <ul className="mt-2 space-y-1">
-                          {(oldData as any)?.activity?.state?.activities?.map(
-                            (a: any) => (
-                              <li className="text-sm" key={a.id}>
-                                • {a.title || a.name}
-                              </li>
-                            )
-                          )}
+                          {oldData?.activity?.state?.activities?.map((a) => (
+                            <li className="text-sm" key={a.id}>
+                              • {a.title || a.name}
+                            </li>
+                          ))}
                         </ul>
                       </div>
                     ) : (
@@ -228,8 +311,8 @@ export default function TestV2MigrationPage() {
             {newData ? (
               <div className="space-y-4">
                 <div>
-                  <p>Version: {(newData as any)?.version || 'unknown'}</p>
-                  <p>Hydrated: {isHydrated ? 'Yes' : 'No'}</p>
+                  <p>Version: {newData?.version || 'unknown'}</p>
+                  <p>Hydrated: Unknown</p>
                   <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
                   {error && <p className="text-red-500">Error: {error}</p>}
                 </div>

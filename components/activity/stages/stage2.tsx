@@ -291,9 +291,6 @@ export default function Stage2Client() {
     removeFromLifecycle,
     setRationale,
     completeStage,
-    setCurrentStage,
-    isHydrated,
-    initialize,
   } = useUnifiedActivityStore();
 
   const activityId = currentRoute.activityId || currentActivity?.id;
@@ -366,9 +363,7 @@ export default function Stage2Client() {
   const biasRiskAssignments = getBiasRiskAssignments();
 
   // Filter cards to only show those categorized in Stage 1
-  const categorizedBiasIds = new Set(
-    biasRiskAssignments.map((a: any) => a.cardId)
-  );
+  const categorizedBiasIds = new Set(biasRiskAssignments.map((a) => a.cardId));
   const availableBiasCards = biasCards.filter((card) =>
     categorizedBiasIds.has(card.id)
   );
@@ -376,7 +371,7 @@ export default function Stage2Client() {
   // Create enriched bias cards with risk category info
   const enrichedBiasCards = availableBiasCards.map((card) => {
     const riskAssignment = biasRiskAssignments.find(
-      (a: any) => a.cardId === card.id
+      (a) => a.cardId === card.id
     );
     return {
       ...card,
@@ -538,13 +533,13 @@ export default function Stage2Client() {
     );
 
     // Sort cards within each category by displayNumber
-    Object.keys(groupedCards).forEach((category) => {
+    for (const category of Object.keys(groupedCards)) {
       groupedCards[category].sort((a, b) => {
         const aNum = Number.parseInt(a.displayNumber || '999', 10);
         const bNum = Number.parseInt(b.displayNumber || '999', 10);
         return aNum - bNum;
       });
-    });
+    }
 
     const getCardNumber = (card: BiasCard) =>
       card.displayNumber || String(card.id).padStart(2, '0');

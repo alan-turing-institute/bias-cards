@@ -1,6 +1,7 @@
 import type { BiasActivity } from '@/lib/activities/bias-activity';
+import type { BiasDeck } from '@/lib/cards/decks/bias-deck';
 import type { BiasRiskCategory, LifecycleStage } from '@/lib/types';
-import type { BiasEntry } from '@/lib/types/bias-activity';
+import type { BiasEntry, ImplementationNote } from '@/lib/types/bias-activity';
 import {
   type FullReport,
   type Recommendation,
@@ -69,7 +70,7 @@ export interface RiskMatrix {
 
 export class BiasReport extends Report {
   protected activity: BiasActivity;
-  protected deck: any; // Will be the deck from BiasActivity
+  protected deck: BiasDeck; // Will be the deck from BiasActivity
 
   constructor(activity: BiasActivity) {
     super(activity);
@@ -538,61 +539,83 @@ ${matrix.unassessed.map((b) => `- ${b}`).join('\n') || '- None'}
 `;
   }
 
+  private formatBasicBiasInfo(bias: BiasDetail): string {
+    return `### ${bias.name}
+- **Risk Level**: ${bias.riskCategory || 'Unassessed'}
+- **Lifecycle Stages**: ${bias.lifecycleStages.join(', ') || 'None assigned'}
+- **Mitigations**: ${bias.mitigationCount} selected
+- **Status**: ${bias.implementationStatus}`;
+  }
+
+  private formatRationaleSection(biasEntry: BiasEntry): string {
+    const hasRationale = Object.values(biasEntry.rationale).some((r) =>
+      r?.trim()
+    );
+    if (!hasRationale) {
+      return '';
+    }
+
+    let section = '#### Rationale by Stage\n';
+    for (const [stage, rationale] of Object.entries(biasEntry.rationale)) {
+      if ((rationale as string)?.trim()) {
+        section += `**${stage}**: ${rationale}\n\n`;
+      }
+    }
+    return section;
+  }
+
+  private formatImplementationNote(
+    mitigationId: string,
+    note: ImplementationNote,
+    stage: string
+  ): string {
+    const mitigationName = this.getMitigationName(mitigationId);
+    let noteSection = `**${mitigationName} (${stage})**:
+- Status: ${note.status}
+- Effectiveness: ${note.effectivenessRating}/5
+- Notes: ${note.notes || 'No notes'}`;
+
+    if (note.dueDate) {
+      noteSection += `\n- Due Date: ${note.dueDate}`;
+    }
+    if (note.assignedTo) {
+      noteSection += `\n- Assigned To: ${note.assignedTo}`;
+    }
+
+    return `${noteSection}\n\n`;
+  }
+
+  private formatImplementationSection(biasEntry: BiasEntry): string {
+    const hasNotes = Object.keys(biasEntry.implementationNotes).length > 0;
+    if (!hasNotes) {
+      return '';
+    }
+
+    let section = '#### Implementation Notes\n';
+    for (const [stage, notes] of Object.entries(
+      biasEntry.implementationNotes
+    )) {
+      for (const [mitigationId, note] of Object.entries(
+        notes as Record<string, ImplementationNote>
+      )) {
+        section += this.formatImplementationNote(mitigationId, note, stage);
+      }
+    }
+    return section;
+  }
+
   private formatBiasDetail(bias: BiasDetail): string {
     // Get the full BiasEntry to access rationale and implementation notes
     const biases = this.activity.getBiases();
     const biasEntry = biases[bias.biasId];
 
     if (!biasEntry) {
-      return `### ${bias.name}
-- **Risk Level**: ${bias.riskCategory || 'Unassessed'}
-- **Lifecycle Stages**: ${bias.lifecycleStages.join(', ') || 'None assigned'}
-- **Mitigations**: ${bias.mitigationCount} selected
-- **Status**: ${bias.implementationStatus}`;
+      return this.formatBasicBiasInfo(bias);
     }
 
-    let section = `### ${bias.name}
-- **Risk Level**: ${bias.riskCategory || 'Unassessed'}
-- **Lifecycle Stages**: ${bias.lifecycleStages.join(', ') || 'None assigned'}
-- **Mitigations**: ${bias.mitigationCount} selected
-- **Status**: ${bias.implementationStatus}
-
-`;
-
-    // Add Stage 3 rationale
-    const hasRationale = Object.values(biasEntry.rationale).some((r) =>
-      r?.trim()
-    );
-    if (hasRationale) {
-      section += '#### Rationale by Stage\n';
-      for (const [stage, rationale] of Object.entries(biasEntry.rationale)) {
-        if (rationale?.trim()) {
-          section += `**${stage}**: ${rationale}\n\n`;
-        }
-      }
-    }
-
-    // Add Stage 5 implementation notes
-    const hasNotes = Object.keys(biasEntry.implementationNotes).length > 0;
-    if (hasNotes) {
-      section += '#### Implementation Notes\n';
-      for (const [stage, notes] of Object.entries(
-        biasEntry.implementationNotes
-      )) {
-        for (const [mitigationId, note] of Object.entries(notes)) {
-          // Get mitigation name if possible
-          const mitigationName = this.getMitigationName(mitigationId);
-          section += `**${mitigationName} (${stage})**:
-- Status: ${note.status}
-- Effectiveness: ${note.effectivenessRating}/5
-- Notes: ${note.notes || 'No notes'}
-${note.dueDate ? `- Due Date: ${note.dueDate}` : ''}
-${note.assignedTo ? `- Assigned To: ${note.assignedTo}` : ''}
-
-`;
-        }
-      }
-    }
+    let section = `${this.formatBasicBiasInfo(bias)}\n\n`;
+    section += this.formatRationaleSection(biasEntry);
+    section += this.formatImplementationSection(biasEntry);
 
     return section.trim();
   }

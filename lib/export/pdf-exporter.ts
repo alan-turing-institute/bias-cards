@@ -21,7 +21,11 @@ export class PDFReportExporter {
     });
   }
 
-  async generate(): Promise<Blob> {
+  generate(): Promise<Blob> {
+    return Promise.resolve(this.generateSync());
+  }
+
+  private generateSync(): Blob {
     // Set default font
     this.doc.setFont('helvetica');
 
@@ -124,14 +128,18 @@ export class PDFReportExporter {
   private addExecutiveSummary(): void {
     this.addSectionTitle('Executive Summary');
 
-    const summary = this.report.analysis.executiveSummary!;
+    const summary = this.report.analysis.executiveSummary;
+    if (!summary) {
+      this.addText('Executive summary not available.');
+      return;
+    }
 
     // Key Findings
     if (summary.keyFindings && summary.keyFindings.length > 0) {
       this.addSubsection('Key Findings');
-      summary.keyFindings.forEach((finding) => {
+      for (const finding of summary.keyFindings) {
         this.addBulletPoint(finding);
-      });
+      }
     }
 
     // Risk Assessment
@@ -143,9 +151,9 @@ export class PDFReportExporter {
     // Recommendations
     if (summary.recommendations && summary.recommendations.length > 0) {
       this.addSubsection('Recommendations');
-      summary.recommendations.forEach((rec) => {
+      for (const rec of summary.recommendations) {
         this.addBulletPoint(rec);
-      });
+      }
     }
   }
 
@@ -168,7 +176,11 @@ export class PDFReportExporter {
   private addRiskAssessment(): void {
     this.addSectionTitle('Risk Assessment Summary');
 
-    const summary = this.report.analysis.riskAssessmentSummary!;
+    const summary = this.report.analysis.riskAssessmentSummary;
+    if (!summary) {
+      this.addText('Risk assessment summary not available.');
+      return;
+    }
 
     this.addText(`Total Biases Assessed: ${summary.totalAssessed}`);
     this.addText(`Completion: ${summary.completionPercentage}%`);
@@ -180,66 +192,93 @@ export class PDFReportExporter {
     this.addText(`Unassigned: ${summary.distribution.unassigned} biases`);
   }
 
+  private addBiasRationale(rationale: string): void {
+    this.doc.setFontSize(9);
+    this.doc.setFont('helvetica', 'italic');
+    const lines = this.doc.splitTextToSize(
+      `  Rationale: ${rationale}`,
+      this.pageWidth - 2 * this.margin - 10
+    );
+    for (const line of lines) {
+      this.addText(line);
+    }
+    this.doc.setFont('helvetica', 'normal');
+    this.doc.setFontSize(10);
+  }
+
+  private addBiasEntry(bias: {
+    biasCard?: { name?: string };
+    severity?: string;
+    rationale?: string;
+  }): void {
+    this.addText(
+      `• ${bias.biasCard?.name || 'Unknown Bias'} (${bias.severity} risk)`
+    );
+    if (bias.rationale) {
+      this.addBiasRationale(bias.rationale);
+    }
+  }
+
+  private addStageIdentification(identification: {
+    stage?: string;
+    biases?: Array<{
+      biasCard?: { name?: string };
+      severity?: string;
+      rationale?: string;
+    }>;
+  }): void {
+    const stageName =
+      identification.stage?.replace(/-/g, ' ') || 'Unknown Stage';
+    this.addSubsection(`Stage: ${stageName}`);
+
+    if (identification.biases) {
+      for (const bias of identification.biases) {
+        this.addBiasEntry(bias);
+      }
+    }
+  }
+
   private addBiasIdentification(): void {
     this.addSectionTitle('Bias Identification');
 
-    this.report.analysis.biasIdentification.forEach((identification) => {
-      const stageName =
-        identification.stage?.replace(/-/g, ' ') || 'Unknown Stage';
-      this.addSubsection(`Stage: ${stageName}`);
-
-      identification.biases?.forEach((bias) => {
-        this.addText(
-          `• ${bias.biasCard?.name || 'Unknown Bias'} (${bias.severity} risk)`
-        );
-        if (bias.rationale) {
-          this.doc.setFontSize(9);
-          this.doc.setFont('helvetica', 'italic');
-          const lines = this.doc.splitTextToSize(
-            `  Rationale: ${bias.rationale}`,
-            this.pageWidth - 2 * this.margin - 10
-          );
-          lines.forEach((line: string) => {
-            this.addText(line);
-          });
-          this.doc.setFont('helvetica', 'normal');
-          this.doc.setFontSize(10);
-        }
-      });
-    });
+    for (const identification of this.report.analysis.biasIdentification) {
+      this.addStageIdentification(identification);
+    }
   }
 
   private addMitigationStrategies(): void {
     this.addSectionTitle('Mitigation Strategies');
 
-    this.report.analysis.mitigationStrategies.forEach((strategy) => {
+    for (const strategy of this.report.analysis.mitigationStrategies) {
       this.addSubsection(strategy.biasName || 'Unknown Bias');
 
-      strategy.mitigations?.forEach((mitigation) => {
-        const name = mitigation.mitigationCard?.name || 'Unknown Mitigation';
-        const rating = mitigation.effectivenessRating || 0;
-        this.addText(`• ${name} (Effectiveness: ${rating}/5)`);
+      if (strategy.mitigations) {
+        for (const mitigation of strategy.mitigations) {
+          const name = mitigation.mitigationCard?.name || 'Unknown Mitigation';
+          const rating = mitigation.effectivenessRating || 0;
+          this.addText(`• ${name} (Effectiveness: ${rating}/5)`);
 
-        if (mitigation.implementationNotes) {
-          this.doc.setFontSize(9);
-          this.doc.setFont('helvetica', 'italic');
-          this.addText(`  Notes: ${mitigation.implementationNotes}`);
-          this.doc.setFont('helvetica', 'normal');
-          this.doc.setFontSize(10);
+          if (mitigation.implementationNotes) {
+            this.doc.setFontSize(9);
+            this.doc.setFont('helvetica', 'italic');
+            this.addText(`  Notes: ${mitigation.implementationNotes}`);
+            this.doc.setFont('helvetica', 'normal');
+            this.doc.setFontSize(10);
+          }
         }
-      });
-    });
+      }
+    }
   }
 
   private addAuditTrail(): void {
     this.addSectionTitle('Audit Trail');
 
     const recentEntries = this.report.auditTrail.slice(-10).reverse();
-    recentEntries.forEach((entry) => {
+    for (const entry of recentEntries) {
       const date = new Date(entry.timestamp).toLocaleDateString();
       this.addText(`• ${date} - ${entry.action}: ${entry.description}`);
       this.addText(`  By: ${entry.userName}`);
-    });
+    }
   }
 
   private addSectionTitle(title: string): void {

@@ -283,7 +283,9 @@ export class BiasCardReportGenerator {
       return;
     }
 
-    (workspace.cardPairs || ([] as CardPair[])).forEach((pair, index) => {
+    for (const [index, pair] of (
+      workspace.cardPairs || ([] as CardPair[])
+    ).entries()) {
       this.checkPageBreak(25);
 
       const biasCard = biasCards.find((b) => b.id === pair.biasId);
@@ -330,7 +332,7 @@ export class BiasCardReportGenerator {
       }
 
       this.currentY += 5;
-    });
+    }
   }
 
   private addAnnotations(

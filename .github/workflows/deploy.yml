@@ -58,6 +58,7 @@ jobs:
       - name: Build Next.js static site
         run: pnpm build
         env:
+          NODE_ENV: production
           NEXT_PUBLIC_BASE_PATH: /bias-cards
           NEXT_PUBLIC_GOOGLE_CLIENT_ID: ${{ secrets.NEXT_PUBLIC_GOOGLE_CLIENT_ID }}
           NEXT_PUBLIC_GOOGLE_DRIVE_SCOPE: ${{ secrets.NEXT_PUBLIC_GOOGLE_DRIVE_SCOPE }}

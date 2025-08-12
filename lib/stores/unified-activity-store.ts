@@ -37,6 +37,20 @@ interface UnifiedActivityStore {
   saveCurrentActivity: () => void;
   deleteActivity: (id: string) => void;
 
+  // Helpers for storage and construction
+  findActivityData: (
+    parsed: {
+      state?: {
+        activitiesData?: Record<string, BiasActivityData>;
+        currentActivityData?: BiasActivityData;
+      };
+    },
+    id: string
+  ) => BiasActivityData | undefined;
+  createActivityFromData: (
+    activityData: BiasActivityData
+  ) => Promise<BiasActivity>;
+
   // BiasActivity delegated actions (Stage 1)
   assignBiasRisk: (biasId: string, risk: BiasRiskCategory) => void;
   removeBiasRisk: (biasId: string) => void;
@@ -84,7 +98,7 @@ interface UnifiedActivityStore {
   canAdvanceToStage: (stage: number) => boolean;
 
   // Export/Import
-  exportActivity: (id?: string) => Promise<void>;
+  exportActivity: (id?: string) => void;
   importActivity: (
     file: File
   ) => Promise<{ success: boolean; message: string; activityId?: string }>;
@@ -246,6 +260,45 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
         }
       },
 
+      // Helper to find activity data in storage
+      findActivityData: (
+        parsed: {
+          state?: {
+            activitiesData?: Record<string, BiasActivityData>;
+            currentActivityData?: BiasActivityData;
+          };
+        },
+        id: string
+      ) => {
+        // Try to get activity data from multiple possible locations
+        let activityData = parsed.state?.activitiesData?.[id];
+
+        // If not found in activitiesData, check if it's the current activity
+        if (!activityData && parsed.state?.currentActivityData?.id === id) {
+          activityData = parsed.state.currentActivityData;
+        }
+
+        return activityData as BiasActivityData | undefined;
+      },
+
+      // Helper to create activity from data
+      createActivityFromData: async (activityData: BiasActivityData) => {
+        const { BiasDeck } = await import('@/lib/cards/decks/bias-deck');
+        const { BiasActivity: BiasActivityClass } = await import(
+          '@/lib/activities/bias-activity'
+        );
+
+        const deck = await BiasDeck.getInstance();
+        const activity = new BiasActivityClass(deck, {
+          id: activityData.id,
+          name: activityData.name,
+          description: activityData.description,
+        });
+        activity.load(activityData);
+
+        return activity;
+      },
+
       // Load an existing activity
       loadActivity: async (id) => {
         const metadata = get().activities.find((a) => a.id === id);
@@ -257,44 +310,30 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
         set({ isLoading: true, error: null });
 
         try {
-          // Get the full data from localStorage
           const stored = localStorage.getItem('bias-cards-store');
-          if (stored) {
-            const parsed = JSON.parse(stored);
-
-            // Try to get activity data from multiple possible locations
-            let activityData = parsed.state?.activitiesData?.[id];
-
-            // If not found in activitiesData, check if it's the current activity
-            if (!activityData && parsed.state?.currentActivityData?.id === id) {
-              activityData = parsed.state.currentActivityData;
-            }
-
-            if (activityData) {
-              const { BiasDeck } = await import('@/lib/cards/decks/bias-deck');
-              const { BiasActivity: BiasActivityClass } = await import(
-                '@/lib/activities/bias-activity'
-              );
-
-              const deck = await BiasDeck.getInstance();
-              const activity = new BiasActivityClass(deck, {
-                id: activityData.id,
-                name: activityData.name,
-                description: activityData.description,
-              });
-              activity.load(activityData);
-
-              set({
-                currentActivity: activity,
-                currentActivityData: activityData,
-                isLoading: false,
-              });
-
-              return; // Success
-            }
+          if (!stored) {
+            set({ error: 'No stored data found', isLoading: false });
+            return;
           }
 
-          // If we couldn't find the activity data, set an error
+          const parsed = JSON.parse(stored) as {
+            state?: {
+              activitiesData?: Record<string, BiasActivityData>;
+              currentActivityData?: BiasActivityData;
+            };
+          };
+          const activityData = get().findActivityData(parsed, id);
+
+          if (activityData) {
+            const activity = await get().createActivityFromData(activityData);
+            set({
+              currentActivity: activity,
+              currentActivityData: activityData,
+              isLoading: false,
+            });
+            return;
+          }
+
           set({
             error: 'Activity data not found in storage',
             isLoading: false,
@@ -503,7 +542,7 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
       },
 
       // Export activity
-      exportActivity: async (id) => {
+      exportActivity: (id) => {
         const activityId = id || get().currentActivity?.id;
         if (!activityId) {
           return;
@@ -627,7 +666,9 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
           // Automatically initialize if we have persisted data
           if (state.currentActivityData) {
             setTimeout(() => {
-              state.initialize().catch(console.error);
+              state.initialize().catch(() => {
+                // Silently handle initialization errors
+              });
             }, 0);
           }
         }

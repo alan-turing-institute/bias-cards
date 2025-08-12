@@ -136,9 +136,7 @@ export default function Stage3Client() {
   const { biasCards, loadCards } = useCardsStore();
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [_currentTab, setCurrentTab] = useState<'lifecycle' | 'risk'>(
-    'lifecycle'
-  );
+  const [, setCurrentTab] = useState<'lifecycle' | 'risk'>('lifecycle');
   const [showOnlyNeedingRationale, setShowOnlyNeedingRationale] =
     useState(false);
 
@@ -158,8 +156,8 @@ export default function Stage3Client() {
     const assignments: StageAssignmentWithCard[] = [];
     const biases = currentActivity.getBiases();
 
-    Object.entries(biases).forEach(([biasId, bias]) => {
-      bias.lifecycleAssignments.forEach((stage) => {
+    for (const [biasId, bias] of Object.entries(biases)) {
+      for (const stage of bias.lifecycleAssignments) {
         const card = biasCards.find((c) => c.id === biasId);
         if (card) {
           assignments.push({
@@ -172,8 +170,8 @@ export default function Stage3Client() {
             riskCategory: bias.riskCategory || undefined,
           });
         }
-      });
-    });
+      }
+    }
 
     return assignments;
   };

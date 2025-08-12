@@ -143,8 +143,19 @@ export class BiasActivityValidator {
     }
   }
 
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Multiple stage dependencies to validate
   private validateBiasProgression(
+    biasId: string,
+    entry: BiasEntry,
+    errors: ValidationError[]
+  ): void {
+    this.validateStage1ToStage2Progression(biasId, entry, errors);
+    this.validateStage2ToStage3Progression(biasId, entry, errors);
+    this.validateStage2ToStage4Progression(biasId, entry, errors);
+    this.validateStage4ToStage5Progression(biasId, entry, errors);
+    this.validateStrictRationaleRequirements(biasId, entry, errors);
+  }
+
+  private validateStage1ToStage2Progression(
     biasId: string,
     entry: BiasEntry,
     errors: ValidationError[]
@@ -158,7 +169,13 @@ export class BiasActivityValidator {
         message: `Bias "${entry.name}" has lifecycle assignments but no risk assessment (Stage 1 incomplete)`,
       });
     }
+  }
 
+  private validateStage2ToStage3Progression(
+    biasId: string,
+    entry: BiasEntry,
+    errors: ValidationError[]
+  ): void {
     // Stage 3 requires Stage 2 (lifecycle assignment before rationale)
     if (
       Object.keys(entry.rationale).length > 0 &&
@@ -171,7 +188,13 @@ export class BiasActivityValidator {
         message: `Bias "${entry.name}" has rationale but no lifecycle assignments (Stage 2 incomplete)`,
       });
     }
+  }
 
+  private validateStage2ToStage4Progression(
+    biasId: string,
+    entry: BiasEntry,
+    errors: ValidationError[]
+  ): void {
     // Stage 4 requires Stage 2 (lifecycle assignment before mitigations)
     if (
       Object.keys(entry.mitigations).length > 0 &&
@@ -184,7 +207,13 @@ export class BiasActivityValidator {
         message: `Bias "${entry.name}" has mitigations but no lifecycle assignments (Stage 2 incomplete)`,
       });
     }
+  }
 
+  private validateStage4ToStage5Progression(
+    biasId: string,
+    entry: BiasEntry,
+    errors: ValidationError[]
+  ): void {
     // Stage 5 requires Stage 4 (mitigations before implementation notes)
     for (const [stage, notes] of Object.entries(entry.implementationNotes)) {
       const stageKey = stage as LifecycleStage;
@@ -200,7 +229,13 @@ export class BiasActivityValidator {
         }
       }
     }
+  }
 
+  private validateStrictRationaleRequirements(
+    biasId: string,
+    entry: BiasEntry,
+    errors: ValidationError[]
+  ): void {
     // Validate rationale exists for assigned stages (warning level)
     if (this.options.strict) {
       for (const stage of entry.lifecycleAssignments) {
@@ -243,11 +278,17 @@ export class BiasActivityValidator {
     }
   }
 
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Multiple strict validation rules
   private validateStrictRules(errors: ValidationError[]): void {
     const biases = this.activity.getBiases();
 
-    // Check for high-risk biases without mitigations
+    this.validateHighRiskBiasesHaveMitigations(biases, errors);
+    this.validateImplementationNotesCompletion(biases, errors);
+  }
+
+  private validateHighRiskBiasesHaveMitigations(
+    biases: Record<string, BiasEntry>,
+    errors: ValidationError[]
+  ): void {
     for (const [biasId, entry] of Object.entries(biases)) {
       if (entry.riskCategory === 'high-risk') {
         const totalMitigations = Object.values(entry.mitigations).flat().length;
@@ -260,8 +301,12 @@ export class BiasActivityValidator {
         }
       }
     }
+  }
 
-    // Check for incomplete implementation notes
+  private validateImplementationNotesCompletion(
+    biases: Record<string, BiasEntry>,
+    errors: ValidationError[]
+  ): void {
     for (const [biasId, entry] of Object.entries(biases)) {
       for (const [stage, mitigationIds] of Object.entries(entry.mitigations)) {
         for (const mitigationId of mitigationIds) {
@@ -385,40 +430,71 @@ export class BiasActivityValidator {
     });
   }
 
+  private hasBiasMitigations(bias: BiasEntry): boolean {
+    return Object.values(bias.mitigations).flat().length > 0;
+  }
+
+  private hasValidImplementationNote(
+    bias: BiasEntry,
+    stage: string,
+    mitigationId: string,
+    minEffectivenessRating: number
+  ): boolean {
+    const note =
+      bias.implementationNotes[stage as LifecycleStage]?.[mitigationId];
+    if (!note) {
+      return false;
+    }
+    return note.effectivenessRating >= minEffectivenessRating;
+  }
+
+  private validateBiasImplementationNotes(
+    bias: BiasEntry,
+    minEffectivenessRating: number
+  ): boolean {
+    for (const [stage, mitigationIds] of Object.entries(bias.mitigations)) {
+      for (const mitigationId of mitigationIds) {
+        if (
+          !this.hasValidImplementationNote(
+            bias,
+            stage,
+            mitigationId,
+            minEffectivenessRating
+          )
+        ) {
+          return false;
+        }
+      }
+    }
+    return true;
+  }
+
+  private isBiasStage5Complete(bias: BiasEntry): boolean {
+    const criteria = this.completionCriteria.stage5;
+
+    // If no mitigations, stage 5 doesn't apply
+    if (!this.hasBiasMitigations(bias)) {
+      return true;
+    }
+
+    if (criteria.requireImplementationNotes) {
+      return this.validateBiasImplementationNotes(
+        bias,
+        criteria.minEffectivenessRating
+      );
+    }
+
+    return true;
+  }
+
   isStage5Complete(): boolean {
     const biases = Object.values(this.activity.getBiases());
-    const criteria = this.completionCriteria.stage5;
 
     if (biases.length === 0) {
       return false;
     }
 
-    // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complex stage 5 validation
-    return biases.every((bias) => {
-      // If no mitigations, stage 5 doesn't apply
-      const hasMitigations = Object.values(bias.mitigations).flat().length > 0;
-      if (!hasMitigations) {
-        return true;
-      }
-
-      if (criteria.requireImplementationNotes) {
-        // Check all mitigations have implementation notes
-        for (const [stage, mitigationIds] of Object.entries(bias.mitigations)) {
-          for (const mitigationId of mitigationIds) {
-            const note =
-              bias.implementationNotes[stage as LifecycleStage]?.[mitigationId];
-            if (!note) {
-              return false;
-            }
-            if (note.effectivenessRating < criteria.minEffectivenessRating) {
-              return false;
-            }
-          }
-        }
-      }
-
-      return true;
-    });
+    return biases.every((bias) => this.isBiasStage5Complete(bias));
   }
 
   canAdvanceToStage(targetStage: number): boolean {
@@ -449,86 +525,106 @@ export class BiasActivityValidator {
     }
   }
 
-  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Complex validation logic with multiple stages
   getStageWarnings(stage: number): string[] {
-    const warnings: string[] = [];
     const biases = Object.values(this.activity.getBiases());
 
     switch (stage) {
-      case 1: {
-        if (biases.length === 0) {
-          warnings.push('No biases have been identified yet');
-        }
-        const unassessedCount = biases.filter((b) => !b.riskCategory).length;
-        if (unassessedCount > 0) {
-          warnings.push(
-            `${unassessedCount} bias(es) still need risk assessment`
-          );
-        }
-        break;
-      }
-
-      case 2: {
-        const unassignedCount = biases.filter(
-          (b) => b.lifecycleAssignments.length === 0
-        ).length;
-        if (unassignedCount > 0) {
-          warnings.push(
-            `${unassignedCount} bias(es) not assigned to any lifecycle stages`
-          );
-        }
-        break;
-      }
-
+      case 1:
+        return this.getStage1Warnings(biases);
+      case 2:
+        return this.getStage2Warnings(biases);
       case 3:
-        for (const bias of biases) {
-          const missingRationale = bias.lifecycleAssignments.filter(
-            (s) => !bias.rationale[s]
-          );
-          if (missingRationale.length > 0) {
-            warnings.push(
-              `${bias.name} lacks rationale for ${missingRationale.length} stage(s)`
-            );
-          }
-        }
-        break;
-
-      case 4: {
-        const highRiskWithoutMitigation = biases.filter(
-          (b) =>
-            b.riskCategory === 'high-risk' &&
-            Object.values(b.mitigations).flat().length === 0
-        );
-        if (highRiskWithoutMitigation.length > 0) {
-          warnings.push(
-            `${highRiskWithoutMitigation.length} high-risk bias(es) have no mitigations`
-          );
-        }
-        break;
-      }
-
-      case 5: {
-        let missingNotes = 0;
-        for (const bias of biases) {
-          for (const [s, mitigationIds] of Object.entries(bias.mitigations)) {
-            for (const mitigationId of mitigationIds) {
-              const stageKey = s as LifecycleStage;
-              if (!bias.implementationNotes[stageKey]?.[mitigationId]) {
-                missingNotes++;
-              }
-            }
-          }
-        }
-        if (missingNotes > 0) {
-          warnings.push(
-            `${missingNotes} mitigation(s) lack implementation notes`
-          );
-        }
-        break;
-      }
+        return this.getStage3Warnings(biases);
+      case 4:
+        return this.getStage4Warnings(biases);
+      case 5:
+        return this.getStage5Warnings(biases);
       default:
-        // No warnings for other stages
-        break;
+        return [];
+    }
+  }
+
+  private getStage1Warnings(biases: BiasEntry[]): string[] {
+    const warnings: string[] = [];
+
+    if (biases.length === 0) {
+      warnings.push('No biases have been identified yet');
+    }
+
+    const unassessedCount = biases.filter((b) => !b.riskCategory).length;
+    if (unassessedCount > 0) {
+      warnings.push(`${unassessedCount} bias(es) still need risk assessment`);
+    }
+
+    return warnings;
+  }
+
+  private getStage2Warnings(biases: BiasEntry[]): string[] {
+    const warnings: string[] = [];
+    const unassignedCount = biases.filter(
+      (b) => b.lifecycleAssignments.length === 0
+    ).length;
+
+    if (unassignedCount > 0) {
+      warnings.push(
+        `${unassignedCount} bias(es) not assigned to any lifecycle stages`
+      );
+    }
+
+    return warnings;
+  }
+
+  private getStage3Warnings(biases: BiasEntry[]): string[] {
+    const warnings: string[] = [];
+
+    for (const bias of biases) {
+      const missingRationale = bias.lifecycleAssignments.filter(
+        (s) => !bias.rationale[s]
+      );
+      if (missingRationale.length > 0) {
+        warnings.push(
+          `${bias.name} lacks rationale for ${missingRationale.length} stage(s)`
+        );
+      }
+    }
+
+    return warnings;
+  }
+
+  private getStage4Warnings(biases: BiasEntry[]): string[] {
+    const warnings: string[] = [];
+    const highRiskWithoutMitigation = biases.filter(
+      (b) =>
+        b.riskCategory === 'high-risk' &&
+        Object.values(b.mitigations).flat().length === 0
+    );
+
+    if (highRiskWithoutMitigation.length > 0) {
+      warnings.push(
+        `${highRiskWithoutMitigation.length} high-risk bias(es) have no mitigations`
+      );
+    }
+
+    return warnings;
+  }
+
+  private getStage5Warnings(biases: BiasEntry[]): string[] {
+    const warnings: string[] = [];
+    let missingNotes = 0;
+
+    for (const bias of biases) {
+      for (const [s, mitigationIds] of Object.entries(bias.mitigations)) {
+        for (const mitigationId of mitigationIds) {
+          const stageKey = s as LifecycleStage;
+          if (!bias.implementationNotes[stageKey]?.[mitigationId]) {
+            missingNotes++;
+          }
+        }
+      }
+    }
+
+    if (missingNotes > 0) {
+      warnings.push(`${missingNotes} mitigation(s) lack implementation notes`);
     }
 
     return warnings;

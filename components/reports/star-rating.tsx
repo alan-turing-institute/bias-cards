@@ -32,7 +32,7 @@ export function StarRating({
               ? 'fill-amber-400 text-amber-400'
               : 'text-muted-foreground/30'
           )}
-          key={i}
+          key={`star-${i}-${max}-${value}`}
         />
       ))}
       {showLabel && (

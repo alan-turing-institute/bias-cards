@@ -273,8 +273,8 @@ export default function Stage4Client() {
     const assignments: StageAssignmentWithCard[] = [];
     const biases = currentActivity.getBiases();
 
-    Object.entries(biases).forEach(([biasId, bias]) => {
-      bias.lifecycleAssignments.forEach((stage) => {
+    for (const [biasId, bias] of Object.entries(biases)) {
+      for (const stage of bias.lifecycleAssignments) {
         const card = biasCards.find((c) => c.id === biasId);
         if (card) {
           assignments.push({
@@ -287,8 +287,8 @@ export default function Stage4Client() {
             riskCategory: bias.riskCategory || undefined,
           });
         }
-      });
-    });
+      }
+    }
 
     return assignments;
   };
@@ -302,18 +302,18 @@ export default function Stage4Client() {
     const pairs: (CardPair & { stage: LifecycleStage })[] = [];
     const biases = currentActivity.getBiases();
 
-    Object.entries(biases).forEach(([biasId, bias]) => {
-      Object.entries(bias.mitigations).forEach(([stage, mitigationIds]) => {
-        mitigationIds.forEach((mitigationId) => {
+    for (const [biasId, bias] of Object.entries(biases)) {
+      for (const [stage, mitigationIds] of Object.entries(bias.mitigations)) {
+        for (const mitigationId of mitigationIds) {
           pairs.push({
             biasId,
             mitigationId,
             stage: stage as LifecycleStage,
             timestamp: new Date().toISOString(),
           });
-        });
-      });
-    });
+        }
+      }
+    }
 
     return pairs;
   };
@@ -424,18 +424,18 @@ export default function Stage4Client() {
 
     // Remove all existing mitigations for this specific stage
     const currentMitigations = bias.mitigations[stage] || [];
-    currentMitigations.forEach((mitigationId) => {
+    for (const mitigationId of currentMitigations) {
       if (!mitigationIds.includes(mitigationId)) {
         removeMitigation(biasId, stage, mitigationId);
       }
-    });
+    }
 
     // Add new mitigations for this specific stage
-    mitigationIds.forEach((mitigationId) => {
+    for (const mitigationId of mitigationIds) {
       if (!currentMitigations.includes(mitigationId)) {
         addMitigation(biasId, stage, mitigationId);
       }
-    });
+    }
   };
 
   // Show loading state during hydration to prevent mismatch
@@ -546,8 +546,16 @@ export default function Stage4Client() {
                               assignment={assignment}
                               key={assignment.id}
                               mitigationCards={mitigationCards}
-                              onRemovePair={(biasId, stage, mitigationId) => {
-                                removeMitigation(biasId, stage, mitigationId);
+                              onRemovePair={(
+                                biasId,
+                                stageParam,
+                                mitigationId
+                              ) => {
+                                removeMitigation(
+                                  biasId,
+                                  stageParam,
+                                  mitigationId
+                                );
                               }}
                               onSelectMitigations={handleSelectMitigations}
                               pairsForBias={getPairsForBias(
@@ -587,8 +595,16 @@ export default function Stage4Client() {
                               assignment={assignment}
                               key={assignment.id}
                               mitigationCards={mitigationCards}
-                              onRemovePair={(biasId, stage, mitigationId) => {
-                                removeMitigation(biasId, stage, mitigationId);
+                              onRemovePair={(
+                                biasId,
+                                stageParam,
+                                mitigationId
+                              ) => {
+                                removeMitigation(
+                                  biasId,
+                                  stageParam,
+                                  mitigationId
+                                );
                               }}
                               onSelectMitigations={handleSelectMitigations}
                               pairsForBias={getPairsForBias(

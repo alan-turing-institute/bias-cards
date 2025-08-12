@@ -14,7 +14,9 @@ import type {
   CardPair,
   LifecycleStage,
   MitigationCard,
+  SimpleMilestone,
   StageAssignment,
+  WorkspaceProgress,
   WorkspaceState,
 } from '@/lib/types';
 import type { BiasEntry } from '@/lib/types/bias-activity';
@@ -22,6 +24,20 @@ import {
   type ActivityValidationResult,
   validateActivityCompletion,
 } from '@/lib/validation/activity-validation';
+
+// Interface for persisted activity state
+interface PersistedActivityState {
+  id?: string;
+  name?: string;
+  state?: { biases?: Record<string, BiasEntry> } & Record<string, unknown>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Extended workspace state with activity state
+interface WorkspaceStoreStateWithActivity extends WorkspaceState {
+  activityState?: PersistedActivityState;
+}
 
 interface WorkspaceStoreState extends WorkspaceState {
   // Core instances
@@ -144,6 +160,19 @@ interface WorkspaceStoreState extends WorkspaceState {
   canGenerateReport: () => boolean;
   getCompletionPercentage: () => number;
 
+  // Internal helpers used during initialization
+  createActivityFromPersistedState: (
+    deck: unknown,
+    BiasActivityClass: unknown,
+    persistedState: PersistedActivityState,
+    activityName: string
+  ) => BiasActivity;
+  createNewActivity: (
+    deck: unknown,
+    BiasActivityClass: unknown,
+    activityName: string
+  ) => BiasActivity;
+
   // Activity state getters (Phase 3)
   getCurrentActivity: () => BiasActivity | null;
   getCurrentDeck: () => BiasDeck | null;
@@ -166,19 +195,13 @@ interface WorkspaceStoreState extends WorkspaceState {
 }
 
 // Simplified interfaces for legacy compatibility
-interface SimpleMilestone {
-  id: string;
-  name: string;
-  description: string;
-  achieved: boolean;
-}
 
 // Simple action interface for workspace history
 interface WorkspaceAction {
   type: string;
   description?: string;
-  payload?: any;
-  data?: any;
+  payload?: Record<string, unknown>;
+  data?: Record<string, unknown>;
   timestamp: string;
   inverse?: WorkspaceAction;
 }
@@ -193,14 +216,6 @@ interface WorkspaceHistory {
 }
 
 // Simple progress interface
-interface WorkspaceProgress {
-  totalCards: number;
-  assignedCards: number;
-  pairedCards: number;
-  completionPercentage: number;
-  timeSpent: number;
-  milestones: SimpleMilestone[];
-}
 
 const createInitialMilestones = (): SimpleMilestone[] => [
   {
@@ -1030,6 +1045,47 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
           return (get().completedStages || []).includes(stage);
         },
 
+        // Helper to create activity with persisted state
+        createActivityFromPersistedState: (
+          deck: unknown,
+          BiasActivityClass: unknown,
+          persistedState: PersistedActivityState,
+          activityName: string
+        ) => {
+          const ActivityConstructor = BiasActivityClass as new (
+            deck: unknown,
+            options: { name: string; id?: string }
+          ) => BiasActivity;
+          const activity = new ActivityConstructor(deck, {
+            name: persistedState.name || activityName,
+            id: get().activityId || persistedState.id,
+          });
+
+          Object.assign(activity, {
+            state: persistedState.state,
+            createdAt: new Date(persistedState.createdAt || Date.now()),
+            updatedAt: new Date(persistedState.updatedAt || Date.now()),
+          });
+
+          return activity;
+        },
+
+        // Helper to create new activity
+        createNewActivity: (
+          deck: unknown,
+          BiasActivityClass: unknown,
+          activityName: string
+        ) => {
+          const ActivityConstructor = BiasActivityClass as new (
+            deck: unknown,
+            options: { name: string; id?: string }
+          ) => BiasActivity;
+          return new ActivityConstructor(deck, {
+            name: activityName,
+            id: get().activityId,
+          });
+        },
+
         // Workspace management
         initialize: async (activityName = 'New Activity') => {
           try {
@@ -1042,43 +1098,35 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
 
             const deck = await BiasDeckClass.getInstance();
 
-            // Check if we have persisted activity state to restore
-            const persistedState = (get() as any).activityState;
+            const persistedState = (get() as WorkspaceStoreStateWithActivity)
+              .activityState;
+
             let activity: BiasActivity;
-
-            // More flexible restoration: check if we have persisted state and it's compatible
-            // Don't require exact ID match since IDs can change during transitions
             if (persistedState?.state?.biases) {
-              activity = new BiasActivityClass(deck, {
-                name: persistedState.name || activityName,
-                id: get().activityId || persistedState.id, // Use workspace ID if available
-              });
+              activity = get().createActivityFromPersistedState(
+                deck,
+                BiasActivityClass,
+                persistedState,
+                activityName
+              );
 
-              // Restore the internal state
-              (activity as any).state = persistedState.state;
-              (activity as any).createdAt = new Date(persistedState.createdAt);
-              (activity as any).updatedAt = new Date(persistedState.updatedAt);
-
-              // Also ensure biasRiskAssignments are populated in the activity
+              // Restore bias risk assignments if needed
               const biasRiskAssignments = get().biasRiskAssignments || [];
-              if (biasRiskAssignments.length > 0) {
-                for (const assignment of biasRiskAssignments) {
-                  // Ensure the bias entry exists with the risk category
-                  const bias = activity.getBias(assignment.cardId);
-                  if (!bias.riskCategory) {
-                    activity.assignBiasRisk(
-                      assignment.cardId,
-                      assignment.riskCategory
-                    );
-                  }
+              for (const assignment of biasRiskAssignments) {
+                const bias = activity.getBias(assignment.cardId);
+                if (!bias.riskCategory) {
+                  activity.assignBiasRisk(
+                    assignment.cardId,
+                    assignment.riskCategory
+                  );
                 }
               }
             } else {
-              // Create new activity
-              activity = new BiasActivityClass(deck, {
-                name: activityName,
-                id: get().activityId, // Use workspace activity ID for new activities
-              });
+              activity = get().createNewActivity(
+                deck,
+                BiasActivityClass,
+                activityName
+              );
             }
 
             set((_state) => ({
@@ -1088,7 +1136,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
               name: activity.name,
               lastModified: new Date().toISOString(),
             }));
-          } catch (_error) {}
+          } catch (_error) {
+            // Silently handle errors during initialization
+          }
         },
 
         resetWorkspace: () => {
@@ -1279,8 +1329,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
                 0
               ),
               completionPercentage: progress,
-              timeSpent: state.activityProgress.timeSpent,
-              milestones: state.activityProgress.milestones,
+              timeSpent: state.activityProgress?.timeSpent || 0,
+              milestones: state.activityProgress?.milestones || [],
             };
           }
 
@@ -1299,8 +1349,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
             assignedCards,
             pairedCards,
             completionPercentage,
-            timeSpent: state.activityProgress.timeSpent,
-            milestones: state.activityProgress.milestones,
+            timeSpent: state.activityProgress?.timeSpent || 0,
+            milestones: state.activityProgress?.milestones || [],
           };
         },
 
@@ -1400,9 +1450,14 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
           const state = get();
 
           // If no current activity but we have persisted state, attempt to restore
-          if (!state.currentActivity && (state as any).activityState) {
+          if (
+            !state.currentActivity &&
+            (state as WorkspaceStoreStateWithActivity).activityState
+          ) {
             // Trigger restoration asynchronously (won't be available on this call but will on next)
-            state.initialize().catch((_error) => {});
+            state.initialize().catch((_error) => {
+              // Silently handle restoration errors
+            });
             return null; // Will be available on next call after restoration completes
           }
 
@@ -1705,7 +1760,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
         migrate: (persistedState: unknown, _version: number) => {
           // Type guard for persisted state
           const state = persistedState as Partial<
-            WorkspaceState & { activityState?: any }
+            WorkspaceState & { activityState?: unknown }
           >;
 
           // Add IDs to existing assignments that don't have them
@@ -1723,9 +1778,10 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
             );
           }
 
-          // Preserve activityState if it exists
-          if ((state as any)?.activityState) {
-            (state as any).activityState = (state as any).activityState;
+          // Preserve activityState if it exists (no-op but kept for future state migration logic)
+          const stateWithActivity = state as WorkspaceStoreStateWithActivity;
+          if (stateWithActivity.activityState) {
+            // Activity state is already preserved during rehydration
           }
 
           return state;
@@ -1737,11 +1793,17 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
           }
 
           // After rehydration, check if we have activityState but no currentActivity
-          if (state && (state as any).activityState && !state.currentActivity) {
+          if (
+            state &&
+            (state as WorkspaceStoreStateWithActivity).activityState &&
+            !state.currentActivity
+          ) {
             // Automatically restore the BiasActivity
             // We need to call initialize after a small delay to ensure all stores are ready
             setTimeout(() => {
-              state.initialize().catch((_error: unknown) => {});
+              state.initialize().catch((_error: unknown) => {
+                // Silently handle delayed initialization errors
+              });
             }, 100);
           }
         },

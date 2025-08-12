@@ -1,7 +1,29 @@
-import type { LifecycleStage } from './cards';
+import type {
+  BiasRiskAssignment,
+  CardPair,
+  LifecycleStage,
+  StageAssignment,
+} from './cards';
 
 // Simplified workspace types for v2 architecture
 // Most state is now managed directly by BiasActivity
+
+// Progress tracking interfaces
+export interface SimpleMilestone {
+  id: string;
+  name: string;
+  description: string;
+  achieved: boolean;
+}
+
+export interface WorkspaceProgress {
+  totalCards: number;
+  assignedCards: number;
+  pairedCards: number;
+  completionPercentage: number;
+  timeSpent: number;
+  milestones: SimpleMilestone[];
+}
 
 export interface WorkspaceFilters {
   category?: string;
@@ -40,11 +62,11 @@ export interface WorkspaceState {
   currentStage?: number;
 
   // These fields are computed from BiasActivity in v2
-  biasRiskAssignments?: any[];
-  stageAssignments?: any[];
-  cardPairs?: any[];
+  biasRiskAssignments?: BiasRiskAssignment[];
+  stageAssignments?: StageAssignment[];
+  cardPairs?: CardPair[];
   selectedCardIds?: string[];
   customAnnotations?: Record<string, string>;
   completedStages?: LifecycleStage[];
-  activityProgress?: any;
+  activityProgress?: WorkspaceProgress;
 }

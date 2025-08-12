@@ -52,7 +52,9 @@ export type {
 } from './reports';
 export type {
   SavedWorkspace,
+  SimpleMilestone,
   WorkspaceFilters,
+  WorkspaceProgress,
   WorkspaceSettings,
   WorkspaceState,
 } from './workspace';

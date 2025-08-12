@@ -26,55 +26,86 @@ export interface ActivityImportData {
   };
 }
 
-// Simplified validation for v2 format only
-export function validateImportData(data: unknown): ImportValidationResult {
+// Helper to validate basic object structure
+function validateBasicStructure(data: unknown): ImportValidationResult {
   const result: ImportValidationResult = {
     isValid: true,
     errors: [],
     warnings: [],
   };
 
-  // Check if data is an object
   if (!data || typeof data !== 'object') {
     result.isValid = false;
     result.errors.push('Import file must contain a valid JSON object');
-    return result;
   }
 
-  const importData = data as ActivityImportData;
+  return result;
+}
 
-  // Check if it's wrapped format or direct format
-  const activityData = importData.activityData || importData;
+// Helper to validate activity fields
+function validateActivityFields(
+  activityData: unknown,
+  result: ImportValidationResult
+): void {
+  const data = activityData as Record<string, unknown>;
 
-  // Validate required fields for BiasActivityData
-  if (!activityData.id || typeof activityData.id !== 'string') {
+  if (!data.id || typeof data.id !== 'string') {
     result.errors.push('Activity must have a valid ID');
     result.isValid = false;
   }
 
-  if (!activityData.name || typeof activityData.name !== 'string') {
+  if (!data.name || typeof data.name !== 'string') {
     result.errors.push('Activity must have a valid name');
     result.isValid = false;
   }
 
-  if (!activityData.biases || typeof activityData.biases !== 'object') {
+  if (!data.biases || typeof data.biases !== 'object') {
     result.errors.push('Activity must contain a biases object');
     result.isValid = false;
   }
+}
 
-  if (!activityData.state || typeof activityData.state !== 'object') {
+// Helper to validate state structure
+function validateStateStructure(
+  activityData: unknown,
+  result: ImportValidationResult
+): void {
+  const data = activityData as Record<string, unknown>;
+
+  if (!data.state || typeof data.state !== 'object') {
     result.errors.push('Activity must have state information');
     result.isValid = false;
-  } else {
-    const state = activityData.state as any;
-    if (typeof state.currentStage !== 'number') {
-      result.errors.push('State must have a valid currentStage number');
-      result.isValid = false;
-    }
-    if (!Array.isArray(state.completedStages)) {
-      result.warnings.push('State should have a completedStages array');
-    }
+    return;
   }
+
+  const state = data.state as {
+    currentStage?: unknown;
+    completedStages?: unknown;
+  };
+
+  if (typeof state.currentStage !== 'number') {
+    result.errors.push('State must have a valid currentStage number');
+    result.isValid = false;
+  }
+
+  if (!Array.isArray(state.completedStages)) {
+    result.warnings.push('State should have a completedStages array');
+  }
+}
+
+// Simplified validation for v2 format only
+export function validateImportData(data: unknown): ImportValidationResult {
+  const result = validateBasicStructure(data);
+
+  if (!result.isValid) {
+    return result;
+  }
+
+  const importData = data as ActivityImportData;
+  const activityData = importData.activityData || importData;
+
+  validateActivityFields(activityData, result);
+  validateStateStructure(activityData, result);
 
   return result;
 }

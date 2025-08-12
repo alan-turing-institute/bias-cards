@@ -98,11 +98,11 @@ function extractActivityData(
 /**
  * Perform the migration from v1 to v2
  */
-export async function migrateToV2(): Promise<{
+export function migrateToV2(): {
   success: boolean;
   message: string;
   migratedCount: number;
-}> {
+} {
   if (!needsMigration()) {
     return {
       success: true,
@@ -128,7 +128,9 @@ export async function migrateToV2(): Promise<{
       try {
         const oldWorkspace = JSON.parse(oldWorkspaceStr) as OldWorkspaceStore;
         activityData = extractActivityData(oldWorkspace);
-      } catch (_error) {}
+      } catch (_error) {
+        // Failed to parse workspace data - continue without it
+      }
     }
 
     // Extract activity list from activity store
@@ -142,7 +144,9 @@ export async function migrateToV2(): Promise<{
             description: a.description,
           }));
         }
-      } catch (_error) {}
+      } catch (_error) {
+        // Failed to parse activity data - continue without it
+      }
     }
 
     // Step 2: Create new v2 store structure
