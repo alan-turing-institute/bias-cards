@@ -2,12 +2,13 @@ import { BiasActivity } from '@/lib/activities/bias-activity';
 import { BiasDeck } from '@/lib/cards/decks/bias-deck';
 import type { Activity } from '@/lib/types/activity';
 import type { BiasActivityData } from '@/lib/types/bias-activity';
-import type { BiasCard, MitigationCard } from '@/lib/types/cards';
-import type { ProjectInfo } from '@/lib/types/project-info';
 import type { Report, ReportSummary } from '@/lib/types/reports';
 
 // Demo Activities - Educational examples in different domains
+// Temporarily disabled - will recreate later
 export const DEMO_ACTIVITIES: Partial<Activity>[] = [
+  // Commented out for clean state
+  /*
   {
     id: 'demo-ai-triage-tool',
     title: 'AI Risk Assessment Tool',
@@ -204,10 +205,14 @@ export const DEMO_ACTIVITIES: Partial<Activity>[] = [
       },
     },
   },
+  */
 ];
 
 // Demo Reports - Complete with analysis and tracking
+// Temporarily disabled - will recreate later
 export const DEMO_REPORTS: Partial<Report>[] = [
+  // Commented out for clean state
+  /*
   {
     id: 'demo-report-financial',
     activityId: 'demo-financial-credit',
@@ -661,6 +666,7 @@ export const DEMO_REPORTS: Partial<Report>[] = [
       },
     ],
   },
+  */
 ];
 
 // Helper function to get demo report summaries

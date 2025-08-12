@@ -41,10 +41,11 @@ const CATEGORY_CONFIG: Record<
     description: 'Biases with significant potential impact on your project',
     icon: AlertTriangle,
     colors: {
-      bg: 'bg-red-50 dark:bg-red-950/20',
-      border: 'border-red-200 dark:border-red-800',
+      // In dark mode, use mid-tone with low alpha for clearer contrast
+      bg: 'bg-red-50 dark:bg-red-500/10',
+      border: 'border-red-200 dark:border-red-500/40',
       text: 'text-red-700 dark:text-red-300',
-      hover: 'border-red-300 dark:border-red-700',
+      hover: 'border-red-300 dark:border-red-400',
     },
   },
   'medium-risk': {
@@ -52,10 +53,10 @@ const CATEGORY_CONFIG: Record<
     description: 'Biases that may impact your project under certain conditions',
     icon: AlertTriangle,
     colors: {
-      bg: 'bg-amber-50 dark:bg-amber-950/20',
-      border: 'border-amber-200 dark:border-amber-800',
+      bg: 'bg-amber-50 dark:bg-amber-500/10',
+      border: 'border-amber-200 dark:border-amber-500/40',
       text: 'text-amber-700 dark:text-amber-300',
-      hover: 'border-amber-300 dark:border-amber-700',
+      hover: 'border-amber-300 dark:border-amber-400',
     },
   },
   'low-risk': {
@@ -63,10 +64,10 @@ const CATEGORY_CONFIG: Record<
     description: 'Biases with minimal impact on your specific project context',
     icon: CheckCircle,
     colors: {
-      bg: 'bg-green-50 dark:bg-green-950/20',
-      border: 'border-green-200 dark:border-green-800',
+      bg: 'bg-green-50 dark:bg-green-500/10',
+      border: 'border-green-200 dark:border-green-500/40',
       text: 'text-green-700 dark:text-green-300',
-      hover: 'border-green-300 dark:border-green-700',
+      hover: 'border-green-300 dark:border-green-400',
     },
   },
   'needs-discussion': {
@@ -74,10 +75,10 @@ const CATEGORY_CONFIG: Record<
     description: 'Biases requiring team input or further analysis',
     icon: HelpCircle,
     colors: {
-      bg: 'bg-blue-50 dark:bg-blue-950/20',
-      border: 'border-blue-200 dark:border-blue-800',
+      bg: 'bg-blue-50 dark:bg-blue-500/10',
+      border: 'border-blue-200 dark:border-blue-500/40',
       text: 'text-blue-700 dark:text-blue-300',
-      hover: 'border-blue-300 dark:border-blue-700',
+      hover: 'border-blue-300 dark:border-blue-400',
     },
   },
 };
@@ -116,7 +117,7 @@ export function RiskCategoryZone({
         'flex h-full flex-col transition-all duration-200',
         config.colors.bg,
         config.colors.border,
-        isOver && 'shadow-lg ring-2',
+        isOver && 'shadow-lg ring-2 ring-primary/30',
         isOver && config.colors.hover
       )}
     >
@@ -144,7 +145,7 @@ export function RiskCategoryZone({
       <CardContent className="flex flex-1 flex-col p-3 pt-0">
         <div
           className={cn(
-            'relative flex-1 rounded-lg border-2 border-dashed transition-all duration-200',
+            'relative flex-1 rounded-lg border-2 border-dashed p-0 transition-all duration-200',
             isOver
               ? cn(config.colors.border, config.colors.bg)
               : 'border-muted-foreground/25'
@@ -152,7 +153,7 @@ export function RiskCategoryZone({
           ref={setNodeRef}
         >
           {categoryCards.length > 0 ? (
-            <ScrollArea className="h-full p-2">
+            <ScrollArea className="h-full">
               <div className="space-y-2">
                 {categoryCards.map(({ card, assignment }) => (
                   <DraggableCardEnhanced
@@ -170,7 +171,7 @@ export function RiskCategoryZone({
                       {/* Remove button */}
                       <button
                         aria-label={`Remove ${card.name} from ${config.title}`}
-                        className="absolute top-2 right-2 z-20 flex h-6 w-6 items-center justify-center rounded-md border bg-white/90 opacity-0 shadow-sm backdrop-blur-sm transition-all hover:border-red-500 hover:bg-red-500 hover:text-white group-hover:opacity-100"
+                        className="absolute top-2 right-2 z-20 flex h-6 w-6 items-center justify-center rounded-md border bg-background/90 opacity-0 shadow-sm backdrop-blur-sm transition-all hover:border-destructive hover:bg-destructive hover:text-destructive-foreground group-hover:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();

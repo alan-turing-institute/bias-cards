@@ -54,7 +54,7 @@ export function PairsList({ className }: PairsListProps) {
 
             return (
               <div
-                className="space-y-3 rounded-lg border bg-gray-50 p-4"
+                className="space-y-3 rounded-lg border bg-muted p-4"
                 key={`${pair.biasId}-${pair.mitigationId}`}
               >
                 {/* Bias Card */}
@@ -67,7 +67,7 @@ export function PairsList({ className }: PairsListProps) {
 
                 {/* Connection indicator */}
                 <div className="flex justify-center">
-                  <div className="h-8 w-0.5 bg-amber-300" />
+                  <div className="h-8 w-0.5 bg-primary" />
                 </div>
 
                 {/* Mitigation Card */}

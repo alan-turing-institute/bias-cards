@@ -61,8 +61,16 @@ interface AssignmentCardProps {
   showDescriptions: boolean;
   pairsForBias: (CardPair & { stage: LifecycleStage })[];
   mitigationCards: MitigationCard[];
-  onSelectMitigations: (biasId: string, mitigationIds: string[]) => void;
-  onRemovePair: (biasId: string, mitigationId: string) => void;
+  onSelectMitigations: (
+    biasId: string,
+    stage: LifecycleStage,
+    mitigationIds: string[]
+  ) => void;
+  onRemovePair: (
+    biasId: string,
+    stage: LifecycleStage,
+    mitigationId: string
+  ) => void;
 }
 
 // Helper component for rendering assignment cards
@@ -153,8 +161,8 @@ const AssignmentCard = ({
             <SelectedMitigations
               existingPairs={pairsForBias}
               mitigationCards={mitigationCards}
-              onRemovePair={(mitigationId) =>
-                onRemovePair(assignment.cardId, mitigationId)
+              onRemovePair={(stage, mitigationId) =>
+                onRemovePair(assignment.cardId, stage, mitigationId)
               }
             />
             <MitigationSelectionDialog
@@ -162,7 +170,11 @@ const AssignmentCard = ({
               biasCardName={assignment.card.name}
               mitigationCards={mitigationCards}
               onSelectMitigations={(mitigationIds) =>
-                onSelectMitigations(assignment.cardId, mitigationIds)
+                onSelectMitigations(
+                  assignment.cardId,
+                  assignment.stage,
+                  mitigationIds
+                )
               }
               selectedMitigations={pairsForBias.map((p) => p.mitigationId)}
             />
@@ -180,7 +192,7 @@ function SelectedMitigations({
   mitigationCards,
 }: {
   existingPairs: (CardPair & { stage: LifecycleStage })[];
-  onRemovePair: (mitigationId: string) => void;
+  onRemovePair: (stage: LifecycleStage, mitigationId: string) => void;
   mitigationCards: MitigationCard[];
 }) {
   if (existingPairs.length === 0) {
@@ -217,7 +229,7 @@ function SelectedMitigations({
               className="absolute top-2 right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-100 text-red-600 hover:bg-red-200"
               onClick={(e) => {
                 e.stopPropagation();
-                onRemovePair(pair.mitigationId);
+                onRemovePair(pair.stage, pair.mitigationId);
               }}
               type="button"
             >
@@ -254,7 +266,9 @@ export default function Stage4Client() {
 
   // Get stage assignments from current activity
   const getStageAssignments = (): StageAssignmentWithCard[] => {
-    if (!currentActivity) return [];
+    if (!currentActivity) {
+      return [];
+    }
 
     const assignments: StageAssignmentWithCard[] = [];
     const biases = currentActivity.getBiases();
@@ -281,7 +295,9 @@ export default function Stage4Client() {
 
   // Get card pairs (bias-mitigation mappings) from current activity
   const getCardPairs = (): (CardPair & { stage: LifecycleStage })[] => {
-    if (!currentActivity) return [];
+    if (!currentActivity) {
+      return [];
+    }
 
     const pairs: (CardPair & { stage: LifecycleStage })[] = [];
     const biases = currentActivity.getBiases();
@@ -377,40 +393,48 @@ export default function Stage4Client() {
     }
   };
 
-  // Get pairs for a specific bias
+  // Get pairs for a specific bias and stage
   const getPairsForBias = (
-    biasId: string
+    biasId: string,
+    stage?: LifecycleStage
   ): (CardPair & { stage: LifecycleStage })[] => {
-    return cardPairs.filter((p) => p.biasId === biasId);
+    return cardPairs.filter((p) => {
+      if (stage) {
+        return p.biasId === biasId && p.stage === stage;
+      }
+      return p.biasId === biasId;
+    });
   };
 
-  // Handle selecting mitigations for a bias card
-  const handleSelectMitigations = (biasId: string, mitigationIds: string[]) => {
-    if (!currentActivity) return;
+  // Handle selecting mitigations for a bias card at a specific stage
+  const handleSelectMitigations = (
+    biasId: string,
+    stage: LifecycleStage,
+    mitigationIds: string[]
+  ) => {
+    if (!currentActivity) {
+      return;
+    }
 
     // Get the bias object
     const bias = currentActivity.getBias(biasId);
-    if (!bias) return;
+    if (!bias) {
+      return;
+    }
 
-    // Get the lifecycle stage(s) for this bias
-    const stages = bias.lifecycleAssignments;
+    // Remove all existing mitigations for this specific stage
+    const currentMitigations = bias.mitigations[stage] || [];
+    currentMitigations.forEach((mitigationId) => {
+      if (!mitigationIds.includes(mitigationId)) {
+        removeMitigation(biasId, stage, mitigationId);
+      }
+    });
 
-    // For each stage, update the mitigations
-    stages.forEach((stage) => {
-      // Remove all existing mitigations for this stage
-      const currentMitigations = bias.mitigations[stage] || [];
-      currentMitigations.forEach((mitigationId) => {
-        if (!mitigationIds.includes(mitigationId)) {
-          removeMitigation(biasId, stage, mitigationId);
-        }
-      });
-
-      // Add new mitigations
-      mitigationIds.forEach((mitigationId) => {
-        if (!currentMitigations.includes(mitigationId)) {
-          addMitigation(biasId, stage, mitigationId);
-        }
-      });
+    // Add new mitigations for this specific stage
+    mitigationIds.forEach((mitigationId) => {
+      if (!currentMitigations.includes(mitigationId)) {
+        addMitigation(biasId, stage, mitigationId);
+      }
     });
   };
 
@@ -522,17 +546,14 @@ export default function Stage4Client() {
                               assignment={assignment}
                               key={assignment.id}
                               mitigationCards={mitigationCards}
-                              onRemovePair={(mitigationId) => {
-                                if (assignment.stage) {
-                                  removeMitigation(
-                                    assignment.cardId,
-                                    assignment.stage,
-                                    mitigationId
-                                  );
-                                }
+                              onRemovePair={(biasId, stage, mitigationId) => {
+                                removeMitigation(biasId, stage, mitigationId);
                               }}
                               onSelectMitigations={handleSelectMitigations}
-                              pairsForBias={getPairsForBias(assignment.cardId)}
+                              pairsForBias={getPairsForBias(
+                                assignment.cardId,
+                                assignment.stage
+                              )}
                               showDescriptions={showDescriptions}
                               viewMode="lifecycle"
                             />
@@ -566,17 +587,14 @@ export default function Stage4Client() {
                               assignment={assignment}
                               key={assignment.id}
                               mitigationCards={mitigationCards}
-                              onRemovePair={(mitigationId) => {
-                                if (assignment.stage) {
-                                  removeMitigation(
-                                    assignment.cardId,
-                                    assignment.stage,
-                                    mitigationId
-                                  );
-                                }
+                              onRemovePair={(biasId, stage, mitigationId) => {
+                                removeMitigation(biasId, stage, mitigationId);
                               }}
                               onSelectMitigations={handleSelectMitigations}
-                              pairsForBias={getPairsForBias(assignment.cardId)}
+                              pairsForBias={getPairsForBias(
+                                assignment.cardId,
+                                assignment.stage
+                              )}
                               showDescriptions={showDescriptions}
                               viewMode="risk"
                             />

@@ -157,7 +157,7 @@ export function DriveFileManager({
         </div>
 
         {error && (
-          <div className="mb-4 rounded-md bg-red-50 p-3 text-red-600 dark:bg-red-950 dark:text-red-400">
+          <div className="mb-4 rounded-md bg-destructive/10 p-3 text-destructive">
             {error}
           </div>
         )}

@@ -65,6 +65,9 @@ export interface BiasIdentification {
     /** User who identified this bias */
     identifiedBy: string;
 
+    /** Rationale for assigning this bias to this stage (from Stage 3) */
+    rationale?: string;
+
     /** Stage-specific context for this bias */
     stageContext?: {
       /** Specific activities where bias applies */
@@ -86,6 +89,12 @@ export interface MitigationStrategy {
   /** ID of the bias this mitigation addresses */
   biasId: string;
 
+  /** Name of the bias for display */
+  biasName?: string;
+
+  /** Lifecycle stage where this mitigation is applied */
+  lifecycleStage?: LifecycleStage;
+
   /** Mitigation approaches for this bias */
   mitigations: Array<{
     /** The mitigation card being applied */
@@ -102,6 +111,12 @@ export interface MitigationStrategy {
 
     /** Priority level for implementation */
     priority: 'low' | 'medium' | 'high';
+
+    /** Effectiveness rating from Stage 5 (1-5 stars) */
+    effectivenessRating?: number;
+
+    /** Implementation notes from Stage 5 */
+    implementationNotes?: string;
 
     /** Estimated effort required */
     effort?: {
@@ -270,6 +285,33 @@ export interface ReportExportConfig {
 }
 
 /**
+ * Risk assessment summary from Stage 1
+ */
+export interface RiskAssessmentSummary {
+  /** Total number of biases assessed */
+  totalAssessed: number;
+
+  /** Distribution by risk category */
+  distribution: {
+    high: number;
+    medium: number;
+    low: number;
+    unassigned: number;
+  };
+
+  /** Biases by risk category with details */
+  biasesByCategory: {
+    high: Array<{ id: string; name: string; assignedAt?: string }>;
+    medium: Array<{ id: string; name: string; assignedAt?: string }>;
+    low: Array<{ id: string; name: string; assignedAt?: string }>;
+    unassigned: Array<{ id: string; name: string }>;
+  };
+
+  /** Completion percentage for Stage 1 */
+  completionPercentage: number;
+}
+
+/**
  * Complete report data structure with all components
  */
 export interface Report {
@@ -326,6 +368,9 @@ export interface Report {
 
   /** Core analysis content */
   analysis: {
+    /** Risk assessment summary from Stage 1 */
+    riskAssessmentSummary?: RiskAssessmentSummary;
+
     /** Bias identification across lifecycle stages */
     biasIdentification: BiasIdentification[];
 

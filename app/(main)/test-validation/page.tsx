@@ -14,7 +14,7 @@ import {
 export default function TestV2MigrationPage() {
   const [migrationStatus, setMigrationStatus] = useState<string>('Checking...');
   const [oldData, setOldData] = useState<any>(null);
-  const [newData, setNewData] = useState<any>(null);
+  const [newData, setNewData] = useState<unknown>(null);
   const [needsMigrationFlag, setNeedsMigrationFlag] = useState(false);
 
   const {
@@ -25,10 +25,6 @@ export default function TestV2MigrationPage() {
     isLoading,
     error,
   } = useUnifiedActivityStore();
-
-  useEffect(() => {
-    checkStatus();
-  }, []);
 
   const checkStatus = () => {
     // Check if migration is needed
@@ -100,6 +96,10 @@ export default function TestV2MigrationPage() {
       window.location.reload();
     }
   };
+
+  useEffect(() => {
+    checkStatus();
+  }, []);
 
   return (
     <div className="container mx-auto space-y-6 p-6">
@@ -191,17 +191,21 @@ export default function TestV2MigrationPage() {
                 <div>
                   <h3 className="font-semibold">Activity Store:</h3>
                   <div className="mt-2 max-h-64 overflow-y-auto rounded bg-muted p-2">
-                    {oldData.activity?.state?.activities ? (
+                    {(oldData as any)?.activity?.state?.activities ? (
                       <div>
                         <p>
-                          Activities: {oldData.activity.state.activities.length}
+                          Activities:{' '}
+                          {(oldData as any)?.activity?.state?.activities
+                            ?.length || 0}
                         </p>
                         <ul className="mt-2 space-y-1">
-                          {oldData.activity.state.activities.map((a: any) => (
-                            <li className="text-sm" key={a.id}>
-                              • {a.title || a.name}
-                            </li>
-                          ))}
+                          {(oldData as any)?.activity?.state?.activities?.map(
+                            (a: any) => (
+                              <li className="text-sm" key={a.id}>
+                                • {a.title || a.name}
+                              </li>
+                            )
+                          )}
                         </ul>
                       </div>
                     ) : (
@@ -224,7 +228,7 @@ export default function TestV2MigrationPage() {
             {newData ? (
               <div className="space-y-4">
                 <div>
-                  <p>Version: {newData.version}</p>
+                  <p>Version: {(newData as any)?.version || 'unknown'}</p>
                   <p>Hydrated: {isHydrated ? 'Yes' : 'No'}</p>
                   <p>Loading: {isLoading ? 'Yes' : 'No'}</p>
                   {error && <p className="text-red-500">Error: {error}</p>}

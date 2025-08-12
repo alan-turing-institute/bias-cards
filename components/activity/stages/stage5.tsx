@@ -3,6 +3,7 @@
 import { Edit3, FileText, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { StageNavigation } from '@/components/stage-navigation';
+import { ActivityCompletionDialog } from '@/components/ui/activity-completion-dialog';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,7 +15,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
 import { useHashRouter } from '@/lib/routing/hash-router';
-import { navigateToReport } from '@/lib/routing/navigation';
+import {
+  navigateToDashboard,
+  navigateToReport,
+} from '@/lib/routing/navigation';
 import { useCardsStore } from '@/lib/stores/cards-store';
 import { useReportsStore } from '@/lib/stores/reports-store';
 import { useUnifiedActivityStore } from '@/lib/stores/unified-activity-store';
@@ -150,7 +154,7 @@ function PairEditModal({
         aria-labelledby="dialog-title"
         aria-modal="true"
         className={cn(
-          '-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg bg-white shadow-lg',
+          '-translate-x-1/2 -translate-y-1/2 fixed top-1/2 left-1/2 z-50 max-h-[90vh] w-full max-w-2xl overflow-auto rounded-lg bg-background text-foreground shadow-lg',
           open ? 'opacity-100' : 'pointer-events-none opacity-0'
         )}
         role="dialog"
@@ -350,10 +354,13 @@ export default function Stage5Client() {
   const [showWithNotes, setShowWithNotes] = useState(true);
   const [isInitializing, setIsInitializing] = useState(true);
   const [isClient, setIsClient] = useState(false);
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
 
   // Get enriched card pairs from current activity
   const getEnrichedPairs = (): EnrichedCardPair[] => {
-    if (!currentActivity) return [];
+    if (!currentActivity) {
+      return [];
+    }
 
     const pairs: EnrichedCardPair[] = [];
     const biases = currentActivity.getBiases();
@@ -450,44 +457,232 @@ export default function Stage5Client() {
       : 0;
   const isStageComplete = completionRate >= 0.5; // 50% completion (either rating or notes for each pair)
 
-  const handleCompleteStage = async () => {
-    if (!(activityId && currentActivity)) return;
+  const handleCompleteStage = () => {
+    // Show the completion dialog instead of directly completing
+    setShowCompletionDialog(true);
+  };
+
+  const handleGenerateReport = async () => {
+    if (!(activityId && currentActivity)) {
+      return;
+    }
 
     // Complete the activity
     completeStage(5);
 
-    // Generate report in the reports system
-    const { generateReportFromWorkspace } = useReportsStore.getState();
+    // Generate report directly from current activity
+    const { createReport, updateReport } = useReportsStore.getState();
+
     try {
-      const reportId = await generateReportFromWorkspace(activityId, {
-        title: currentActivity.name || '',
-        description: '',
-        domain: 'General',
-        objectives: '',
-        scope: '',
-        status: 'testing' as const,
-        timeline: {
-          startDate: currentActivity.getState().startTime,
-          endDate: new Date().toISOString(),
-          milestones: [],
-        },
-        team: {
-          projectLead: {
-            name: '',
-            role: '',
-            responsibilities: '',
+      // Create the report
+      const reportId = createReport(
+        activityId,
+        {
+          title: currentActivity.name || '',
+          description: currentActivity.description || '',
+          domain: 'General',
+          objectives: '',
+          scope: '',
+          status: 'planning' as const,
+          timeline: {
+            startDate: currentActivity.getState().startTime,
+            endDate: new Date().toISOString(),
+            milestones: [],
           },
-          members: [],
-          stakeholders: [],
+          team: {
+            projectLead: {
+              name: '',
+              role: '',
+              responsibilities: '',
+            },
+            members: [],
+            stakeholders: [],
+          },
         },
+        'default-user',
+        'Anonymous User'
+      );
+
+      // Generate analysis from current activity
+      const biases = currentActivity.getBiases();
+      const biasIdentificationsByStage: Record<string, any[]> = {};
+      const mitigationStrategiesByBias: Record<string, any> = {};
+
+      // Generate risk assessment summary (Stage 1)
+      const riskDistribution = { high: 0, medium: 0, low: 0, unassigned: 0 };
+      const biasesByCategory: {
+        high: Array<{ id: string; name: string; assignedAt?: string }>;
+        medium: Array<{ id: string; name: string; assignedAt?: string }>;
+        low: Array<{ id: string; name: string; assignedAt?: string }>;
+        unassigned: Array<{ id: string; name: string }>;
+      } = {
+        high: [],
+        medium: [],
+        low: [],
+        unassigned: [],
+      };
+
+      Object.entries(biases).forEach(([biasId, biasData]) => {
+        const biasCard = biasCards.find((c) => c.id === biasId);
+        if (!biasCard) {
+          return;
+        }
+
+        // Process risk assessment (Stage 1)
+        if (biasData.riskCategory) {
+          const category = biasData.riskCategory.replace('-risk', '') as
+            | 'high'
+            | 'medium'
+            | 'low';
+
+          // Ensure the category exists in our objects
+          if (category in riskDistribution && category in biasesByCategory) {
+            riskDistribution[category]++;
+            biasesByCategory[category].push({
+              id: biasId,
+              name: biasCard.name,
+              assignedAt: biasData.riskAssignedAt || undefined,
+            });
+          } else {
+            // Fallback to unassigned if category is invalid
+            riskDistribution.unassigned++;
+            biasesByCategory.unassigned.push({
+              id: biasId,
+              name: biasCard.name,
+            });
+          }
+        } else {
+          riskDistribution.unassigned++;
+          biasesByCategory.unassigned.push({
+            id: biasId,
+            name: biasCard.name,
+          });
+        }
+
+        // Group biases by their lifecycle stages with rationale (Stages 2 & 3)
+        (biasData.lifecycleAssignments || []).forEach((stage: string) => {
+          if (!biasIdentificationsByStage[stage]) {
+            biasIdentificationsByStage[stage] = [];
+          }
+
+          biasIdentificationsByStage[stage].push({
+            biasCard,
+            severity:
+              biasData.riskCategory === 'high-risk'
+                ? 'high'
+                : biasData.riskCategory === 'medium-risk'
+                  ? 'medium'
+                  : 'low',
+            confidence: 'medium',
+            rationale: biasData.rationale?.[stage as LifecycleStage] || '',
+            comments: [],
+            identifiedAt: biasData.riskAssignedAt || new Date().toISOString(),
+            identifiedBy: 'default-user',
+          });
+        });
+
+        // Process mitigation strategies (Stages 4 & 5)
+        Object.entries(biasData.mitigations || {}).forEach(
+          ([stage, mitigationIds]) => {
+            (mitigationIds as string[]).forEach((mitigationId) => {
+              const mitigationCard = mitigationCards.find(
+                (c) => c.id === mitigationId
+              );
+              if (!mitigationCard) {
+                return;
+              }
+
+              const implementationNote = (
+                biasData.implementationNotes as any
+              )?.[stage]?.[mitigationId];
+
+              if (!mitigationStrategiesByBias[biasId]) {
+                mitigationStrategiesByBias[biasId] = {
+                  biasId,
+                  biasName: biasCard.name,
+                  lifecycleStage: stage,
+                  mitigations: [],
+                };
+              }
+
+              mitigationStrategiesByBias[biasId].mitigations.push({
+                mitigationCard,
+                timeline: 'TBD',
+                responsible: 'TBD',
+                successCriteria: 'TBD',
+                priority: 'medium',
+                effectivenessRating:
+                  implementationNote?.effectivenessRating || 0,
+                implementationNotes: implementationNote?.notes || '',
+                comments: [],
+              });
+            });
+          }
+        );
       });
+
+      const totalAssessed = Object.keys(biases).length;
+      const riskAssessmentSummary = {
+        totalAssessed,
+        distribution: riskDistribution,
+        biasesByCategory,
+        completionPercentage:
+          totalAssessed > 0
+            ? Math.round(
+                ((totalAssessed - riskDistribution.unassigned) /
+                  totalAssessed) *
+                  100
+              )
+            : 0,
+      };
+
+      // Convert grouped biases to proper format
+      const biasIdentifications = Object.entries(
+        biasIdentificationsByStage
+      ).map(([stage, biases]) => ({
+        stage: stage as LifecycleStage,
+        biases,
+      }));
+
+      // Convert mitigation strategies to array
+      const mitigationStrategies = Object.values(mitigationStrategiesByBias);
+
+      // Update the report with analysis
+      updateReport(
+        reportId,
+        {
+          analysis: {
+            riskAssessmentSummary,
+            biasIdentification: biasIdentifications,
+            mitigationStrategies,
+            executiveSummary: {
+              keyFindings: [],
+              riskAssessment: `Identified ${totalAssessed} biases: ${riskDistribution.high} high-risk, ${riskDistribution.medium} medium-risk, ${riskDistribution.low} low-risk`,
+              recommendations: [],
+            },
+          },
+        },
+        'default-user',
+        'Anonymous User'
+      );
 
       // Redirect to report view
       window.location.href = `/reports/view?id=${reportId}`;
     } catch (_error) {
-      // Fallback to activity report page
       navigateToReport(activityId);
     }
+  };
+
+  const handleReturnToDashboard = () => {
+    if (!activityId) {
+      return;
+    }
+
+    // Complete the activity
+    completeStage(5);
+
+    // Navigate to dashboard
+    navigateToDashboard();
   };
 
   const handleEditPair = (pair: EnrichedCardPair) => {
@@ -499,7 +694,7 @@ export default function Stage5Client() {
     effectivenessRating?: number;
     annotation?: string;
   }) => {
-    if (selectedPair && selectedPair.stage) {
+    if (selectedPair?.stage) {
       setImplementationNote(
         selectedPair.biasId,
         selectedPair.stage,
@@ -682,6 +877,15 @@ export default function Stage5Client() {
         onSave={handleSavePair}
         open={isModalOpen}
         pair={selectedPair}
+      />
+
+      {/* Activity Completion Dialog */}
+      <ActivityCompletionDialog
+        activityName={currentActivity?.name}
+        onGenerateReport={handleGenerateReport}
+        onOpenChange={setShowCompletionDialog}
+        onReturnToDashboard={handleReturnToDashboard}
+        open={showCompletionDialog}
       />
 
       {/* Footer Navigation */}

@@ -26,6 +26,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Progress } from '@/components/ui/progress';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { SidebarTrigger } from '@/components/ui/sidebar';
 import { useHashRouter } from '@/lib/routing/hash-router';
 import { navigateToActivity } from '@/lib/routing/navigation';
 import { useUnifiedActivityStore } from '@/lib/stores/unified-activity-store';
@@ -56,7 +58,7 @@ const STAGE_NAMES = {
   5: 'Implementation Planning',
 };
 
-function StagePills({
+function _StagePills({
   currentStage,
   completedStages,
   isHydrated,
@@ -84,7 +86,7 @@ function StagePills({
   return (
     <ScrollArea className="w-full">
       <div className="flex items-center justify-center px-2 py-3 md:px-6">
-        <div className="flex items-center rounded-full bg-gray-200 p-1 shadow-sm">
+        <div className="flex items-center rounded-full bg-muted p-1 shadow-sm">
           {[1, 2, 3, 4, 5].map((stage, index) => {
             const isCompleted = stage <= completedStages;
             const isCurrent = stage === currentStage;
@@ -98,14 +100,16 @@ function StagePills({
                   className={cn(
                     'flex items-center gap-1 rounded-full px-2 py-1.5 font-medium text-xs transition-all duration-200 md:gap-2 md:px-3 md:py-2 md:text-sm',
                     'min-w-[48px] justify-center md:min-w-[140px]',
-                    isCurrent && 'scale-105 bg-amber-500 text-white shadow-md',
+                    isCurrent &&
+                      'scale-105 bg-primary text-primary-foreground shadow-md',
                     isCompleted &&
                       !isCurrent &&
-                      'bg-green-500 text-white hover:bg-green-600',
+                      'bg-secondary text-secondary-foreground hover:bg-secondary/90',
                     !(isCompleted || isCurrent) &&
                       canAccess &&
-                      'bg-white text-gray-700 shadow-sm hover:bg-gray-50',
-                    !canAccess && 'cursor-not-allowed bg-gray-100 text-gray-400'
+                      'bg-background text-muted-foreground shadow-sm hover:bg-muted',
+                    !canAccess &&
+                      'cursor-not-allowed bg-muted text-muted-foreground'
                   )}
                   disabled={!canAccess}
                   onClick={() => onNavigate(stage)}
@@ -132,8 +136,8 @@ function StagePills({
                     className={cn(
                       'mx-0.5 h-0.5 w-1 md:mx-1 md:w-2',
                       isCompleted || stage < currentStage
-                        ? 'bg-green-400'
-                        : 'bg-gray-300'
+                        ? 'bg-primary'
+                        : 'bg-border'
                     )}
                   />
                 )}
@@ -179,6 +183,12 @@ function StageControls({
   const [instructionsOpen, setInstructionsOpen] = useState(true);
   return (
     <div className="space-y-4 px-4 py-4 md:px-6">
+      {/* Sidebar trigger */}
+      <div className="flex items-center gap-2">
+        <SidebarTrigger className="-ml-1" />
+        <Separator className="mr-2 h-4" orientation="vertical" />
+      </div>
+
       {/* Title and Progress */}
       <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
         <div className="min-w-0 flex-1">
@@ -218,17 +228,17 @@ function StageControls({
       {(actions || progress) && (
         <>
           {/* Desktop Actions */}
-          <div className="hidden rounded-lg border bg-gray-50 p-4 md:block">
-            <div className="flex items-center justify-between">
+          <div className="hidden rounded-lg border bg-muted p-4 md:block">
+            <div className="flex items-center justify-between gap-4">
               {/* Progress indicator on the left */}
               {progress && (
-                <div className="max-w-sm flex-1">
-                  <div className="flex items-center gap-4">
-                    <span className="font-medium text-muted-foreground text-sm">
+                <div className="max-w-md flex-1">
+                  <div className="flex items-center gap-3">
+                    <span className="whitespace-nowrap font-medium text-muted-foreground text-sm">
                       {progress.label || 'Progress'}
                     </span>
-                    <div className="flex-1">
-                      <Progress className="h-2" value={progressPercentage} />
+                    <div className="min-w-[100px] flex-1">
+                      <Progress className="h-2.5" value={progressPercentage} />
                     </div>
                     <span className="font-medium text-sm">
                       {Math.round(progressPercentage)}%
@@ -326,7 +336,8 @@ function StageControls({
           <Button
             className={cn(
               'flex-1',
-              canComplete && 'bg-green-600 text-white hover:bg-green-700'
+              canComplete &&
+                'bg-primary text-primary-foreground hover:bg-primary/90'
             )}
             disabled={!canComplete}
             onClick={onCompleteStage}
@@ -425,18 +436,6 @@ export function StageNavigation({
 
   return (
     <div className="border-b bg-background">
-      {/* Stage Progress Indicator */}
-      <div className="border-b">
-        <StagePills
-          canAdvanceToStage={canAdvanceToStage}
-          completedStages={highestCompletedStage}
-          currentStage={currentStage}
-          isHydrated={isHydrated}
-          onNavigate={handleStageNavigation}
-          resolvedActivityId={resolvedActivityId}
-        />
-      </div>
-
       {/* Current Stage Header */}
       <StageControls
         actions={actions}

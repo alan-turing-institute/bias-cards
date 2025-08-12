@@ -560,13 +560,13 @@ ${matrix.unassessed.map((b) => `- ${b}`).join('\n') || '- None'}
 `;
 
     // Add Stage 3 rationale
-    const hasRationale = Object.values(biasEntry.rationale).some(
-      (r) => r && r.trim()
+    const hasRationale = Object.values(biasEntry.rationale).some((r) =>
+      r?.trim()
     );
     if (hasRationale) {
       section += '#### Rationale by Stage\n';
       for (const [stage, rationale] of Object.entries(biasEntry.rationale)) {
-        if (rationale && rationale.trim()) {
+        if (rationale?.trim()) {
           section += `**${stage}**: ${rationale}\n\n`;
         }
       }

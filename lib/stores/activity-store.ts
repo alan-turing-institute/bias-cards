@@ -3,11 +3,7 @@ import { persist } from 'zustand/middleware';
 import { DEMO_ACTIVITIES } from '@/lib/data/demo-content';
 import type { Activity, Report } from '@/lib/types/activity';
 import type { ActivityStage } from '@/lib/types/cards';
-import {
-  type ActivityImportData,
-  validateImportData,
-  validateImportFile,
-} from '@/lib/types/import';
+import { validateImportData, validateImportFile } from '@/lib/types/import';
 
 // Helper functions for import functionality
 async function parseImportFile(
@@ -26,11 +22,11 @@ async function parseImportFile(
   }
 }
 
-function generateActivityId(): string {
+function _generateActivityId(): string {
   return `activity-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-function createImportedActivity(
+function _createImportedActivity(
   activity: Activity,
   newActivityId: string,
   hasWorkspace: boolean
@@ -47,7 +43,7 @@ function createImportedActivity(
   };
 }
 
-function importWorkspaceData(
+function _importWorkspaceData(
   workspace: unknown,
   newActivityId: string
 ): { success: boolean; message?: string } {
@@ -92,7 +88,7 @@ function importWorkspaceData(
   }
 }
 
-function buildSuccessMessage(
+function _buildSuccessMessage(
   title: string,
   warnings: string[],
   activityId: string,
@@ -418,7 +414,7 @@ export const useActivityStore = create<ActivityStore>()(
           const { BiasDeck } = await import('@/lib/cards/decks/bias-deck');
           // const { detectDataVersion } = await import('@/lib/types/migration');
 
-          const deck = await BiasDeck.getInstance();
+          const _deck = await BiasDeck.getInstance();
           // const converter = new FormatConverter();
           // const version = detectDataVersion(importData.data);
 

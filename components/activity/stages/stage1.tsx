@@ -115,8 +115,10 @@ export default function Stage1Client() {
   >([]);
 
   // Activity-aware helper methods
-  const getBiasRisk = (biasId: string): BiasRiskCategory | null => {
-    if (!currentActivity) return null;
+  const _getBiasRisk = (biasId: string): BiasRiskCategory | null => {
+    if (!currentActivity) {
+      return null;
+    }
     const bias = currentActivity.getBias(biasId);
     return bias?.riskCategory || null;
   };
@@ -140,12 +142,11 @@ export default function Stage1Client() {
     };
 
     initializeActivity();
-  }, [loadCards, activityId, isHydrated, currentActivity, initialize]);
+  }, [loadCards, isHydrated, currentActivity]);
 
   // Get risk assignments by category from current activity data
   const getBiasRiskByCategory = (category: BiasRiskCategory) => {
     if (!currentActivityData) {
-      console.log('[Stage1] getBiasRiskByCategory - no currentActivityData');
       return [];
     }
     const biases = currentActivityData.biases || {};
@@ -157,13 +158,6 @@ export default function Stage1Client() {
         riskCategory: category,
         timestamp: bias.riskAssignedAt || new Date().toISOString(),
       }));
-
-    console.log('[Stage1] getBiasRiskByCategory:', {
-      category,
-      biasCount: Object.keys(biases).length,
-      matchingCount: result.length,
-      biases,
-    });
 
     return result;
   };
@@ -236,7 +230,6 @@ export default function Stage1Client() {
       if (card) {
         // Validate activity is ready before assigning
         if (!isActivityReady()) {
-          console.warn('Activity not initialized. Please refresh the page.');
           return;
         }
 
@@ -244,22 +237,11 @@ export default function Stage1Client() {
           .toString()
           .replace('risk-category-', '') as BiasRiskCategory;
 
-        console.log('[Stage1] Assigning bias risk:', {
-          cardId: card.id,
-          targetCategory,
-          currentDataBefore: currentActivityData?.biases[card.id],
-        });
-
         assignBiasRisk(card.id, targetCategory);
         setIsSheetOpen(false);
 
         // Check data after a small delay
-        setTimeout(() => {
-          console.log('[Stage1] After assignment, currentActivityData:', {
-            biasEntry: currentActivityData?.biases[card.id],
-            allBiases: currentActivityData?.biases,
-          });
-        }, 100);
+        setTimeout(() => {}, 100);
       }
     }
 

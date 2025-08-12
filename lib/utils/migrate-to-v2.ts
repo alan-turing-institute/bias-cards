@@ -63,7 +63,9 @@ function extractActivityData(
   oldWorkspace: OldWorkspaceStore
 ): BiasActivityData | null {
   const state = oldWorkspace.state;
-  if (!state) return null;
+  if (!state) {
+    return null;
+  }
 
   // Priority 1: Use activityState if it exists (this is the clean data)
   if (state.activityState && typeof state.activityState === 'object') {
@@ -82,7 +84,7 @@ function extractActivityData(
   ) {
     try {
       const exported = state.currentActivity.export();
-      if (exported && exported.biases && exported.state) {
+      if (exported?.biases && exported.state) {
         return exported;
       }
     } catch {
@@ -115,7 +117,7 @@ export async function migrateToV2(): Promise<{
     const oldActivityStr = localStorage.getItem('activity-store');
 
     let activityData: BiasActivityData | null = null;
-    let activityList: Array<{
+    let _activityList: Array<{
       id: string;
       name: string;
       description?: string;
@@ -126,9 +128,7 @@ export async function migrateToV2(): Promise<{
       try {
         const oldWorkspace = JSON.parse(oldWorkspaceStr) as OldWorkspaceStore;
         activityData = extractActivityData(oldWorkspace);
-      } catch (error) {
-        console.error('Failed to parse old workspace store:', error);
-      }
+      } catch (_error) {}
     }
 
     // Extract activity list from activity store
@@ -136,15 +136,13 @@ export async function migrateToV2(): Promise<{
       try {
         const oldActivity = JSON.parse(oldActivityStr) as OldActivityStore;
         if (oldActivity.state?.activities) {
-          activityList = oldActivity.state.activities.map((a) => ({
+          _activityList = oldActivity.state.activities.map((a) => ({
             id: a.id,
             name: a.title,
             description: a.description,
           }));
         }
-      } catch (error) {
-        console.error('Failed to parse old activity store:', error);
-      }
+      } catch (_error) {}
     }
 
     // Step 2: Create new v2 store structure
@@ -202,8 +200,6 @@ export async function migrateToV2(): Promise<{
       migratedCount: activityData ? 1 : 0,
     };
   } catch (error) {
-    console.error('Migration failed:', error);
-
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Migration failed',

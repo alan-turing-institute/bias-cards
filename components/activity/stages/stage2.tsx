@@ -314,13 +314,15 @@ export default function Stage2Client() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Activity-aware helper methods
-  const getAssignments = (biasId: string): LifecycleStage[] => {
-    if (!currentActivity) return [];
+  const _getAssignments = (biasId: string): LifecycleStage[] => {
+    if (!currentActivity) {
+      return [];
+    }
     const bias = currentActivity.getBias(biasId);
     return bias?.lifecycleAssignments || [];
   };
 
-  const isActivityReady = (): boolean => {
+  const _isActivityReady = (): boolean => {
     return currentActivity !== null;
   };
 
@@ -349,7 +351,9 @@ export default function Stage2Client() {
 
   // Get bias risk assignments from current activity
   const getBiasRiskAssignments = () => {
-    if (!currentActivity) return [];
+    if (!currentActivity) {
+      return [];
+    }
     const biases = currentActivity.getBiases();
     return Object.entries(biases)
       .filter(([_, bias]) => bias.riskCategory)
@@ -508,7 +512,7 @@ export default function Stage2Client() {
 
   // Handle saving rationale
   const handleSaveRationale = (rationale: string) => {
-    if (selectedAssignment && selectedAssignment.stage) {
+    if (selectedAssignment?.stage) {
       setRationale(
         selectedAssignment.cardId,
         selectedAssignment.stage,
@@ -733,7 +737,7 @@ export default function Stage2Client() {
           progress={{
             current: uniqueAssignedCards,
             total: enrichedBiasCards.length,
-            label: `${uniqueAssignedCards}/${enrichedBiasCards.length} unique biases assigned (${validAssignments.length} total assignments)`,
+            label: `${uniqueAssignedCards}/${enrichedBiasCards.length} unique biases assigned`,
           }}
           title="Stage 2: Lifecycle Assignment"
         />

@@ -504,7 +504,7 @@ function ActivityCard({
           <div className="flex flex-shrink-0 gap-2">
             {activity.isDemo && <Badge variant="secondary">Demo</Badge>}
             {isCompleted ? (
-              <Badge className="bg-green-600 text-white hover:bg-green-700">
+              <Badge className="bg-primary text-primary-foreground hover:bg-primary/90">
                 Completed
               </Badge>
             ) : (
@@ -544,9 +544,9 @@ function ActivityCard({
                   : `${completedStages}/${totalStages} stages`}
               </span>
             </div>
-            <div className="h-2 w-full rounded-full bg-gray-200">
+            <div className="h-2 w-full rounded-full bg-muted">
               <div
-                className={`h-2 rounded-full ${isCompleted ? 'bg-green-500' : 'bg-amber-500'}`}
+                className={`h-2 rounded-full ${isCompleted ? 'bg-primary' : 'bg-primary/70'}`}
                 style={{
                   width: isCompleted ? '100%' : `${progressPercentage}%`,
                 }}
@@ -653,7 +653,7 @@ function DashboardContent() {
   const importActivity = useUnifiedActivityStore(
     (state) => state.importActivity
   );
-  const workspaceStore = useWorkspaceStore();
+  const _workspaceStore = useWorkspaceStore();
   const reports = useReportsStore((state) => state.reports);
 
   // Convert Report[] to ReportSummary[]
@@ -669,10 +669,10 @@ function DashboardContent() {
     domain: report.projectInfo.domain,
     tags: report.metadata.tags,
     biasCount: report.analysis.biasIdentification.reduce(
-      (acc, stage) => acc + stage.biases.length,
+      (acc, stage) => acc + (stage.biases?.length || 0),
       0
     ),
-    mitigationCount: report.analysis.mitigationStrategies.length,
+    mitigationCount: report.analysis.mitigationStrategies?.length || 0,
     completionPercentage:
       report.tracking.healthMetrics?.implementationProgress || 0,
     hasUnreadUpdates: false,

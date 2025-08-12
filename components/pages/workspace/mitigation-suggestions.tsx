@@ -56,7 +56,7 @@ export function MitigationSuggestions({
   return (
     <Card className={cn('p-4', className)}>
       <div className="mb-4 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-amber-500" />
+        <Sparkles className="h-5 w-5 text-primary" />
         <h3 className="font-semibold">Suggested Mitigations</h3>
         <Badge className="ml-auto" variant="secondary">
           {suggestions.length} matches
@@ -76,7 +76,7 @@ export function MitigationSuggestions({
                     'rounded-lg border p-3 transition-all',
                     isPaired
                       ? 'border-green-200 bg-green-50'
-                      : 'bg-gray-50 hover:bg-gray-100'
+                      : 'bg-muted hover:bg-muted/70'
                   )}
                   key={mitigation.id}
                 >

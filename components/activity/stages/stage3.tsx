@@ -151,7 +151,9 @@ export default function Stage3Client() {
 
   // Get stage assignments from current activity
   const getStageAssignments = (): StageAssignmentWithCard[] => {
-    if (!currentActivity) return [];
+    if (!currentActivity) {
+      return [];
+    }
 
     const assignments: StageAssignmentWithCard[] = [];
     const biases = currentActivity.getBiases();

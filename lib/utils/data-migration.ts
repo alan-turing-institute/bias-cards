@@ -208,7 +208,7 @@ function migrateCompletionStatus(
           ? Number.parseInt(stage.replace('stage-', ''), 10)
           : stage
       )
-      .filter((stage) => !isNaN(stage));
+      .filter((stage) => !Number.isNaN(stage));
     state.currentStage = Math.max(...state.completedStages, 0) + 1;
   }
 }

@@ -71,7 +71,7 @@ export function KeyboardShortcutsDialog({
               <div className="flex gap-1">
                 {shortcut.keys.map((key, keyIndex) => (
                   <span key={`${shortcut.keys[0]}-key-${keyIndex}`}>
-                    <kbd className="rounded border border-gray-200 bg-gray-100 px-2 py-1 font-mono text-xs dark:border-gray-700 dark:bg-gray-800">
+                    <kbd className="rounded border border-border bg-muted px-2 py-1 font-mono text-xs">
                       {key}
                     </kbd>
                     {keyIndex < shortcut.keys.length - 1 && (
@@ -86,7 +86,7 @@ export function KeyboardShortcutsDialog({
             </div>
           ))}
         </div>
-        <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900 dark:bg-amber-950">
+        <div className="mt-4 rounded-lg border border-accent bg-accent/30 p-3">
           <p className="text-sm">
             <strong>Tip:</strong> Focus a card and use Space or Enter to start
             dragging, then use arrow keys to move it to different lifecycle

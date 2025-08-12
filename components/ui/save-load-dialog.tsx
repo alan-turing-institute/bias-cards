@@ -141,7 +141,7 @@ export function SaveLoadDialog({ trigger }: SaveLoadDialogProps) {
           </TabsList>
 
           <TabsContent className="space-y-4" value="save">
-            <div className="rounded-lg bg-gray-50 p-3">
+            <div className="rounded-lg bg-muted p-3">
               <h4 className="font-medium text-sm">Current Workspace</h4>
               <div className="mt-2 space-y-1 text-muted-foreground text-xs">
                 <p>Session: {sessionId?.split('-')[1] || 'N/A'}</p>
@@ -184,15 +184,15 @@ export function SaveLoadDialog({ trigger }: SaveLoadDialogProps) {
               aria-label="Drag and drop area for workspace file upload"
               className={`rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
                 dragOver
-                  ? 'border-blue-500 bg-blue-50'
-                  : 'border-gray-300 hover:border-gray-400'
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border hover:border-primary/50'
               }`}
               onDragLeave={handleDragLeave}
               onDragOver={handleDragOver}
               onDrop={handleDrop}
               type="button"
             >
-              <Upload className="mx-auto h-8 w-8 text-gray-400" />
+              <Upload className="mx-auto h-8 w-8 text-muted-foreground" />
               <p className="mt-2 text-muted-foreground text-sm">
                 Drag and drop a workspace file here, or click to browse
               </p>
@@ -205,21 +205,21 @@ export function SaveLoadDialog({ trigger }: SaveLoadDialogProps) {
             </button>
 
             {uploadError && (
-              <div className="rounded-lg bg-red-50 p-3">
+              <div className="rounded-lg bg-destructive/10 p-3">
                 <div className="flex items-start gap-2">
-                  <X className="mt-0.5 h-4 w-4 text-red-600" />
+                  <X className="mt-0.5 h-4 w-4 text-destructive" />
                   <div>
-                    <p className="font-medium text-red-800 text-sm">
+                    <p className="font-medium text-destructive text-sm">
                       Upload Failed
                     </p>
-                    <p className="text-red-700 text-xs">{uploadError}</p>
+                    <p className="text-destructive/90 text-xs">{uploadError}</p>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="rounded-lg bg-amber-50 p-3">
-              <p className="text-amber-800 text-xs">
+            <div className="rounded-lg bg-accent/30 p-3">
+              <p className="text-accent-foreground text-xs">
                 <strong>Note:</strong> Loading a workspace will replace your
                 current progress. Consider saving your current work first.
               </p>

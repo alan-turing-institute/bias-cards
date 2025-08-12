@@ -51,7 +51,7 @@ export function EffectivenessRating({
             className={cn(
               'transition-all',
               readonly ? 'cursor-default' : 'cursor-pointer hover:scale-110',
-              'rounded focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-1'
+              'rounded focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-1'
             )}
             disabled={readonly}
             key={star}
@@ -67,9 +67,9 @@ export function EffectivenessRating({
               className={cn(
                 sizeClasses[size],
                 star <= value
-                  ? 'fill-amber-500 text-amber-500'
-                  : 'fill-gray-200 text-gray-200',
-                !readonly && 'hover:fill-amber-400 hover:text-amber-400'
+                  ? 'fill-primary text-primary'
+                  : 'fill-muted text-muted-foreground/40',
+                !readonly && 'hover:fill-primary/90 hover:text-primary/90'
               )}
             />
           </button>

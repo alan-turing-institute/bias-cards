@@ -1,18 +1,22 @@
 'use client';
 
 import {
+  Activity,
   ArrowLeft,
   Calendar,
   Download,
   Edit,
   FileText,
   Share,
+  ShieldCheck,
+  Target,
   User,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Suspense, useEffect } from 'react';
 import { ReportExportDialog } from '@/components/reports/export-dialog';
+import { StarRating } from '@/components/reports/star-rating';
 import { Badge } from '@/components/ui/badge';
 import {
   Breadcrumb,
@@ -30,8 +34,17 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Separator } from '@/components/ui/separator';
 import { SidebarTrigger } from '@/components/ui/sidebar';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
 import { useReportsStore } from '@/lib/stores/reports-store';
 import type { ReportStatus } from '@/lib/types/reports';
 
@@ -116,13 +129,16 @@ function ReportPageContent() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
       hour: '2-digit',
       minute: '2-digit',
-    });
+      timeZone: 'UTC',
+    };
+    return date.toLocaleDateString('en-US', options);
   };
 
   return (
@@ -266,11 +282,8 @@ function ReportPageContent() {
                     <h4 className="font-medium">Key Findings</h4>
                     <ul className="mt-2 list-inside list-disc space-y-1">
                       {currentReport.analysis.executiveSummary.keyFindings.map(
-                        (finding, findingIndex) => (
-                          <li
-                            className="text-muted-foreground"
-                            key={`finding-${findingIndex}`}
-                          >
+                        (finding, _findingIndex) => (
+                          <li className="text-muted-foreground" key={finding}>
                             {finding}
                           </li>
                         )
@@ -292,11 +305,8 @@ function ReportPageContent() {
                     <h4 className="font-medium">Recommendations</h4>
                     <ul className="mt-2 list-inside list-disc space-y-1">
                       {currentReport.analysis.executiveSummary.recommendations.map(
-                        (rec, recIndex) => (
-                          <li
-                            className="text-muted-foreground"
-                            key={`rec-${recIndex}`}
-                          >
+                        (rec, _recIndex) => (
+                          <li className="text-muted-foreground" key={rec}>
                             {rec}
                           </li>
                         )
@@ -308,125 +318,298 @@ function ReportPageContent() {
             </Card>
           )}
 
-          {/* Bias Identification */}
-          {currentReport.analysis.biasIdentification.length > 0 && (
+          {/* Section 1: Preliminary Risk Assessment (Stage 1) */}
+          {currentReport.analysis.riskAssessmentSummary && (
             <Card>
               <CardHeader>
-                <CardTitle>Bias Identification</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-primary" />
+                  <CardTitle>Stage 1: Preliminary Risk Assessment</CardTitle>
+                </div>
                 <CardDescription>
-                  Biases identified across project lifecycle stages
+                  Initial assessment and categorization of biases by risk level
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
-                {currentReport.analysis.biasIdentification.map(
-                  (identification) => (
-                    <div
-                      className="space-y-3"
-                      key={`identification-${identification.stage}`}
-                    >
-                      <h4 className="font-medium capitalize">
-                        {identification.stage.replace(/-/g, ' ')}
-                      </h4>
-                      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                        {identification.biases.map((bias, biasIndex) => (
-                          <div
-                            className="rounded-lg border p-3"
-                            key={`bias-${identification.stage}-${bias.biasCard.id}-${biasIndex}`}
-                          >
-                            <div className="mb-2 flex items-center justify-between">
-                              <h5 className="font-medium text-sm">
-                                {bias.biasCard.title}
-                              </h5>
+                <div className="grid gap-4 md:grid-cols-3">
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="font-bold text-2xl">
+                        {
+                          currentReport.analysis.riskAssessmentSummary
+                            .totalAssessed
+                        }
+                      </div>
+                      <p className="text-muted-foreground text-xs">
+                        Total Biases Assessed
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="font-bold text-2xl">
+                        {
+                          currentReport.analysis.riskAssessmentSummary
+                            .completionPercentage
+                        }
+                        %
+                      </div>
+                      <p className="text-muted-foreground text-xs">
+                        Assessment Complete
+                      </p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="destructive">
+                          {
+                            currentReport.analysis.riskAssessmentSummary
+                              .distribution.high
+                          }
+                        </Badge>
+                        <Badge>
+                          {
+                            currentReport.analysis.riskAssessmentSummary
+                              .distribution.medium
+                          }
+                        </Badge>
+                        <Badge variant="secondary">
+                          {
+                            currentReport.analysis.riskAssessmentSummary
+                              .distribution.low
+                          }
+                        </Badge>
+                      </div>
+                      <p className="mt-1 text-muted-foreground text-xs">
+                        Risk Distribution
+                      </p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="space-y-4">
+                  <h4 className="font-medium">Risk Category Breakdown</h4>
+                  <div className="space-y-3">
+                    {['high', 'medium', 'low'].map((level) => {
+                      const count =
+                        currentReport.analysis.riskAssessmentSummary
+                          ?.distribution[
+                          level as keyof typeof currentReport.analysis.riskAssessmentSummary.distribution
+                        ];
+                      const total =
+                        currentReport.analysis.riskAssessmentSummary
+                          ?.totalAssessed;
+                      const percentage =
+                        total && total > 0 && count ? (count / total) * 100 : 0;
+
+                      return (
+                        <div className="space-y-2" key={level}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
                               <Badge
-                                className="text-xs"
+                                className="capitalize"
                                 variant={(() => {
-                                  if (bias.severity === 'high') {
+                                  if (level === 'high') {
                                     return 'destructive';
                                   }
-                                  if (bias.severity === 'medium') {
+                                  if (level === 'medium') {
                                     return 'default';
                                   }
                                   return 'secondary';
                                 })()}
                               >
-                                {bias.severity}
+                                {level} Risk
                               </Badge>
+                              <span className="text-muted-foreground text-sm">
+                                {count} {count === 1 ? 'bias' : 'biases'}
+                              </span>
                             </div>
-                            <p className="line-clamp-2 text-muted-foreground text-xs">
-                              {bias.biasCard.description}
-                            </p>
+                            <span className="font-medium text-sm">
+                              {percentage.toFixed(1)}%
+                            </span>
                           </div>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                )}
+                          <Progress className="h-2" value={percentage} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </CardContent>
             </Card>
           )}
 
-          {/* Mitigation Strategies */}
+          {/* Section 2: Bias-Lifecycle Mapping (Stages 2 & 3) */}
+          {currentReport.analysis.biasIdentification.length > 0 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Target className="h-5 w-5 text-primary" />
+                  <CardTitle>Stages 2 & 3: Bias-Lifecycle Mapping</CardTitle>
+                </div>
+                <CardDescription>
+                  Assignment of risk-categorized biases to project lifecycle
+                  stages with rationale
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[25%]">Lifecycle Stage</TableHead>
+                      <TableHead className="w-[25%]">Assigned Biases</TableHead>
+                      <TableHead className="w-[35%]">Rationale</TableHead>
+                      <TableHead className="w-[15%]">Risk Category</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {currentReport.analysis.biasIdentification.map(
+                      (identification) => {
+                        const stageName =
+                          identification.stage?.replace(/-/g, ' ') ||
+                          'Unknown Stage';
+
+                        return (identification.biases || []).map(
+                          (bias, biasIndex) => (
+                            <TableRow
+                              key={`${identification.stage}-${bias.biasCard.id}-${biasIndex}`}
+                            >
+                              {biasIndex === 0 && (
+                                <TableCell
+                                  className="align-top font-medium capitalize"
+                                  rowSpan={identification.biases.length}
+                                >
+                                  {stageName}
+                                </TableCell>
+                              )}
+                              <TableCell>
+                                {bias.biasCard?.name || 'Unknown Bias'}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground text-sm">
+                                {bias.rationale || 'No rationale provided'}
+                              </TableCell>
+                              <TableCell>
+                                <Badge
+                                  variant={(() => {
+                                    if (bias.severity === 'high') {
+                                      return 'destructive';
+                                    }
+                                    if (bias.severity === 'medium') {
+                                      return 'default';
+                                    }
+                                    return 'secondary';
+                                  })()}
+                                >
+                                  {bias.severity} risk
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        );
+                      }
+                    )}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Section 3: Mitigation Strategies (Stages 4 & 5) */}
           {currentReport.analysis.mitigationStrategies.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Mitigation Strategies</CardTitle>
+                <div className="flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5 text-primary" />
+                  <CardTitle>Stages 4 & 5: Mitigation Strategies</CardTitle>
+                </div>
                 <CardDescription>
-                  Planned strategies to address identified biases
+                  Mitigation strategies assigned to biases with effectiveness
+                  ratings and implementation notes
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
-                {currentReport.analysis.mitigationStrategies.map(
-                  (strategy, index) => (
-                    <div
-                      className="space-y-3"
-                      key={`strategy-${strategy.biasId}-${index}`}
-                    >
-                      <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
-                        {strategy.mitigations.map((mitigation) => (
-                          <div
-                            className="rounded-lg border p-3"
-                            key={`mitigation-${mitigation.mitigationCard.id}`}
-                          >
-                            <div className="mb-2 flex items-center justify-between">
-                              <h5 className="font-medium text-sm">
-                                {mitigation.mitigationCard.title}
-                              </h5>
-                              <Badge
-                                className="text-xs"
-                                variant={(() => {
-                                  if (mitigation.priority === 'high') {
-                                    return 'destructive';
-                                  }
-                                  if (mitigation.priority === 'medium') {
-                                    return 'default';
-                                  }
-                                  return 'secondary';
-                                })()}
-                              >
-                                {mitigation.priority}
-                              </Badge>
-                            </div>
-                            <p className="mb-2 line-clamp-2 text-muted-foreground text-xs">
-                              {mitigation.mitigationCard.description}
-                            </p>
-                            <div className="space-y-1 text-xs">
-                              <div>
-                                <span className="font-medium">Timeline:</span>{' '}
-                                {mitigation.timeline}
-                              </div>
-                              <div>
-                                <span className="font-medium">
-                                  Responsible:
-                                </span>{' '}
-                                {mitigation.responsible}
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )
-                )}
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[20%]">Bias</TableHead>
+                      <TableHead className="w-[15%]">Stage</TableHead>
+                      <TableHead className="w-[25%]">
+                        Mitigation Strategy
+                      </TableHead>
+                      <TableHead className="w-[15%]">Effectiveness</TableHead>
+                      <TableHead className="w-[20%]">
+                        Implementation Notes
+                      </TableHead>
+                      <TableHead className="w-[5%]">Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {currentReport.analysis.mitigationStrategies.flatMap(
+                      (strategy) =>
+                        (strategy.mitigations || []).map(
+                          (mitigation, index) => (
+                            <TableRow
+                              key={`${strategy.biasId}-${mitigation.mitigationCard.id}-${index}`}
+                            >
+                              {index === 0 && (
+                                <TableCell
+                                  className="align-top font-medium"
+                                  rowSpan={strategy.mitigations.length}
+                                >
+                                  {strategy.biasName || 'Unknown Bias'}
+                                </TableCell>
+                              )}
+                              {index === 0 && (
+                                <TableCell
+                                  className="align-top capitalize"
+                                  rowSpan={strategy.mitigations.length}
+                                >
+                                  {strategy.lifecycleStage?.replace(
+                                    /-/g,
+                                    ' '
+                                  ) || 'Unknown'}
+                                </TableCell>
+                              )}
+                              <TableCell>
+                                <div className="space-y-1">
+                                  <div className="font-medium">
+                                    {mitigation.mitigationCard?.name ||
+                                      'Unknown Mitigation'}
+                                  </div>
+                                  <div className="line-clamp-2 text-muted-foreground text-xs">
+                                    {mitigation.mitigationCard?.description}
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <StarRating
+                                  showLabel
+                                  size="sm"
+                                  value={mitigation.effectivenessRating || 0}
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <div className="max-w-[200px]">
+                                  <p
+                                    className="truncate text-muted-foreground text-sm"
+                                    title={mitigation.implementationNotes}
+                                  >
+                                    {mitigation.implementationNotes ||
+                                      'No notes provided'}
+                                  </p>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className="text-xs" variant="outline">
+                                  Planned
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          )
+                        )
+                    )}
+                  </TableBody>
+                </Table>
               </CardContent>
             </Card>
           )}

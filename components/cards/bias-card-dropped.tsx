@@ -24,7 +24,7 @@ export function BiasCardDropped({
   return (
     <Card
       className={cn(
-        'group relative h-auto w-full overflow-hidden border-0 shadow-sm transition-all duration-200 hover:shadow-md',
+        'group relative h-[90px] w-full overflow-hidden border-0 shadow-sm transition-all duration-200 hover:shadow-md',
         'cursor-grab p-0 active:cursor-grabbing',
         className
       )}
@@ -33,7 +33,7 @@ export function BiasCardDropped({
     >
       <div className="flex h-full">
         {/* Colored side section with icon and number */}
-        <div className={cn('relative w-12 flex-shrink-0', colors.bg)}>
+        <div className={cn('relative w-[60px] flex-shrink-0', colors.bg)}>
           {/* Card Number */}
           <div className="absolute top-2 left-0 w-full text-center">
             <span className="font-bold text-white/90 text-xs">
@@ -50,7 +50,7 @@ export function BiasCardDropped({
         {/* White content section */}
         <div className="flex flex-1 flex-col bg-white p-3">
           <div className="min-w-0 flex-1 space-y-1">
-            <h3 className="font-semibold text-gray-900 text-sm leading-tight">
+            <h3 className="truncate font-semibold text-gray-900 text-sm leading-tight">
               {card.name}
             </h3>
             <p className="line-clamp-2 text-gray-600 text-xs leading-relaxed">

@@ -50,7 +50,9 @@ export function MitigationCardsPage() {
         <div className="flex flex-1 items-center justify-center">
           <div className="space-y-2 text-center">
             <div className="mx-auto h-8 w-8 animate-spin rounded-full border-primary border-b-2" />
-            <p className="text-gray-600">Loading mitigation strategies...</p>
+            <p className="text-muted-foreground">
+              Loading mitigation strategies...
+            </p>
           </div>
         </div>
       </>
@@ -75,8 +77,8 @@ export function MitigationCardsPage() {
         </header>
         <div className="flex flex-1 items-center justify-center">
           <div className="space-y-2 text-center">
-            <p className="font-medium text-red-600">Error loading cards</p>
-            <p className="text-gray-600">{error}</p>
+            <p className="font-medium text-destructive">Error loading cards</p>
+            <p className="text-muted-foreground">{error}</p>
             <button
               className="rounded-md bg-primary px-4 py-2 text-white transition-colors hover:bg-primary/90"
               onClick={() => loadCards()}

@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import type { BiasActivity } from '@/lib/activities/bias-activity';
-import type { BiasDeck } from '@/lib/cards/decks/bias-deck';
 import type { BiasRiskCategory, LifecycleStage } from '@/lib/types';
 import type {
   BiasActivityData,
@@ -130,12 +129,14 @@ function getFullActivityDataById(id: string): BiasActivityData | null {
 
   try {
     const stored = localStorage.getItem('unified-activity-store');
-    if (!stored) return null;
+    if (!stored) {
+      return null;
+    }
 
     const parsed = JSON.parse(stored);
     const activitiesData = parsed.state?.activitiesData;
 
-    if (activitiesData && activitiesData[id]) {
+    if (activitiesData?.[id]) {
       return activitiesData[id] as BiasActivityData;
     }
 
@@ -146,8 +147,7 @@ function getFullActivityDataById(id: string): BiasActivityData | null {
     }
 
     return null;
-  } catch (error) {
-    console.error('Failed to retrieve activity data from localStorage:', error);
+  } catch (_error) {
     return null;
   }
 }
@@ -313,15 +313,12 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
       // Save current activity
       saveCurrentActivity: () => {
         const { currentActivity } = get();
-        if (!currentActivity) return;
+        if (!currentActivity) {
+          return;
+        }
 
         const activityData = currentActivity.export();
         const metadata = createMetadataFromActivity(currentActivity);
-
-        console.log('[Store] saveCurrentActivity - exported data:', {
-          biasCount: Object.keys(activityData.biases).length,
-          biases: activityData.biases,
-        });
 
         // Force a new object reference to ensure Zustand detects the change
         set((state) => ({
@@ -330,10 +327,6 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
             a.id === metadata.id ? metadata : a
           ),
         }));
-
-        console.log('[Store] saveCurrentActivity - after set, store state:', {
-          currentActivityData: get().currentActivityData,
-        });
       },
 
       // Delete an activity
@@ -354,20 +347,18 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
       // Stage 1: Risk Assessment
       assignBiasRisk: (biasId, risk) => {
         const { currentActivity } = get();
-        if (!currentActivity) return;
-
-        console.log('[Store] assignBiasRisk called:', { biasId, risk });
+        if (!currentActivity) {
+          return;
+        }
         currentActivity.assignBiasRisk(biasId, risk);
         get().saveCurrentActivity();
-        console.log(
-          '[Store] After save, currentActivityData:',
-          get().currentActivityData?.biases[biasId]
-        );
       },
 
       removeBiasRisk: (biasId) => {
         const { currentActivity } = get();
-        if (!currentActivity) return;
+        if (!currentActivity) {
+          return;
+        }
 
         currentActivity.removeBiasRisk(biasId);
         get().saveCurrentActivity();
@@ -376,7 +367,9 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
       // Stage 2: Lifecycle Assignment
       assignToLifecycle: (biasId, stage) => {
         const { currentActivity } = get();
-        if (!currentActivity) return;
+        if (!currentActivity) {
+          return;
+        }
 
         currentActivity.assignToLifecycle(biasId, stage);
         get().saveCurrentActivity();
@@ -384,7 +377,9 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
 
       removeFromLifecycle: (biasId, stage) => {
         const { currentActivity } = get();
-        if (!currentActivity) return;
+        if (!currentActivity) {
+          return;
+        }
 
         currentActivity.removeFromLifecycle(biasId, stage);
         get().saveCurrentActivity();
@@ -393,7 +388,9 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
       // Stage 3: Rationale
       setRationale: (biasId, stage, rationale) => {
         const { currentActivity } = get();
-        if (!currentActivity) return;
+        if (!currentActivity) {
+          return;
+        }
 
         currentActivity.setRationale(biasId, stage, rationale);
         get().saveCurrentActivity();
@@ -401,7 +398,9 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
 
       removeRationale: (biasId, stage) => {
         const { currentActivity } = get();
-        if (!currentActivity) return;
+        if (!currentActivity) {
+          return;
+        }
 
         currentActivity.removeRationale(biasId, stage);
         get().saveCurrentActivity();
@@ -410,7 +409,9 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
       // Stage 4: Mitigation Selection
       addMitigation: (biasId, stage, mitigationId) => {
         const { currentActivity } = get();
-        if (!currentActivity) return;
+        if (!currentActivity) {
+          return;
+        }
 
         currentActivity.addMitigation(biasId, stage, mitigationId);
         get().saveCurrentActivity();
@@ -418,7 +419,9 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
 
       removeMitigation: (biasId, stage, mitigationId) => {
         const { currentActivity } = get();
-        if (!currentActivity) return;
+        if (!currentActivity) {
+          return;
+        }
 
         currentActivity.removeMitigation(biasId, stage, mitigationId);
         get().saveCurrentActivity();
@@ -427,7 +430,9 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
       // Stage 5: Implementation Planning
       setImplementationNote: (biasId, stage, mitigationId, note) => {
         const { currentActivity } = get();
-        if (!currentActivity) return;
+        if (!currentActivity) {
+          return;
+        }
 
         currentActivity.setImplementationNote(
           biasId,
@@ -440,7 +445,9 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
 
       removeImplementationNote: (biasId, stage, mitigationId) => {
         const { currentActivity } = get();
-        if (!currentActivity) return;
+        if (!currentActivity) {
+          return;
+        }
 
         currentActivity.removeImplementationNote(biasId, stage, mitigationId);
         get().saveCurrentActivity();
@@ -449,7 +456,9 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
       // Stage navigation
       setCurrentStage: (stage) => {
         const { currentActivity } = get();
-        if (!currentActivity) return;
+        if (!currentActivity) {
+          return;
+        }
 
         const activityData = currentActivity.export();
         activityData.state.currentStage = stage;
@@ -460,7 +469,9 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
 
       completeStage: (stage) => {
         const { currentActivity } = get();
-        if (!currentActivity) return;
+        if (!currentActivity) {
+          return;
+        }
 
         const activityData = currentActivity.export();
         if (!activityData.state.completedStages.includes(stage)) {
@@ -473,13 +484,17 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
 
       canAdvanceToStage: (stage) => {
         const { currentActivity } = get();
-        if (!currentActivity) return false;
+        if (!currentActivity) {
+          return false;
+        }
 
         const activityData = currentActivity.export();
         const completedStages = activityData.state.completedStages;
 
         // Can always go to stage 1
-        if (stage === 1) return true;
+        if (stage === 1) {
+          return true;
+        }
 
         // Can go to any completed stage or the next stage
         return (
@@ -490,7 +505,9 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
       // Export activity
       exportActivity: async (id) => {
         const activityId = id || get().currentActivity?.id;
-        if (!activityId) return;
+        if (!activityId) {
+          return;
+        }
 
         // Get full activity data - either current or from localStorage
         let exportData: BiasActivityData | null = null;
@@ -504,10 +521,6 @@ export const useUnifiedActivityStore = create<UnifiedActivityStore>()(
         }
 
         if (!exportData) {
-          console.error(
-            'Could not find full activity data for export:',
-            activityId
-          );
           return;
         }
 

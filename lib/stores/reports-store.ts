@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { DEMO_REPORTS } from '@/lib/data/demo-content';
+import { exportReport } from '@/lib/export/export-service';
 import type { BiasCard, Card, MitigationCard } from '@/lib/types/cards';
 import type { ProjectInfo } from '@/lib/types/project-info';
 import type {
@@ -163,10 +164,17 @@ function processBiasIdentifications(
       biasIdentification.push(stageIdentification);
     }
 
+    // Get risk category from biasRiskAssignments if available
+    const riskAssignment = (workspaceState.biasRiskAssignments || []).find(
+      (ra: any) => ra.cardId === assignment.cardId
+    );
+    const severity = riskAssignment?.riskCategory || 'medium';
+
     stageIdentification.biases.push({
       biasCard: biasCard as BiasCard,
-      severity: 'medium',
+      severity: severity as 'low' | 'medium' | 'high',
       confidence: 'medium',
+      rationale: assignment.annotation || 'Some rationale.',
       comments: [],
       identifiedAt: assignment.timestamp || new Date().toISOString(),
       identifiedBy: user.userId,
@@ -184,23 +192,39 @@ function processMitigationStrategies(
   // Group mitigations by biasId to avoid duplicate keys
   const mitigationsByBias = new Map<
     string,
-    MitigationStrategy['mitigations']
+    {
+      mitigations: MitigationStrategy['mitigations'];
+      biasName?: string;
+      lifecycleStage?: string;
+    }
   >();
 
   for (const pair of workspaceState.cardPairs || []) {
     const mitigationCard = getCardById(pair.mitigationId);
+    const biasCard = getCardById(pair.biasId);
     if (!mitigationCard) {
       continue;
     }
 
-    // Get or create the mitigation list for this bias
+    // Find the stage assignment for this bias
+    const stageAssignment = (workspaceState.stageAssignments || []).find(
+      (sa: any) => sa.cardId === pair.biasId
+    );
+
+    // Get or create the mitigation data for this bias
     if (!mitigationsByBias.has(pair.biasId)) {
-      mitigationsByBias.set(pair.biasId, []);
+      mitigationsByBias.set(pair.biasId, {
+        mitigations: [],
+        biasName: biasCard?.name || 'Unknown Bias',
+        lifecycleStage: stageAssignment?.stage,
+      });
     }
 
     // Add the mitigation to the bias's list
-    mitigationsByBias.get(pair.biasId)!.push({
+    mitigationsByBias.get(pair.biasId)?.mitigations.push({
       mitigationCard: mitigationCard as MitigationCard,
+      effectivenessRating: pair.effectivenessRating,
+      implementationNotes: pair.annotation || 'Notes.',
       timeline: 'TBD',
       responsible: 'TBD',
       successCriteria: 'TBD',
@@ -211,10 +235,12 @@ function processMitigationStrategies(
 
   // Convert map to array of MitigationStrategy objects
   const mitigationStrategies: MitigationStrategy[] = [];
-  for (const [biasId, mitigations] of mitigationsByBias) {
+  for (const [biasId, data] of mitigationsByBias) {
     mitigationStrategies.push({
       biasId,
-      mitigations,
+      biasName: data.biasName,
+      lifecycleStage: data.lifecycleStage as any,
+      mitigations: data.mitigations,
     });
   }
 
@@ -392,11 +418,16 @@ export const useReportsStore = create<ReportsStore>()(
         const report = reportId ? get().getReport(reportId) : null;
 
         // Fix duplicate mitigation strategies in existing reports
-        if (report && report.analysis.mitigationStrategies) {
+        if (report?.analysis.mitigationStrategies) {
           const deduplicatedStrategies = new Map<string, MitigationStrategy>();
 
           // Group all mitigations by biasId
           for (const strategy of report.analysis.mitigationStrategies) {
+            // Skip if mitigations is not an array
+            if (!Array.isArray(strategy.mitigations)) {
+              continue;
+            }
+
             if (deduplicatedStrategies.has(strategy.biasId)) {
               // Merge mitigations for the same biasId
               const existing = deduplicatedStrategies.get(strategy.biasId)!;
@@ -404,6 +435,8 @@ export const useReportsStore = create<ReportsStore>()(
             } else {
               deduplicatedStrategies.set(strategy.biasId, {
                 biasId: strategy.biasId,
+                biasName: strategy.biasName,
+                lifecycleStage: strategy.lifecycleStage,
                 mitigations: [...strategy.mitigations],
               });
             }
@@ -460,6 +493,73 @@ export const useReportsStore = create<ReportsStore>()(
             getCardById
           );
 
+          // Calculate risk distribution
+          const riskDistribution = {
+            high: 0,
+            medium: 0,
+            low: 0,
+            unassigned: 0,
+          };
+          let totalBiases = 0;
+          const biasesByCategory = {
+            high: [] as Array<{
+              id: string;
+              name: string;
+              assignedAt?: string;
+            }>,
+            medium: [] as Array<{
+              id: string;
+              name: string;
+              assignedAt?: string;
+            }>,
+            low: [] as Array<{ id: string; name: string; assignedAt?: string }>,
+            unassigned: [] as Array<{
+              id: string;
+              name: string;
+              assignedAt?: string;
+            }>,
+          };
+
+          for (const bi of biasIdentification) {
+            for (const bias of bi.biases || []) {
+              totalBiases++;
+              const biasInfo = {
+                id: bias.biasCard.id,
+                name: bias.biasCard.name,
+                assignedAt: new Date().toISOString(),
+              };
+
+              if (bias.severity === 'high') {
+                riskDistribution.high++;
+                biasesByCategory.high.push(biasInfo);
+              } else if (bias.severity === 'medium') {
+                riskDistribution.medium++;
+                biasesByCategory.medium.push(biasInfo);
+              } else if (bias.severity === 'low') {
+                riskDistribution.low++;
+                biasesByCategory.low.push(biasInfo);
+              } else {
+                riskDistribution.unassigned++;
+                biasesByCategory.unassigned.push(biasInfo);
+              }
+            }
+          }
+
+          // Generate executive summary
+          const executiveSummary = {
+            keyFindings: [],
+            riskAssessment: `Identified ${totalBiases} biases: ${riskDistribution.high} high-risk, ${riskDistribution.medium} medium-risk, ${riskDistribution.low} low-risk`,
+            recommendations: [],
+          };
+
+          // Generate risk assessment summary
+          const riskAssessmentSummary = {
+            totalAssessed: totalBiases,
+            completionPercentage: 90, // Placeholder - could be calculated based on activity progress
+            distribution: riskDistribution,
+            biasesByCategory,
+          };
+
           // Update the report with generated analysis
           get().updateReport(
             reportId,
@@ -467,6 +567,8 @@ export const useReportsStore = create<ReportsStore>()(
               analysis: {
                 biasIdentification,
                 mitigationStrategies,
+                executiveSummary,
+                riskAssessmentSummary,
               },
             },
             user.userId,
@@ -609,8 +711,8 @@ export const useReportsStore = create<ReportsStore>()(
         try {
           set({ isLoading: true, error: null });
 
-          // Export functionality not yet implemented - placeholder
-          await new Promise((resolve) => setTimeout(resolve, 100));
+          // Call the actual export service
+          await exportReport(report, config);
 
           // Add to export history
           const exportRecord = {
@@ -666,14 +768,16 @@ export const useReportsStore = create<ReportsStore>()(
           owner: report.permissions.owner,
           domain: report.projectInfo.domain,
           tags: report.metadata.tags,
-          biasCount: report.analysis.biasIdentification.reduce(
-            (count, bi) => count + bi.biases.length,
-            0
-          ),
-          mitigationCount: report.analysis.mitigationStrategies.reduce(
-            (count, ms) => count + ms.mitigations.length,
-            0
-          ),
+          biasCount:
+            report.analysis.biasIdentification?.reduce(
+              (count, bi) => count + (bi.biases?.length || 0),
+              0
+            ) || 0,
+          mitigationCount:
+            report.analysis.mitigationStrategies?.reduce(
+              (count, ms) => count + (ms.mitigations?.length || 0),
+              0
+            ) || 0,
           completionPercentage: calculateCompletionPercentage(report),
           isDemo: report.isDemo,
         }));
@@ -818,11 +922,11 @@ export const useReportsStore = create<ReportsStore>()(
         deletedDemoReportIds: state.deletedDemoReportIds,
         // Don't persist loading states or current report
       }),
-      onRehydrateStorage: () => (state) => {
-        // Initialize demo reports after store rehydration if needed
-        if (state) {
-          state.initializeDemoReports();
-        }
+      onRehydrateStorage: () => (_state) => {
+        // Demo reports initialization disabled - will recreate later
+        // if (state) {
+        //   state.initializeDemoReports();
+        // }
       },
     }
   )
@@ -841,13 +945,13 @@ function calculateCompletionPercentage(report: Report): number {
 
   // Check if biases are identified
   total += 1;
-  if (report.analysis.biasIdentification.length > 0) {
+  if (report.analysis.biasIdentification?.length > 0) {
     completed += 1;
   }
 
   // Check if mitigations are planned
   total += 1;
-  if (report.analysis.mitigationStrategies.length > 0) {
+  if (report.analysis.mitigationStrategies?.length > 0) {
     completed += 1;
   }
 

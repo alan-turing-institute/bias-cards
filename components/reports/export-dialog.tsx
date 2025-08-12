@@ -125,7 +125,7 @@ export function ReportExportDialog({
                       className={`flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-all ${
                         selectedFormat === format.value
                           ? 'border-primary bg-primary/5'
-                          : 'border-gray-200 hover:border-gray-300'
+                          : 'border-border hover:border-muted-foreground/40'
                       }`}
                       htmlFor={format.value}
                     >

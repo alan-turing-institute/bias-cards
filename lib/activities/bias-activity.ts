@@ -164,7 +164,7 @@ export class BiasActivity extends Activity {
 
   // Helper methods
   getBias(biasId: string): BiasEntry {
-    if (!(this.state && this.state.biases)) {
+    if (!this.state?.biases) {
       this.state = this.initializeState();
     }
     if (!this.state.biases[biasId]) {
@@ -174,7 +174,7 @@ export class BiasActivity extends Activity {
   }
 
   getBiases(): Record<string, BiasEntry> {
-    if (!(this.state && this.state.biases)) {
+    if (!this.state?.biases) {
       return {};
     }
     return { ...this.state.biases };

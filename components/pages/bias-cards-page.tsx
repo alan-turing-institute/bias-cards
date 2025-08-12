@@ -142,8 +142,8 @@ export function BiasCardsPage({
           {filteredCards
             .sort(
               (a, b) =>
-                Number.parseInt(a.displayNumber || '0') -
-                Number.parseInt(b.displayNumber || '0')
+                Number.parseInt(a.displayNumber || '0', 10) -
+                Number.parseInt(b.displayNumber || '0', 10)
             )
             .map((card) => (
               <BiasCardCompact

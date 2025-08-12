@@ -2,7 +2,7 @@
 
 import { Calendar, FileText, Search, Share2, Trash2, User } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
   Breadcrumb,
@@ -35,11 +35,14 @@ function ReportCard({ report }: ReportCardProps) {
   const { deleteReport, exportReport } = useReportsStore();
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    const date = new Date(dateString);
+    const options: Intl.DateTimeFormatOptions = {
       year: 'numeric',
       month: 'short',
       day: 'numeric',
-    });
+      timeZone: 'UTC',
+    };
+    return date.toLocaleDateString('en-US', options);
   };
 
   const handleDelete = (e: React.MouseEvent) => {
@@ -120,14 +123,14 @@ function ReportCard({ report }: ReportCardProps) {
           <Badge className="text-xs" variant="outline">
             {report.domain}
           </Badge>
-          {report.tags.slice(0, 2).map((tag) => (
+          {(report.tags || []).slice(0, 2).map((tag) => (
             <Badge className="text-xs" key={tag} variant="secondary">
               {tag}
             </Badge>
           ))}
-          {report.tags.length > 2 && (
+          {(report.tags?.length || 0) > 2 && (
             <Badge className="text-xs" variant="secondary">
-              +{report.tags.length - 2}
+              +{(report.tags?.length || 0) - 2}
             </Badge>
           )}
         </div>
@@ -161,14 +164,14 @@ export default function ReportsPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [domainFilter, setDomainFilter] = useState<string>('all');
 
-  const { getReportSummaries } = useReportsStore();
-  const [allReports, setAllReports] = useState<ReportSummary[]>([]);
+  // Subscribe to the reports store to get real-time updates
+  const _reports = useReportsStore((state) => state.reports);
+  const getReportSummaries = useReportsStore(
+    (state) => state.getReportSummaries
+  );
 
-  useEffect(() => {
-    // Load reports from store
-    const reports = getReportSummaries();
-    setAllReports(reports);
-  }, [getReportSummaries]);
+  // Get report summaries whenever reports change
+  const allReports = getReportSummaries();
 
   const filteredReports = allReports.filter((report) => {
     const matchesSearch =

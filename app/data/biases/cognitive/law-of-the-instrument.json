@@ -1,7 +1,7 @@
 {
-  "name": "Law of the Instrument (Maslow’s Hammer)",
+  "name": "Law of the Instrument",
   "title": "law-of-the-instrument",
-  "description": "Known as 'Maslow's Hammer', this bias describes over-reliance on familiar tools or methods. In AI development, teams may default to techniques they know well rather than selecting the most appropriate approach. This can lead to misapplying complex ML solutions to simple problems, or forcing AI into situations where traditional methods would be more effective.",
+  "description": "Also known as 'Maslow's Hammer', this bias describes over-reliance on familiar tools or methods. In AI development, teams may default to techniques they know well rather than selecting the most appropriate approach. This can lead to misapplying complex ML solutions to simple problems, or forcing AI into situations where traditional methods would be more effective.",
   "example": "If an organisation develops a system to parse natural language, and successfully deploys it for one task, but then uses it in a new project without considering whether it is the right tool, they are falling prey to this bias.",
   "prompts": [
     "Have you considered simpler alternatives before defaulting to AI/ML solutions for this problem?",

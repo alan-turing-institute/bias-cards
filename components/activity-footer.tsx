@@ -1,11 +1,18 @@
 'use client';
 
-import { ArrowLeft, ArrowRight, Download } from 'lucide-react';
+import { ArrowRight, Check, Download } from 'lucide-react';
 import { useEffect, useState } from 'react';
+import { ActivityCompletionDialog } from '@/components/ui/activity-completion-dialog';
 import { Button } from '@/components/ui/button';
 import { useSidebar } from '@/components/ui/sidebar';
-import { navigateToActivity } from '@/lib/routing/navigation';
+import {
+  navigateToActivity,
+  navigateToDashboard,
+} from '@/lib/routing/navigation';
+import { useCardsStore } from '@/lib/stores/cards-store';
+import { useReportsStore } from '@/lib/stores/reports-store';
 import { useUnifiedActivityStore } from '@/lib/stores/unified-activity-store';
+import type { LifecycleStage } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
 export function ActivityFooter() {
@@ -15,6 +22,7 @@ export function ActivityFooter() {
 
   const [currentStage, setCurrentStage] = useState<number | null>(null);
   const [activityId, setActivityId] = useState<string>('');
+  const [showCompletionDialog, setShowCompletionDialog] = useState(false);
 
   useEffect(() => {
     // Parse the hash to get current stage and activity
@@ -36,7 +44,9 @@ export function ActivityFooter() {
   }, []);
 
   // Only show footer on activity stages
-  if (!currentStage) return null;
+  if (!currentStage) {
+    return null;
+  }
 
   // Use activity ID from hash or current activity
   const resolvedActivityId = activityId || currentActivity?.id || '';
@@ -44,7 +54,9 @@ export function ActivityFooter() {
   // Get completion status for current stage
   const { currentActivityData } = useUnifiedActivityStore.getState();
   const canComplete = (() => {
-    if (!currentActivityData) return false;
+    if (!currentActivityData) {
+      return false;
+    }
 
     switch (currentStage) {
       case 1: {
@@ -74,7 +86,7 @@ export function ActivityFooter() {
           if (b.lifecycleAssignments) {
             b.lifecycleAssignments.forEach((stage: string) => {
               totalAssignments++;
-              if (b.rationale && b.rationale[stage]) {
+              if (b.rationale?.[stage]) {
                 assignmentsWithRationale++;
               }
             });
@@ -116,10 +128,7 @@ export function ActivityFooter() {
                 if (Array.isArray(mitigations)) {
                   mitigations.forEach((mitId: string) => {
                     totalMitigations++;
-                    if (
-                      b.implementationNotes[stage] &&
-                      b.implementationNotes[stage][mitId]
-                    ) {
+                    if (b.implementationNotes[stage]?.[mitId]) {
                       mitigationsWithNotes++;
                     }
                   });
@@ -138,12 +147,6 @@ export function ActivityFooter() {
     }
   })();
 
-  const handlePreviousStage = () => {
-    if (currentStage > 1 && resolvedActivityId) {
-      navigateToActivity(resolvedActivityId, currentStage - 1);
-    }
-  };
-
   const handleNextStage = () => {
     if (
       currentStage < 5 &&
@@ -156,11 +159,237 @@ export function ActivityFooter() {
 
   const handleCompleteStage = () => {
     if (resolvedActivityId && canComplete) {
-      completeStage(currentStage);
-      if (currentStage < 5) {
+      if (currentStage === 5) {
+        // Show completion dialog for stage 5
+        setShowCompletionDialog(true);
+      } else {
+        // Complete stage and navigate to next
+        completeStage(currentStage);
         navigateToActivity(resolvedActivityId, currentStage + 1);
       }
     }
+  };
+
+  const handleGenerateReport = async () => {
+    if (!(resolvedActivityId && currentActivity)) {
+      return;
+    }
+
+    // Complete the activity
+    completeStage(5);
+
+    // Generate report directly from current activity
+    const { createReport, updateReport } = useReportsStore.getState();
+    const { biasCards, mitigationCards } = useCardsStore.getState();
+
+    try {
+      // Create the report
+      const reportId = createReport(
+        resolvedActivityId,
+        {
+          title: currentActivity.name || '',
+          description: currentActivity.description || '',
+          domain: 'General',
+          objectives: '',
+          scope: '',
+          status: 'planning' as const,
+          timeline: {
+            startDate: currentActivity.getState().startTime,
+            endDate: new Date().toISOString(),
+            milestones: [],
+          },
+          team: {
+            projectLead: {
+              name: '',
+              role: '',
+              responsibilities: '',
+            },
+            members: [],
+            stakeholders: [],
+          },
+        },
+        'default-user',
+        'Anonymous User'
+      );
+
+      // Generate analysis from current activity
+      const biases = currentActivity.getBiases();
+      const biasIdentificationsByStage: Record<string, any[]> = {};
+      const mitigationStrategiesByBias: Record<string, any> = {};
+
+      // Generate risk assessment summary (Stage 1)
+      const riskDistribution = { high: 0, medium: 0, low: 0, unassigned: 0 };
+      const biasesByCategory: {
+        high: Array<{ id: string; name: string; assignedAt?: string }>;
+        medium: Array<{ id: string; name: string; assignedAt?: string }>;
+        low: Array<{ id: string; name: string; assignedAt?: string }>;
+        unassigned: Array<{ id: string; name: string }>;
+      } = {
+        high: [],
+        medium: [],
+        low: [],
+        unassigned: [],
+      };
+
+      Object.entries(biases).forEach(([biasId, biasData]) => {
+        const biasCard = biasCards.find((c) => c.id === biasId);
+        if (!biasCard) {
+          return;
+        }
+
+        // Process risk assessment (Stage 1)
+        if (biasData.riskCategory) {
+          const category = biasData.riskCategory.replace('-risk', '') as
+            | 'high'
+            | 'medium'
+            | 'low';
+
+          // Ensure the category exists in our objects
+          if (category in riskDistribution && category in biasesByCategory) {
+            riskDistribution[category]++;
+            biasesByCategory[category].push({
+              id: biasId,
+              name: biasCard.name,
+              assignedAt: biasData.riskAssignedAt || undefined,
+            });
+          } else {
+            // Fallback to unassigned if category is invalid
+            riskDistribution.unassigned++;
+            biasesByCategory.unassigned.push({
+              id: biasId,
+              name: biasCard.name,
+            });
+          }
+        } else {
+          riskDistribution.unassigned++;
+          biasesByCategory.unassigned.push({
+            id: biasId,
+            name: biasCard.name,
+          });
+        }
+
+        // Group biases by their lifecycle stages with rationale (Stages 2 & 3)
+        (biasData.lifecycleAssignments || []).forEach((stage: string) => {
+          if (!biasIdentificationsByStage[stage]) {
+            biasIdentificationsByStage[stage] = [];
+          }
+
+          biasIdentificationsByStage[stage].push({
+            biasCard,
+            severity:
+              biasData.riskCategory === 'high-risk'
+                ? 'high'
+                : biasData.riskCategory === 'medium-risk'
+                  ? 'medium'
+                  : 'low',
+            confidence: 'medium',
+            rationale: biasData.rationale?.[stage as LifecycleStage] || '',
+            comments: [],
+            identifiedAt: biasData.riskAssignedAt || new Date().toISOString(),
+            identifiedBy: 'default-user',
+          });
+        });
+
+        // Process mitigation strategies (Stages 4 & 5)
+        Object.entries(biasData.mitigations || {}).forEach(
+          ([stage, mitigationIds]) => {
+            (mitigationIds as string[]).forEach((mitigationId) => {
+              const mitigationCard = mitigationCards.find(
+                (c) => c.id === mitigationId
+              );
+              if (!mitigationCard) {
+                return;
+              }
+
+              const implementationNote = (
+                biasData.implementationNotes as any
+              )?.[stage]?.[mitigationId];
+
+              if (!mitigationStrategiesByBias[biasId]) {
+                mitigationStrategiesByBias[biasId] = {
+                  biasId,
+                  biasName: biasCard.name,
+                  lifecycleStage: stage,
+                  mitigations: [],
+                };
+              }
+
+              mitigationStrategiesByBias[biasId].mitigations.push({
+                mitigationCard,
+                timeline: 'TBD',
+                responsible: 'TBD',
+                successCriteria: 'TBD',
+                priority: 'medium',
+                effectivenessRating:
+                  implementationNote?.effectivenessRating || 0,
+                implementationNotes: implementationNote?.notes || '',
+                comments: [],
+              });
+            });
+          }
+        );
+      });
+
+      const totalAssessed = Object.keys(biases).length;
+      const riskAssessmentSummary = {
+        totalAssessed,
+        distribution: riskDistribution,
+        biasesByCategory,
+        completionPercentage:
+          totalAssessed > 0
+            ? Math.round(
+                ((totalAssessed - riskDistribution.unassigned) /
+                  totalAssessed) *
+                  100
+              )
+            : 0,
+      };
+
+      // Convert grouped biases to proper format
+      const biasIdentifications = Object.entries(
+        biasIdentificationsByStage
+      ).map(([stage, biases]) => ({
+        stage: stage as LifecycleStage,
+        biases,
+      }));
+
+      // Convert mitigation strategies to array
+      const mitigationStrategies = Object.values(mitigationStrategiesByBias);
+
+      // Update the report with analysis
+      updateReport(
+        reportId,
+        {
+          analysis: {
+            riskAssessmentSummary,
+            biasIdentification: biasIdentifications,
+            mitigationStrategies,
+            executiveSummary: {
+              keyFindings: [],
+              riskAssessment: `Identified ${totalAssessed} biases: ${riskDistribution.high} high-risk, ${riskDistribution.medium} medium-risk, ${riskDistribution.low} low-risk`,
+              recommendations: [],
+            },
+          },
+        },
+        'default-user',
+        'Anonymous User'
+      );
+
+      // Redirect to report view
+      window.location.href = `/reports/view?id=${reportId}`;
+    } catch (_error) {}
+  };
+
+  const handleReturnToDashboard = () => {
+    if (!resolvedActivityId) {
+      return;
+    }
+
+    // Complete the activity
+    completeStage(5);
+
+    // Navigate to dashboard
+    navigateToDashboard();
   };
 
   const handleExportReport = () => {
@@ -182,7 +411,6 @@ export function ActivityFooter() {
     }
   };
 
-  const showPrev = currentStage > 1;
   const showNext =
     !canComplete &&
     currentStage < 5 &&
@@ -194,6 +422,33 @@ export function ActivityFooter() {
 
   const leftOffset = sidebar?.open ? 'md:left-[16rem]' : 'md:left-[3rem]';
 
+  // Get completed stages from current activity
+  const activityState = currentActivity?.getState() as any;
+  const completedStages = activityState?.completedStages || [];
+
+  const stages = [
+    { num: 1, label: 'Risk Assessment' },
+    { num: 2, label: 'Lifecycle Assignment' },
+    { num: 3, label: 'Rationale Documentation' },
+    { num: 4, label: 'Mitigation Selection' },
+    { num: 5, label: 'Implementation Planning' },
+  ];
+
+  const handleStageNavigation = (targetStage: number) => {
+    if (!resolvedActivityId) {
+      return;
+    }
+    if (canAdvanceToStage(targetStage)) {
+      navigateToActivity(resolvedActivityId, targetStage);
+    }
+  };
+
+  // Visual layout constants for precise alignment
+  const STEP_WIDTH = 140; // distance between stage centers
+  const LINE_Y_CLASS = 'top-4'; // 16px -> vertical center of 32px node
+
+  const startX = STEP_WIDTH / 2; // center of first node within its slot
+
   return (
     <div
       className={cn(
@@ -201,51 +456,141 @@ export function ActivityFooter() {
         leftOffset
       )}
     >
-      <div className="px-4 py-3">
-        <div className="flex items-center justify-between">
-          {/* Left side - Previous button */}
-          <div className="flex items-center gap-2">
-            {showPrev && (
-              <Button onClick={handlePreviousStage} size="sm" variant="outline">
-                <ArrowLeft className="mr-2 h-4 w-4" />
-                Previous
-              </Button>
-            )}
-          </div>
+      <div className="flex items-center justify-between px-4 py-3">
+        {/* Left side - Stage Progress Tracker */}
+        <div className="flex items-center">
+          <div className="relative flex items-center">
+            {/* Background line that spans between first and last circles */}
+            <div
+              className={cn('absolute h-[2px] bg-border', LINE_Y_CLASS)}
+              style={{
+                left: `${startX}px`, // Start at center of first circle
+                width: `${(stages.length - 1) * STEP_WIDTH}px`, // Span to center of last circle
+              }}
+            />
 
-          {/* Right side - Export and Complete/Next buttons */}
-          <div className="flex items-center gap-2">
-            <Button onClick={handleExportReport} size="sm" variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              Export Report
-            </Button>
+            {/* Colored line segments for completed stages */}
+            {stages.map((stage, index) => {
+              const isCompleted = completedStages.includes(stage.num);
+              if (!isCompleted || index === stages.length - 1) {
+                return null;
+              }
 
-            {canComplete && (
-              <Button
-                className={cn('bg-green-600 text-white hover:bg-green-700')}
-                onClick={handleCompleteStage}
-                size="sm"
-              >
-                {currentStage < 5 ? (
-                  <>
-                    {completionLabel}
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </>
-                ) : (
-                  completionLabel
-                )}
-              </Button>
-            )}
+              // Calculate segment position and width precisely between node centers
+              const segmentLeft = startX + index * STEP_WIDTH; // start at current node center
+              const segmentWidth = STEP_WIDTH; // Distance between node centers
 
-            {showNext && (
-              <Button onClick={handleNextStage} size="sm">
-                Next Stage
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
-            )}
+              return (
+                <div
+                  className={cn('absolute h-[2px] bg-primary', LINE_Y_CLASS)}
+                  key={`line-${stage.num}`}
+                  style={{
+                    left: `${segmentLeft}px`,
+                    width: `${segmentWidth}px`,
+                  }}
+                />
+              );
+            })}
+
+            {/* Stage circles */}
+            {stages.map((stage) => {
+              const isCompleted = completedStages.includes(stage.num);
+              const isCurrent = stage.num === currentStage;
+              const canAccess = !isHydrated || canAdvanceToStage(stage.num);
+
+              return (
+                <div
+                  className="flex flex-col items-center"
+                  key={stage.num}
+                  style={{ width: `${STEP_WIDTH}px` }}
+                >
+                  {/* Circle */}
+                  <button
+                    className={cn(
+                      'relative z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 transition-all duration-200',
+                      isCompleted &&
+                        'border-primary bg-primary text-primary-foreground hover:border-primary/90 hover:bg-primary/90',
+                      isCurrent &&
+                        !isCompleted &&
+                        'border-secondary bg-secondary text-secondary-foreground hover:border-secondary/90 hover:bg-secondary/90',
+                      !(isCompleted || isCurrent) &&
+                        canAccess &&
+                        'border-border bg-background text-muted-foreground hover:border-border hover:bg-muted',
+                      !canAccess &&
+                        'cursor-not-allowed border-border bg-muted text-muted-foreground'
+                    )}
+                    disabled={!canAccess}
+                    onClick={() => handleStageNavigation(stage.num)}
+                    title={stage.label}
+                    type="button"
+                  >
+                    {isCompleted ? (
+                      <Check className="h-4 w-4" />
+                    ) : (
+                      <span className="font-semibold text-xs">{stage.num}</span>
+                    )}
+                  </button>
+
+                  {/* Label */}
+                  <span
+                    className={cn(
+                      'mt-2 hidden max-w-[128px] whitespace-normal text-center text-[10px] tracking-wide md:block',
+                      isCurrent
+                        ? 'font-semibold text-foreground'
+                        : 'text-muted-foreground'
+                    )}
+                  >
+                    {stage.label}
+                  </span>
+                </div>
+              );
+            })}
           </div>
         </div>
+
+        {/* Right side - Action Buttons */}
+        <div className="flex items-center gap-2">
+          <Button onClick={handleExportReport} size="sm" variant="outline">
+            <Download className="mr-2 h-4 w-4" />
+            Export Report
+          </Button>
+
+          {canComplete && (
+            <Button
+              className={cn(
+                'bg-primary text-primary-foreground hover:bg-primary/90'
+              )}
+              onClick={handleCompleteStage}
+              size="sm"
+            >
+              {currentStage < 5 ? (
+                <>
+                  {completionLabel}
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </>
+              ) : (
+                completionLabel
+              )}
+            </Button>
+          )}
+
+          {showNext && (
+            <Button onClick={handleNextStage} size="sm">
+              Next Stage
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </div>
+
+      {/* Activity Completion Dialog */}
+      <ActivityCompletionDialog
+        activityName={currentActivity?.name}
+        onGenerateReport={handleGenerateReport}
+        onOpenChange={setShowCompletionDialog}
+        onReturnToDashboard={handleReturnToDashboard}
+        open={showCompletionDialog}
+      />
     </div>
   );
 }

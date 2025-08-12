@@ -385,7 +385,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
           }));
         },
 
-        completeActivityStage: (stage) => {
+        completeActivityStage: (_stage) => {
           // Legacy function - now handled by unified activity store
           set((state) => ({
             ...state,
@@ -393,7 +393,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
           }));
         },
 
-        isActivityStageComplete: (stage) => {
+        isActivityStageComplete: (_stage) => {
           // Legacy function - now handled by unified activity store
           return false;
         },
@@ -1000,7 +1000,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
         },
 
         getCardAnnotation: (cardId) => {
-          return (get().customAnnotations || {})[cardId];
+          return get().customAnnotations?.[cardId];
         },
 
         // Progress tracking
@@ -1048,22 +1048,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
 
             // More flexible restoration: check if we have persisted state and it's compatible
             // Don't require exact ID match since IDs can change during transitions
-            if (
-              persistedState &&
-              persistedState.state &&
-              persistedState.state.biases
-            ) {
-              // Restore from persisted state
-              console.log(
-                'Attempting to restore BiasActivity from persisted state',
-                {
-                  persistedId: persistedState.id,
-                  workspaceId: get().activityId,
-                  hasState: !!persistedState.state,
-                  hasBiases: !!persistedState.state?.biases,
-                }
-              );
-
+            if (persistedState?.state?.biases) {
               activity = new BiasActivityClass(deck, {
                 name: persistedState.name || activityName,
                 id: get().activityId || persistedState.id, // Use workspace ID if available
@@ -1074,17 +1059,9 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
               (activity as any).createdAt = new Date(persistedState.createdAt);
               (activity as any).updatedAt = new Date(persistedState.updatedAt);
 
-              console.log(
-                'Successfully restored BiasActivity from persisted state'
-              );
-
               // Also ensure biasRiskAssignments are populated in the activity
               const biasRiskAssignments = get().biasRiskAssignments || [];
               if (biasRiskAssignments.length > 0) {
-                console.log(
-                  'Syncing biasRiskAssignments to BiasActivity',
-                  biasRiskAssignments.length
-                );
                 for (const assignment of biasRiskAssignments) {
                   // Ensure the bias entry exists with the risk category
                   const bias = activity.getBias(assignment.cardId);
@@ -1102,7 +1079,6 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
                 name: activityName,
                 id: get().activityId, // Use workspace activity ID for new activities
               });
-              console.log('Created new BiasActivity');
             }
 
             set((_state) => ({
@@ -1112,9 +1088,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
               name: activity.name,
               lastModified: new Date().toISOString(),
             }));
-          } catch (error) {
-            console.error('Failed to initialize workspace:', error);
-          }
+          } catch (_error) {}
         },
 
         resetWorkspace: () => {
@@ -1172,7 +1146,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
                   id: generateAssignmentId(),
                   cardId: biasId,
                   stage,
-                  annotation: (state.customAnnotations || {})[biasId],
+                  annotation: state.customAnnotations?.[biasId],
                   timestamp: bias.riskAssignedAt || new Date().toISOString(),
                 }))
             ),
@@ -1427,13 +1401,8 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
 
           // If no current activity but we have persisted state, attempt to restore
           if (!state.currentActivity && (state as any).activityState) {
-            console.log(
-              'getCurrentActivity: Auto-restoring BiasActivity from persisted state'
-            );
             // Trigger restoration asynchronously (won't be available on this call but will on next)
-            state.initialize().catch((error) => {
-              console.error('Failed to auto-restore BiasActivity:', error);
-            });
+            state.initialize().catch((_error) => {});
             return null; // Will be available on next call after restoration completes
           }
 
@@ -1728,8 +1697,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
               return state.currentActivity
                 ? state.currentActivity.export()
                 : null;
-            } catch (error) {
-              console.warn('Failed to export activity state:', error);
+            } catch (_error) {
               return null;
             }
           })(),
@@ -1770,15 +1738,10 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
 
           // After rehydration, check if we have activityState but no currentActivity
           if (state && (state as any).activityState && !state.currentActivity) {
-            console.log(
-              'Auto-restoring BiasActivity from persisted state on rehydration'
-            );
             // Automatically restore the BiasActivity
             // We need to call initialize after a small delay to ensure all stores are ready
             setTimeout(() => {
-              state.initialize().catch((error: unknown) => {
-                console.error('Failed to auto-restore BiasActivity:', error);
-              });
+              state.initialize().catch((_error: unknown) => {});
             }, 100);
           }
         },

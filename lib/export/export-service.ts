@@ -1,6 +1,4 @@
 import { saveAs } from 'file-saver';
-import { generateBiasReport } from '@/lib/reports/report-generator';
-import { useWorkspaceStore } from '@/lib/stores/workspace-store';
 import type {
   Report,
   ReportExportConfig,
@@ -8,6 +6,7 @@ import type {
 } from '@/lib/types/reports';
 import { DocxReportExporter } from './docx-exporter';
 import { MarkdownReportExporter } from './markdown-exporter';
+import { PDFReportExporter } from './pdf-exporter';
 
 /**
  * Generate a filename for the report
@@ -23,11 +22,12 @@ function generateFilename(report: Report, format: string): string {
 /**
  * Get PDF content for a report
  */
-function getPDFContent(report: Report, _config: ReportExportConfig): Blob {
-  // Here you would use a PDF generation library like jsPDF or puppeteer
-  // For now, returning a placeholder
-  const content = JSON.stringify(report, null, 2);
-  return new Blob([content], { type: 'application/pdf' });
+async function getPDFContent(
+  report: Report,
+  config: ReportExportConfig
+): Promise<Blob> {
+  const exporter = new PDFReportExporter(report, config);
+  return await exporter.generate();
 }
 
 /**
@@ -68,32 +68,15 @@ function getJSONContent(report: Report, config: ReportExportConfig): string {
 }
 
 /**
- * Export to PDF using BiasReport
+ * Export to PDF format
  */
 async function exportPDF(
   report: Report,
   config: ReportExportConfig,
   filename: string
 ): Promise<void> {
-  const workspaceState = useWorkspaceStore.getState();
-
-  // Get the current BiasActivity from workspace
-  const currentActivity = workspaceState.getCurrentActivity();
-  if (!currentActivity) {
-    throw new Error('No active bias activity found');
-  }
-
-  // Import BiasReport dynamically to avoid circular dependencies
-  const { BiasReport } = await import('@/lib/reports/bias-report');
-
-  // Create BiasReport instance
-  const biasReport = new BiasReport(currentActivity);
-
-  // Generate PDF content
-  const pdfContent = await biasReport.exportToPDF();
-
-  // Save the file
-  saveAs(new Blob([pdfContent]), filename);
+  const content = await getPDFContent(report, config);
+  saveAs(content, filename);
 }
 
 /**
@@ -116,28 +99,7 @@ async function exportMarkdown(
   config: ReportExportConfig,
   filename: string
 ): Promise<void> {
-  const workspaceState = useWorkspaceStore.getState();
-
-  // Get the current BiasActivity from workspace
-  const currentActivity = workspaceState.getCurrentActivity();
-  if (!currentActivity) {
-    // Fallback to old method if no activity
-    const content = getMarkdownContent(report, config);
-    const blob = new Blob([content], { type: 'text/markdown' });
-    saveAs(blob, filename);
-    return;
-  }
-
-  // Import BiasReport dynamically to avoid circular dependencies
-  const { BiasReport } = await import('@/lib/reports/bias-report');
-
-  // Create BiasReport instance
-  const biasReport = new BiasReport(currentActivity);
-
-  // Generate markdown content with interim flag if activity not complete
-  const isInterim = currentActivity.getCurrentStage() < 5;
-  const content = biasReport.exportToMarkdown(isInterim);
-
+  const content = getMarkdownContent(report, config);
   const blob = new Blob([content], { type: 'text/markdown' });
   saveAs(blob, filename);
 }
@@ -150,36 +112,7 @@ async function exportJSON(
   config: ReportExportConfig,
   filename: string
 ): Promise<void> {
-  const workspaceState = useWorkspaceStore.getState();
-
-  // Get the current BiasActivity from workspace
-  const currentActivity = workspaceState.getCurrentActivity();
-  if (!currentActivity) {
-    // Fallback to old method if no activity
-    const content = getJSONContent(report, config);
-    const blob = new Blob([content], { type: 'application/json' });
-    saveAs(blob, filename);
-    return;
-  }
-
-  // Import BiasReport dynamically to avoid circular dependencies
-  const { BiasReport } = await import('@/lib/reports/bias-report');
-
-  // Create BiasReport instance
-  const biasReport = new BiasReport(currentActivity);
-
-  // Generate JSON content
-  const jsonData = biasReport.exportToJSON();
-  const content = JSON.stringify(
-    {
-      report: jsonData,
-      exportConfig: config,
-      exportDate: new Date().toISOString(),
-    },
-    null,
-    2
-  );
-
+  const content = getJSONContent(report, config);
   const blob = new Blob([content], { type: 'application/json' });
   saveAs(blob, filename);
 }
@@ -229,7 +162,7 @@ export async function exportBatch(
 
     switch (config.format) {
       case 'pdf':
-        content = getPDFContent(report, config);
+        content = await getPDFContent(report, config);
         break;
       case 'docx':
         content = await getDocxContent(report, config);
