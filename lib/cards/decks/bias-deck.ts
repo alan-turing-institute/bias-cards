@@ -1,6 +1,6 @@
 import type { BiasCategory, LifecycleStage } from '@/lib/types';
 import { BiasCard, type BiasCardData } from '../bias-card';
-import { Deck } from '../deck';
+import { Deck } from '../Deck';
 import { MitigationCard, type MitigationCardData } from '../mitigation-card';
 
 type BiasDeckCard = BiasCard | MitigationCard;

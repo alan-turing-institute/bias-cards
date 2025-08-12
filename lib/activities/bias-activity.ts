@@ -13,7 +13,7 @@ import {
   Activity,
   type ActivityMetadata, // Use the base Activity's metadata type
   type ValidationResult,
-} from './activity';
+} from './Activity';
 
 export class BiasActivity extends Activity {
   protected state!: BiasActivityState; // Use definite assignment assertion since it's initialized in parent
