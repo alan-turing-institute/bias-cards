@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { PageHeader } from '@/components/page-header';
 import { Card } from '@/components/ui/card';
+import { getAssetPath } from '@/lib/utils/asset-path';
 
 export default function Home() {
   return (
@@ -50,7 +51,7 @@ export default function Home() {
                 className="object-contain"
                 fill
                 priority
-                src="/project-design.png"
+                src={getAssetPath('/project-design.png')}
               />
             </div>
           </div>

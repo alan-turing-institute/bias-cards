@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { LifecycleStage } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { getAssetPath } from '@/lib/utils/asset-path';
 
 interface ProjectLifecycleProps {
   onStageClick?: (stage: LifecycleStage) => void;
@@ -119,7 +120,7 @@ export function ProjectLifecycle({
 
   // Load and display the SVG
   useEffect(() => {
-    fetch('/project-lifecycle.svg')
+    fetch(getAssetPath('/project-lifecycle.svg'))
       .then((res) => res.text())
       .then((svgText) => {
         if (containerRef.current) {

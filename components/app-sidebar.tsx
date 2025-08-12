@@ -13,7 +13,6 @@ import Link from 'next/link';
 import { useTheme } from 'next-themes';
 import type { ComponentProps } from 'react';
 import { useEffect, useState } from 'react';
-
 import { NavMain } from '@/components/nav-main';
 import { NavProjects } from '@/components/nav-projects';
 import { NavUser } from '@/components/nav-user';
@@ -27,6 +26,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from '@/components/ui/sidebar';
+import { getAssetPath } from '@/lib/utils/asset-path';
 
 // Navigation data with Resources and Activity sections
 const data = {
@@ -137,7 +137,9 @@ export function AppSidebar({ ...props }: ComponentProps<typeof Sidebar>) {
 
   // Use light logo by default, switch to dark logo when theme is dark
   const logoSrc =
-    mounted && theme === 'dark' ? '/logo-dark.png' : '/logo-light.png';
+    mounted && theme === 'dark'
+      ? getAssetPath('/logo-dark.png')
+      : getAssetPath('/logo-light.png');
 
   return (
     <Sidebar collapsible="icon" {...props}>
