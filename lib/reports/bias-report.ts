@@ -9,7 +9,7 @@ import {
   type ReportMetrics,
   type ReportSection,
   type ReportSummary,
-} from './Report';
+} from './report';
 
 export interface BiasReportSummary extends ReportSummary {
   totalBiases: number;
