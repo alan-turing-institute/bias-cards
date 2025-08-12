@@ -153,7 +153,7 @@ export function ReportExportDialog({ trigger }: ReportExportDialogProps) {
           createdAt: workspace.createdAt,
           lastModified: workspace.lastModified,
           currentStage: workspace.currentStage,
-          completedActivityStages: workspace.completedActivityStages,
+          // completedActivityStages: workspace.completedActivityStages,
           biasRiskAssignments: workspace.biasRiskAssignments,
           stageAssignments: workspace.stageAssignments,
           cardPairs: workspace.cardPairs,

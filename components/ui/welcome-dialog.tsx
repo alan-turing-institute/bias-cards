@@ -55,7 +55,7 @@ export function WelcomeDialog() {
 
   return (
     <Dialog onOpenChange={setOpen} open={open}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md" showCloseButton={false}>
         <DialogHeader>
           <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-amber-500/10 dark:bg-amber-500/20">
             <BookOpen className="h-8 w-8 text-amber-500" />
@@ -81,13 +81,13 @@ export function WelcomeDialog() {
           </div>
         </div>
 
-        <DialogFooter className="flex-col gap-2 sm:flex-col">
-          <Button className="w-full" onClick={handleStartTour}>
-            <Play className="mr-2 h-4 w-4" />
-            Start Guided Tour
-          </Button>
-          <Button className="w-full" onClick={handleSkip} variant="outline">
+        <DialogFooter className="flex-row gap-2">
+          <Button className="flex-1" onClick={handleSkip} variant="outline">
             Skip
+          </Button>
+          <Button className="flex-1" onClick={handleStartTour}>
+            <Play className="mr-2 h-4 w-4" />
+            Start Tour
           </Button>
         </DialogFooter>
       </DialogContent>

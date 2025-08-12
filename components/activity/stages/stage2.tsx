@@ -19,7 +19,6 @@ import { BiasCardDropped } from '@/components/cards/bias-card-dropped';
 import { BiasCardList } from '@/components/cards/bias-card-list';
 import { CardDragOverlay } from '@/components/cards/drag-overlay';
 import { DraggableCardEnhanced } from '@/components/cards/draggable-card-enhanced';
-import { StageFooter } from '@/components/stage-footer';
 import { StageNavigation } from '@/components/stage-navigation';
 import {
   Accordion,
@@ -51,9 +50,8 @@ import {
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
 import { useHashRouter } from '@/lib/routing/hash-router';
 import { navigateToActivity } from '@/lib/routing/navigation';
-import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
-import { useWorkspaceStore } from '@/lib/stores/workspace-store';
+import { useUnifiedActivityStore } from '@/lib/stores/unified-activity-store';
 import type { BiasCard, LifecycleStage, StageAssignment } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -183,7 +181,7 @@ function StageColumn({
                   <DraggableCardEnhanced
                     card={card}
                     id={`stage-${stage}-card-${card.id}-${assignment.timestamp}`}
-                    key={`${assignment.cardId}-${assignment.timestamp}`}
+                    key={assignment.id}
                   >
                     <div className="group relative">
                       <BiasCardDropped
@@ -286,30 +284,28 @@ function StageColumn({
 
 export default function Stage2Client() {
   const { currentRoute } = useHashRouter();
-  const workspaceActivityId = useWorkspaceStore((s) => s.activityId);
-  const activityId = (currentRoute.activityId || workspaceActivityId) as string;
-
-  const { completeActivityStage } = useActivityStore();
-  const { biasCards, setSearchQuery, loadCards } = useCardsStore();
 
   const {
-    stageAssignments,
-    assignCardToStage,
-    removeCardFromStage,
-    updateStageAssignment,
-    getBiasRiskAssignments,
-    completeActivityStage: completeWorkspaceStage,
-    getCurrentActivity,
-    getLifecycleAssignmentsFromActivity,
-    setCardAnnotation,
-    hasHydrated,
-  } = useWorkspaceStore();
+    currentActivity,
+    assignToLifecycle,
+    removeFromLifecycle,
+    setRationale,
+    completeStage,
+    setCurrentStage,
+    isHydrated,
+    initialize,
+  } = useUnifiedActivityStore();
+
+  const activityId = currentRoute.activityId || currentActivity?.id;
+
+  const { biasCards, setSearchQuery, loadCards } = useCardsStore();
 
   const [activeCard, setActiveCard] = useState<BiasCard | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [accordionOpenItems, setAccordionOpenItems] = useState<string[]>([]);
 
   // Modal state for card details
   const [selectedCard, setSelectedCard] = useState<BiasCard | null>(null);
@@ -318,83 +314,57 @@ export default function Stage2Client() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   // Activity-aware helper methods
-  const _getAssignments = (biasId: string): LifecycleStage[] => {
-    return getLifecycleAssignmentsFromActivity(biasId);
+  const getAssignments = (biasId: string): LifecycleStage[] => {
+    if (!currentActivity) return [];
+    const bias = currentActivity.getBias(biasId);
+    return bias?.lifecycleAssignments || [];
   };
 
-  const _isActivityReady = (): boolean => {
-    return getCurrentActivity() !== null;
+  const isActivityReady = (): boolean => {
+    return currentActivity !== null;
   };
+
+  // Get stage assignments from activity
+  const stageAssignments = currentActivity
+    ? Object.entries(currentActivity.getBiases()).flatMap(([biasId, bias]) =>
+        bias.lifecycleAssignments.map(
+          (stage) =>
+            ({
+              id: `${biasId}-${stage}`,
+              cardId: biasId,
+              stage,
+              annotation: bias.rationale[stage],
+              timestamp: new Date().toISOString(),
+            }) as StageAssignment
+        )
+      )
+    : [];
 
   // Ensure we only render on client to avoid hydration issues
   useEffect(() => {
     setIsClient(true);
     loadCards();
+    setIsInitializing(false);
+  }, [loadCards]);
 
-    // Initialize workspace if not ready
-    const initializeWorkspace = async () => {
-      try {
-        // Import stores dynamically to avoid circular dependencies
-        const { useActivityStore } = await import(
-          '@/lib/stores/activity-store'
-        );
-        const { useWorkspaceStore } = await import(
-          '@/lib/stores/workspace-store'
-        );
+  // Get bias risk assignments from current activity
+  const getBiasRiskAssignments = () => {
+    if (!currentActivity) return [];
+    const biases = currentActivity.getBiases();
+    return Object.entries(biases)
+      .filter(([_, bias]) => bias.riskCategory)
+      .map(([biasId, bias]) => ({
+        cardId: biasId,
+        riskCategory: bias.riskCategory,
+      }));
+  };
 
-        const workspaceStore = useWorkspaceStore.getState();
-
-        // Wait for store hydration before checking persisted state
-        const hasPersistedActivityState =
-          hasHydrated && workspaceStore.activityId === activityId;
-
-        console.log('Stage 2: Checking activity state', {
-          hasCurrentActivity: !!workspaceStore.getCurrentActivity(),
-          hasPersistedState: hasPersistedActivityState,
-          activityId,
-        });
-
-        // Check if we need to restore from persisted state
-        if (!workspaceStore.getCurrentActivity() && hasPersistedActivityState) {
-          console.log('Stage 2: Restoring from persisted state');
-          await workspaceStore.initialize();
-          console.log('Stage 2: Restoration complete', {
-            currentActivity: workspaceStore.getCurrentActivity(),
-            biasRiskAssignments: workspaceStore.getBiasRiskAssignments().length,
-          });
-        } else if (!_isActivityReady()) {
-          console.log('Stage 2: Activity not ready, initializing new...');
-          // If no persisted state, initialize normally
-          const activityStore = useActivityStore.getState();
-          const currentActivityData = activityStore.activities.find(
-            (a) => a.id === activityId
-          );
-
-          console.log('Stage 2: Found activity data', currentActivityData);
-
-          if (currentActivityData) {
-            await workspaceStore.initialize(currentActivityData.title);
-            workspaceStore.setActivityId(activityId);
-            console.log('Stage 2: Workspace initialized', {
-              currentActivity: workspaceStore.getCurrentActivity(),
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Failed to initialize workspace:', error);
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-
-    initializeWorkspace();
-  }, [loadCards, activityId, hasHydrated]);
-
-  // Get bias risk assignments from Stage 1
   const biasRiskAssignments = getBiasRiskAssignments();
 
   // Filter cards to only show those categorized in Stage 1
-  const categorizedBiasIds = new Set(biasRiskAssignments.map((a) => a.cardId));
+  const categorizedBiasIds = new Set(
+    biasRiskAssignments.map((a: any) => a.cardId)
+  );
   const availableBiasCards = biasCards.filter((card) =>
     categorizedBiasIds.has(card.id)
   );
@@ -402,7 +372,7 @@ export default function Stage2Client() {
   // Create enriched bias cards with risk category info
   const enrichedBiasCards = availableBiasCards.map((card) => {
     const riskAssignment = biasRiskAssignments.find(
-      (a) => a.cardId === card.id
+      (a: any) => a.cardId === card.id
     );
     return {
       ...card,
@@ -480,20 +450,15 @@ export default function Stage2Client() {
       if (match) {
         const sourceStage = match[1] as LifecycleStage;
         const cardId = match[2]; // This is now the card ID from the regex
-        const timestamp = match[3]; // Timestamp moved to third capture group
 
-        const assignmentToMove = stageAssignments.find(
-          (a) => a.cardId === cardId && a.timestamp === timestamp
-        );
-
-        if (assignmentToMove && sourceStage !== targetStage) {
-          removeCardFromStage(assignmentToMove.id);
-          assignCardToStage(cardId, targetStage);
+        if (sourceStage !== targetStage) {
+          removeFromLifecycle(cardId, sourceStage);
+          assignToLifecycle(cardId, targetStage);
         }
       }
     } else {
       // New card from library
-      assignCardToStage(card.id, targetStage);
+      assignToLifecycle(card.id, targetStage);
       setIsSheetOpen(false);
     }
   };
@@ -543,9 +508,12 @@ export default function Stage2Client() {
 
   // Handle saving rationale
   const handleSaveRationale = (rationale: string) => {
-    if (selectedAssignment) {
-      // Use setCardAnnotation instead of updateStageAssignment for better persistence
-      setCardAnnotation(selectedAssignment.cardId, rationale);
+    if (selectedAssignment && selectedAssignment.stage) {
+      setRationale(
+        selectedAssignment.cardId,
+        selectedAssignment.stage,
+        rationale
+      );
     }
     setIsModalOpen(false);
   };
@@ -564,6 +532,15 @@ export default function Stage2Client() {
       },
       {} as Record<string, typeof enrichedBiasCards>
     );
+
+    // Sort cards within each category by displayNumber
+    Object.keys(groupedCards).forEach((category) => {
+      groupedCards[category].sort((a, b) => {
+        const aNum = Number.parseInt(a.displayNumber || '999', 10);
+        const bNum = Number.parseInt(b.displayNumber || '999', 10);
+        return aNum - bNum;
+      });
+    });
 
     const getCardNumber = (card: BiasCard) =>
       card.displayNumber || String(card.id).padStart(2, '0');
@@ -613,8 +590,9 @@ export default function Stage2Client() {
           </p>
           <Accordion
             className="pr-4"
-            defaultValue={Object.keys(groupedCards)}
+            onValueChange={setAccordionOpenItems}
             type="multiple"
+            value={accordionOpenItems}
           >
             {sortedEntries.map(([category, cards]) => (
               <AccordionItem key={category} value={category}>
@@ -673,9 +651,10 @@ export default function Stage2Client() {
     uniqueAssignedCards >= Math.min(5, enrichedBiasCards.length); // At least 5 unique cards or all available
 
   const handleCompleteStage = () => {
-    completeActivityStage(activityId, 2);
-    completeWorkspaceStage(2);
-    navigateToActivity(activityId, 3);
+    if (activityId) {
+      completeStage(2);
+      navigateToActivity(activityId, 3);
+    }
   };
 
   // Show loading state during hydration to prevent mismatch
@@ -697,53 +676,55 @@ export default function Stage2Client() {
       onDragStart={handleDragStart}
       sensors={sensors}
     >
-      <div className="flex h-full flex-col">
+      <div className="flex min-h-screen flex-col">
         <StageNavigation
           actions={
-            <Sheet onOpenChange={setIsSheetOpen} open={isSheetOpen}>
-              <SheetTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <Layers className="mr-2 h-4 w-4" />
-                  View Categorised Cards
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="w-[400px] p-4 sm:w-[540px]">
-                <SheetHeader className="p-0">
-                  <SheetTitle>Categorised Bias Cards</SheetTitle>
-                  <SheetDescription>
-                    Drag bias cards to lifecycle stages based on their risk
-                    category from Stage 1
-                  </SheetDescription>
-                </SheetHeader>
+            <div className="flex justify-end">
+              <Sheet onOpenChange={setIsSheetOpen} open={isSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Layers className="mr-2 h-4 w-4" />
+                    View Categorised Cards
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="w-[400px] p-4 sm:w-[540px]">
+                  <SheetHeader className="p-0">
+                    <SheetTitle>Categorised Bias Cards</SheetTitle>
+                    <SheetDescription>
+                      Drag bias cards to lifecycle stages based on their risk
+                      category from Stage 1
+                    </SheetDescription>
+                  </SheetHeader>
 
-                <div className="mt-6 space-y-4">
-                  <div className="relative">
-                    <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      className="pl-10"
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search categorised cards..."
-                    />
-                  </div>
-
-                  <ScrollArea className="h-[calc(100vh-12rem)]">
-                    <div className="pr-3">
-                      {enrichedBiasCards.length > 0 ? (
-                        renderBiasCards()
-                      ) : (
-                        <div className="py-4 text-center text-muted-foreground">
-                          No categorised cards from Stage 1.
-                          <br />
-                          Complete Stage 1 first to see cards here.
-                        </div>
-                      )}
+                  <div className="mt-6 space-y-4">
+                    <div className="relative">
+                      <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        className="pl-10"
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search categorised cards..."
+                      />
                     </div>
-                  </ScrollArea>
-                </div>
-              </SheetContent>
-            </Sheet>
+
+                    <ScrollArea className="h-[calc(100vh-12rem)]">
+                      <div className="pr-3">
+                        {enrichedBiasCards.length > 0 ? (
+                          renderBiasCards()
+                        ) : (
+                          <div className="py-4 text-center text-muted-foreground">
+                            No categorised cards from Stage 1.
+                            <br />
+                            Complete Stage 1 first to see cards here.
+                          </div>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           }
-          activityId={activityId}
+          activityId={activityId || ''}
           canComplete={isStageComplete}
           completionLabel="Complete Stage 2"
           currentStage={2}
@@ -779,7 +760,17 @@ export default function Stage2Client() {
                       draggedCard={activeCard}
                       isDragging={isDragging}
                       onCardClick={handleCardClick}
-                      onRemoveCard={removeCardFromStage}
+                      onRemoveCard={(assignmentId) => {
+                        const assignment = stageAssignments.find(
+                          (a) => a.id === assignmentId
+                        );
+                        if (assignment) {
+                          removeFromLifecycle(
+                            assignment.cardId,
+                            assignment.stage
+                          );
+                        }
+                      }}
                       stage={stage}
                     />
                   </div>
@@ -796,7 +787,17 @@ export default function Stage2Client() {
                       draggedCard={activeCard}
                       isDragging={isDragging}
                       onCardClick={handleCardClick}
-                      onRemoveCard={removeCardFromStage}
+                      onRemoveCard={(assignmentId) => {
+                        const assignment = stageAssignments.find(
+                          (a) => a.id === assignmentId
+                        );
+                        if (assignment) {
+                          removeFromLifecycle(
+                            assignment.cardId,
+                            assignment.stage
+                          );
+                        }
+                      }}
                       stage={stage}
                     />
                   </div>
@@ -813,7 +814,17 @@ export default function Stage2Client() {
                       draggedCard={activeCard}
                       isDragging={isDragging}
                       onCardClick={handleCardClick}
-                      onRemoveCard={removeCardFromStage}
+                      onRemoveCard={(assignmentId) => {
+                        const assignment = stageAssignments.find(
+                          (a) => a.id === assignmentId
+                        );
+                        if (assignment) {
+                          removeFromLifecycle(
+                            assignment.cardId,
+                            assignment.stage
+                          );
+                        }
+                      }}
                       stage={stage}
                     />
                   </div>
@@ -832,15 +843,6 @@ export default function Stage2Client() {
         onOpenChange={setIsModalOpen}
         onSaveRationale={handleSaveRationale}
         open={isModalOpen}
-      />
-
-      {/* Footer Navigation */}
-      <StageFooter
-        activityId={activityId}
-        canComplete={isStageComplete}
-        completionLabel="Complete Stage 2"
-        currentStage={2}
-        onCompleteStage={handleCompleteStage}
       />
     </DndContext>
   );

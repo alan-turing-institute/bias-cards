@@ -18,7 +18,6 @@ import { BiasCardList } from '@/components/cards/bias-card-list';
 import { CardDragOverlay } from '@/components/cards/drag-overlay';
 import { DraggableCardEnhanced } from '@/components/cards/draggable-card-enhanced';
 import { RiskCategoryZone } from '@/components/cards/risk-category-zone';
-import { StageFooter } from '@/components/stage-footer';
 import { StageNavigation } from '@/components/stage-navigation';
 import {
   Accordion,
@@ -47,9 +46,8 @@ import {
 } from '@/components/ui/sheet';
 import { useHashRouter } from '@/lib/routing/hash-router';
 import { navigateToActivity } from '@/lib/routing/navigation';
-import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
-import { useWorkspaceStore } from '@/lib/stores/workspace-store';
+import { useUnifiedActivityStore } from '@/lib/stores/unified-activity-store';
 import type { BiasCard, BiasRiskCategory, Card } from '@/lib/types';
 
 // Regex pattern for extracting card IDs from drag element IDs
@@ -87,22 +85,22 @@ function extractCardFromDragEvent(
 
 export default function Stage1Client() {
   const { currentRoute } = useHashRouter();
-  const workspaceActivityId = useWorkspaceStore((s) => s.activityId);
-  const activityId = (currentRoute.activityId || workspaceActivityId) as string;
-
-  const { completeActivityStage } = useActivityStore();
-  const { biasCards, setSearchQuery, filteredCards, loadCards } =
-    useCardsStore();
 
   const {
+    currentActivity,
+    currentActivityData,
     assignBiasRisk,
     removeBiasRisk,
-    getBiasRiskByCategory,
-    completeActivityStage: completeWorkspaceStage,
-    getCurrentActivity,
-    getBiasRiskFromActivity,
-    hasHydrated,
-  } = useWorkspaceStore();
+    completeStage,
+    setCurrentStage,
+    isHydrated,
+    initialize,
+  } = useUnifiedActivityStore();
+
+  const activityId = currentRoute.activityId || currentActivity?.id;
+
+  const { biasCards, setSearchQuery, filteredCards, loadCards } =
+    useCardsStore();
 
   const [activeCard, setActiveCard] = useState<Card | null>(null);
   const [isSheetOpen, setIsSheetOpen] = useState(false);
@@ -111,14 +109,20 @@ export default function Stage1Client() {
   const [showConfirmationDialog, setShowConfirmationDialog] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [accordionOpenItems, setAccordionOpenItems] = useState<string[]>([]);
+  const [assignedAccordionOpenItems, setAssignedAccordionOpenItems] = useState<
+    string[]
+  >([]);
 
   // Activity-aware helper methods
-  const _getBiasRisk = (biasId: string): BiasRiskCategory | null => {
-    return getBiasRiskFromActivity(biasId);
+  const getBiasRisk = (biasId: string): BiasRiskCategory | null => {
+    if (!currentActivity) return null;
+    const bias = currentActivity.getBias(biasId);
+    return bias?.riskCategory || null;
   };
 
   const isActivityReady = (): boolean => {
-    return getCurrentActivity() !== null;
+    return currentActivity !== null;
   };
 
   // Load cards on mount and ensure client-side only rendering
@@ -126,61 +130,48 @@ export default function Stage1Client() {
     setIsClient(true);
     loadCards();
 
-    // Initialize workspace if not ready
-    const initializeWorkspace = async () => {
-      try {
-        // Import stores dynamically to avoid circular dependencies
-        const { useActivityStore } = await import(
-          '@/lib/stores/activity-store'
-        );
-        const { useWorkspaceStore } = await import(
-          '@/lib/stores/workspace-store'
-        );
-
-        const workspaceStore = useWorkspaceStore.getState();
-
-        // Wait for store hydration before checking persisted state
-        const hasPersistedActivityState =
-          hasHydrated && workspaceStore.activityId === activityId;
-
-        if (!workspaceStore.getCurrentActivity() && hasPersistedActivityState) {
-          console.log('Stage 1: Restoring from persisted state');
-          await workspaceStore.initialize();
-        } else if (!isActivityReady()) {
-          // If no persisted state, initialize normally
-          const activityStore = useActivityStore.getState();
-          const currentActivityData = activityStore.activities.find(
-            (a) => a.id === activityId
-          );
-
-          if (currentActivityData) {
-            await workspaceStore.initialize(currentActivityData.title);
-            workspaceStore.setActivityId(activityId);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to initialize workspace:', error);
-      } finally {
+    // Initialize activity if not ready
+    const initializeActivity = async () => {
+      if (!currentActivity && isHydrated) {
+        setIsInitializing(false);
+      } else {
         setIsInitializing(false);
       }
     };
 
-    initializeWorkspace();
-  }, [loadCards, activityId, hasHydrated]);
+    initializeActivity();
+  }, [loadCards, activityId, isHydrated, currentActivity, initialize]);
 
-  // Get risk assignments by category (safe to call even if activity not ready)
-  const highRiskCards = isActivityReady()
-    ? getBiasRiskByCategory('high-risk')
-    : [];
-  const mediumRiskCards = isActivityReady()
-    ? getBiasRiskByCategory('medium-risk')
-    : [];
-  const lowRiskCards = isActivityReady()
-    ? getBiasRiskByCategory('low-risk')
-    : [];
-  const needsDiscussionCards = isActivityReady()
-    ? getBiasRiskByCategory('needs-discussion')
-    : [];
+  // Get risk assignments by category from current activity data
+  const getBiasRiskByCategory = (category: BiasRiskCategory) => {
+    if (!currentActivityData) {
+      console.log('[Stage1] getBiasRiskByCategory - no currentActivityData');
+      return [];
+    }
+    const biases = currentActivityData.biases || {};
+    const result = Object.entries(biases)
+      .filter(([_, bias]) => bias.riskCategory === category)
+      .map(([biasId, bias]) => ({
+        id: `${biasId}-${category}`, // Create unique ID
+        cardId: biasId,
+        riskCategory: category,
+        timestamp: bias.riskAssignedAt || new Date().toISOString(),
+      }));
+
+    console.log('[Stage1] getBiasRiskByCategory:', {
+      category,
+      biasCount: Object.keys(biases).length,
+      matchingCount: result.length,
+      biases,
+    });
+
+    return result;
+  };
+
+  const highRiskCards = getBiasRiskByCategory('high-risk');
+  const mediumRiskCards = getBiasRiskByCategory('medium-risk');
+  const lowRiskCards = getBiasRiskByCategory('low-risk');
+  const needsDiscussionCards = getBiasRiskByCategory('needs-discussion');
 
   // Check completion status
   const totalBiasCards = biasCards.length;
@@ -210,9 +201,11 @@ export default function Stage1Client() {
   };
 
   const proceedToNextStage = () => {
-    completeActivityStage(activityId, 1);
-    completeWorkspaceStage(1);
-    navigateToActivity(activityId, 2);
+    completeStage(1);
+    setCurrentStage(2);
+    if (activityId) {
+      navigateToActivity(activityId, 2);
+    }
   };
 
   // Drag and drop sensors
@@ -251,8 +244,22 @@ export default function Stage1Client() {
           .toString()
           .replace('risk-category-', '') as BiasRiskCategory;
 
+        console.log('[Stage1] Assigning bias risk:', {
+          cardId: card.id,
+          targetCategory,
+          currentDataBefore: currentActivityData?.biases[card.id],
+        });
+
         assignBiasRisk(card.id, targetCategory);
         setIsSheetOpen(false);
+
+        // Check data after a small delay
+        setTimeout(() => {
+          console.log('[Stage1] After assignment, currentActivityData:', {
+            biasEntry: currentActivityData?.biases[card.id],
+            allBiases: currentActivityData?.biases,
+          });
+        }, 100);
       }
     }
 
@@ -294,6 +301,15 @@ export default function Stage1Client() {
     {} as Record<string, Card[]>
   );
 
+  // Sort cards within each category by displayNumber
+  Object.keys(groupedBiasCards).forEach((category) => {
+    groupedBiasCards[category].sort((a, b) => {
+      const aNum = Number.parseInt(a.displayNumber || '999', 10);
+      const bNum = Number.parseInt(b.displayNumber || '999', 10);
+      return aNum - bNum;
+    });
+  });
+
   // Group assigned cards by category for display
   const groupedAssignedCards = assignedBiasCards.reduce(
     (acc, card) => {
@@ -306,6 +322,15 @@ export default function Stage1Client() {
     },
     {} as Record<string, Card[]>
   );
+
+  // Sort assigned cards within each category by displayNumber
+  Object.keys(groupedAssignedCards).forEach((category) => {
+    groupedAssignedCards[category].sort((a, b) => {
+      const aNum = Number.parseInt(a.displayNumber || '999', 10);
+      const bNum = Number.parseInt(b.displayNumber || '999', 10);
+      return aNum - bNum;
+    });
+  });
 
   const getCardNumber = (card: Card) =>
     card.displayNumber || String(card.id).padStart(2, '0');
@@ -329,96 +354,60 @@ export default function Stage1Client() {
       onDragStart={handleDragStart}
       sensors={sensors}
     >
-      <div className="flex h-full flex-col">
+      <div className="flex min-h-screen flex-col">
         <StageNavigation
           actions={
-            <Sheet onOpenChange={setIsSheetOpen} open={isSheetOpen}>
-              <SheetTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <Layers className="mr-2 h-4 w-4" />
-                  View All Bias Cards
-                </Button>
-              </SheetTrigger>
-              <SheetContent className="w-[400px] p-4 sm:w-[540px]">
-                <SheetHeader className="p-0">
-                  <SheetTitle>Bias Card Library</SheetTitle>
-                  <SheetDescription>
-                    Drag bias cards to risk categories to assess their potential
-                    impact
-                  </SheetDescription>
-                </SheetHeader>
+            <div className="flex justify-end">
+              <Sheet onOpenChange={setIsSheetOpen} open={isSheetOpen}>
+                <SheetTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Layers className="mr-2 h-4 w-4" />
+                    View All Bias Cards
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="w-[400px] p-4 sm:w-[540px]">
+                  <SheetHeader className="p-0">
+                    <SheetTitle>Bias Card Library</SheetTitle>
+                    <SheetDescription>
+                      Drag bias cards to risk categories to assess their
+                      potential impact
+                    </SheetDescription>
+                  </SheetHeader>
 
-                <div className="mt-6 space-y-4">
-                  <div className="relative">
-                    <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      className="pl-10"
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search bias cards..."
-                    />
-                  </div>
+                  <div className="mt-6 space-y-4">
+                    <div className="relative">
+                      <Search className="-translate-y-1/2 absolute top-1/2 left-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        className="pl-10"
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="Search bias cards..."
+                      />
+                    </div>
 
-                  <ScrollArea className="h-[calc(100vh-12rem)]">
-                    <div className="pr-3">
-                      {/* Available Cards Section */}
-                      <div className="mb-6">
-                        <h3 className="mb-3 font-medium text-green-600 text-sm">
-                          Available Cards ({unassignedBiasCards.length})
-                        </h3>
-                        <Accordion
-                          defaultValue={Object.keys(groupedBiasCards)}
-                          type="multiple"
-                        >
-                          {Object.entries(groupedBiasCards).map(
-                            ([category, cards]) => (
-                              <AccordionItem key={category} value={category}>
-                                <AccordionTrigger className="font-medium text-base capitalize hover:no-underline">
-                                  {category} Biases ({cards.length})
-                                </AccordionTrigger>
-                                <AccordionContent>
-                                  <div className="space-y-2">
-                                    {cards.map((card, _index) => (
-                                      <DraggableCardEnhanced
-                                        card={card}
-                                        id={`card-${card.id}`}
-                                        key={card.id}
-                                      >
-                                        <BiasCardList
-                                          card={card as BiasCard}
-                                          cardNumber={getCardNumber(card)}
-                                          showCategory={false}
-                                        />
-                                      </DraggableCardEnhanced>
-                                    ))}
-                                  </div>
-                                </AccordionContent>
-                              </AccordionItem>
-                            )
-                          )}
-                        </Accordion>
-                      </div>
-
-                      {/* Already Assigned Cards Section */}
-                      {assignedBiasCards.length > 0 && (
-                        <div>
-                          <h3 className="mb-3 font-medium text-muted-foreground text-sm">
-                            Already Assigned ({assignedBiasCards.length})
+                    <ScrollArea className="h-[calc(100vh-12rem)]">
+                      <div className="pr-3">
+                        {/* Available Cards Section */}
+                        <div className="mb-6">
+                          <h3 className="mb-3 font-medium text-green-600 text-sm">
+                            Available Cards ({unassignedBiasCards.length})
                           </h3>
-                          <Accordion type="multiple">
-                            {Object.entries(groupedAssignedCards).map(
+                          <Accordion
+                            onValueChange={setAccordionOpenItems}
+                            type="multiple"
+                            value={accordionOpenItems}
+                          >
+                            {Object.entries(groupedBiasCards).map(
                               ([category, cards]) => (
-                                <AccordionItem
-                                  key={`assigned-${category}`}
-                                  value={`assigned-${category}`}
-                                >
-                                  <AccordionTrigger className="font-medium text-base text-muted-foreground capitalize hover:no-underline">
+                                <AccordionItem key={category} value={category}>
+                                  <AccordionTrigger className="font-medium text-base capitalize hover:no-underline">
                                     {category} Biases ({cards.length})
                                   </AccordionTrigger>
                                   <AccordionContent>
                                     <div className="space-y-2">
                                       {cards.map((card, _index) => (
-                                        <div
-                                          className="pointer-events-none opacity-50"
+                                        <DraggableCardEnhanced
+                                          card={card}
+                                          id={`card-${card.id}`}
                                           key={card.id}
                                         >
                                           <BiasCardList
@@ -426,7 +415,7 @@ export default function Stage1Client() {
                                             cardNumber={getCardNumber(card)}
                                             showCategory={false}
                                           />
-                                        </div>
+                                        </DraggableCardEnhanced>
                                       ))}
                                     </div>
                                   </AccordionContent>
@@ -435,14 +424,57 @@ export default function Stage1Client() {
                             )}
                           </Accordion>
                         </div>
-                      )}
-                    </div>
-                  </ScrollArea>
-                </div>
-              </SheetContent>
-            </Sheet>
+
+                        {/* Already Assigned Cards Section */}
+                        {assignedBiasCards.length > 0 && (
+                          <div>
+                            <h3 className="mb-3 font-medium text-muted-foreground text-sm">
+                              Already Assigned ({assignedBiasCards.length})
+                            </h3>
+                            <Accordion
+                              onValueChange={setAssignedAccordionOpenItems}
+                              type="multiple"
+                              value={assignedAccordionOpenItems}
+                            >
+                              {Object.entries(groupedAssignedCards).map(
+                                ([category, cards]) => (
+                                  <AccordionItem
+                                    key={`assigned-${category}`}
+                                    value={`assigned-${category}`}
+                                  >
+                                    <AccordionTrigger className="font-medium text-base text-muted-foreground capitalize hover:no-underline">
+                                      {category} Biases ({cards.length})
+                                    </AccordionTrigger>
+                                    <AccordionContent>
+                                      <div className="space-y-2">
+                                        {cards.map((card, _index) => (
+                                          <div
+                                            className="pointer-events-none opacity-50"
+                                            key={card.id}
+                                          >
+                                            <BiasCardList
+                                              card={card as BiasCard}
+                                              cardNumber={getCardNumber(card)}
+                                              showCategory={false}
+                                            />
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </AccordionContent>
+                                  </AccordionItem>
+                                )
+                              )}
+                            </Accordion>
+                          </div>
+                        )}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
           }
-          activityId={activityId}
+          activityId={activityId || ''}
           canComplete={hasMinimumCards}
           completionLabel="Complete Stage 1"
           currentStage={1}
@@ -538,15 +570,6 @@ export default function Stage1Client() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
-      {/* Footer Navigation */}
-      <StageFooter
-        activityId={activityId}
-        canComplete={hasMinimumCards}
-        completionLabel="Complete Stage 1"
-        currentStage={1}
-        onCompleteStage={handleCompleteStage}
-      />
     </DndContext>
   );
 }

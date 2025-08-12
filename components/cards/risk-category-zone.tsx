@@ -157,8 +157,8 @@ export function RiskCategoryZone({
                 {categoryCards.map(({ card, assignment }) => (
                   <DraggableCardEnhanced
                     card={card}
-                    id={`risk-${category}-card-${card.id}-${assignment.timestamp}`}
-                    key={`${assignment.id}-${assignment.timestamp}`}
+                    id={`risk-${category}-card-${card.id}-${assignment.timestamp || 'default'}`}
+                    key={assignment.id || `${card.id}-${category}`}
                   >
                     <div className="group relative">
                       <BiasCardDropped

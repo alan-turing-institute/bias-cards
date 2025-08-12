@@ -28,22 +28,7 @@ export type {
   CommentFilters,
   CommentSummary,
 } from './comments';
-export type {
-  ActivityExport,
-  DataValidationResult,
-  IntermediateData,
-  LegacyData,
-  MigrationOptions,
-  MigrationResult,
-  VersionDetectionResult,
-} from './migration';
-// Export utility functions from migration
-export {
-  detectDataVersion,
-  isActivityExport,
-  isIntermediateData,
-  isLegacyData,
-} from './migration';
+// Migration types temporarily disabled during refactor
 export type {
   ProjectInfo,
   ProjectMilestone,
@@ -66,12 +51,8 @@ export type {
   ReportTemplate,
 } from './reports';
 export type {
-  Milestone,
   SavedWorkspace,
-  WorkspaceAction,
   WorkspaceFilters,
-  WorkspaceHistory,
-  WorkspaceProgress,
   WorkspaceSettings,
   WorkspaceState,
 } from './workspace';

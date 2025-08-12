@@ -55,7 +55,7 @@ export function SaveLoadDialog({ trigger }: SaveLoadDialogProps) {
         completedStages: workspaceStore.completedStages,
         activityProgress: workspaceStore.activityProgress,
         currentStage: workspaceStore.currentStage,
-        completedActivityStages: workspaceStore.completedActivityStages,
+        // completedActivityStages: workspaceStore.completedActivityStages,
         biasRiskAssignments: workspaceStore.biasRiskAssignments,
       };
 
@@ -144,7 +144,7 @@ export function SaveLoadDialog({ trigger }: SaveLoadDialogProps) {
             <div className="rounded-lg bg-gray-50 p-3">
               <h4 className="font-medium text-sm">Current Workspace</h4>
               <div className="mt-2 space-y-1 text-muted-foreground text-xs">
-                <p>Session: {sessionId.split('-')[1]}</p>
+                <p>Session: {sessionId?.split('-')[1] || 'N/A'}</p>
                 <p>Cards assigned: {stats.assignedCards}</p>
                 <p>Pairs created: {stats.createdPairs}</p>
               </div>

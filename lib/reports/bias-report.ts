@@ -69,10 +69,12 @@ export interface RiskMatrix {
 
 export class BiasReport extends Report {
   protected activity: BiasActivity;
+  protected deck: any; // Will be the deck from BiasActivity
 
   constructor(activity: BiasActivity) {
     super(activity);
     this.activity = activity;
+    this.deck = activity.getDeck();
   }
 
   generateSummary(): BiasReportSummary {
@@ -124,12 +126,47 @@ export class BiasReport extends Report {
     };
   }
 
+  generateInterimReport(maxStage?: number): BiasFullReport {
+    const currentStage = maxStage || this.activity.getCurrentStage();
+    const report = this.generateFullReport();
+
+    // Add interim indicators
+    report.metadata.isInterim = true;
+    report.metadata.maxStage = currentStage;
+
+    // Filter sections based on completed stages
+    report.sections = report.sections.filter((section) =>
+      this.isSectionAvailableForStage(section.id, currentStage)
+    );
+
+    // Update summary to reflect interim status
+    report.summary.activityName += ` (Interim Report - Stage ${currentStage})`;
+
+    return report;
+  }
+
+  private isSectionAvailableForStage(
+    sectionId: string,
+    maxStage: number
+  ): boolean {
+    const stageRequirements: Record<string, number> = {
+      overview: 1,
+      'risk-assessment': 1,
+      'mitigation-plan': 4,
+      timeline: 5,
+    };
+
+    return maxStage >= (stageRequirements[sectionId] || 1);
+  }
+
   exportToJSON(): object {
     return this.generateFullReport();
   }
 
-  exportToMarkdown(): string {
-    const report = this.generateFullReport();
+  exportToMarkdown(interim = false): string {
+    const report = interim
+      ? this.generateInterimReport()
+      : this.generateFullReport();
 
     return `# Bias Assessment Report
 
@@ -502,11 +539,73 @@ ${matrix.unassessed.map((b) => `- ${b}`).join('\n') || '- None'}
   }
 
   private formatBiasDetail(bias: BiasDetail): string {
-    return `### ${bias.name}
+    // Get the full BiasEntry to access rationale and implementation notes
+    const biases = this.activity.getBiases();
+    const biasEntry = biases[bias.biasId];
+
+    if (!biasEntry) {
+      return `### ${bias.name}
 - **Risk Level**: ${bias.riskCategory || 'Unassessed'}
 - **Lifecycle Stages**: ${bias.lifecycleStages.join(', ') || 'None assigned'}
 - **Mitigations**: ${bias.mitigationCount} selected
 - **Status**: ${bias.implementationStatus}`;
+    }
+
+    let section = `### ${bias.name}
+- **Risk Level**: ${bias.riskCategory || 'Unassessed'}
+- **Lifecycle Stages**: ${bias.lifecycleStages.join(', ') || 'None assigned'}
+- **Mitigations**: ${bias.mitigationCount} selected
+- **Status**: ${bias.implementationStatus}
+
+`;
+
+    // Add Stage 3 rationale
+    const hasRationale = Object.values(biasEntry.rationale).some(
+      (r) => r && r.trim()
+    );
+    if (hasRationale) {
+      section += '#### Rationale by Stage\n';
+      for (const [stage, rationale] of Object.entries(biasEntry.rationale)) {
+        if (rationale && rationale.trim()) {
+          section += `**${stage}**: ${rationale}\n\n`;
+        }
+      }
+    }
+
+    // Add Stage 5 implementation notes
+    const hasNotes = Object.keys(biasEntry.implementationNotes).length > 0;
+    if (hasNotes) {
+      section += '#### Implementation Notes\n';
+      for (const [stage, notes] of Object.entries(
+        biasEntry.implementationNotes
+      )) {
+        for (const [mitigationId, note] of Object.entries(notes)) {
+          // Get mitigation name if possible
+          const mitigationName = this.getMitigationName(mitigationId);
+          section += `**${mitigationName} (${stage})**:
+- Status: ${note.status}
+- Effectiveness: ${note.effectivenessRating}/5
+- Notes: ${note.notes || 'No notes'}
+${note.dueDate ? `- Due Date: ${note.dueDate}` : ''}
+${note.assignedTo ? `- Assigned To: ${note.assignedTo}` : ''}
+
+`;
+        }
+      }
+    }
+
+    return section.trim();
+  }
+
+  private getMitigationName(mitigationId: string): string {
+    // Try to get mitigation name from deck
+    if (this.deck) {
+      const card = this.deck.getCard(mitigationId);
+      if (card) {
+        return card.name;
+      }
+    }
+    return mitigationId;
   }
 
   private formatRecommendation(rec: Recommendation): string {

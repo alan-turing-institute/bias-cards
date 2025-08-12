@@ -2,7 +2,6 @@
 
 import { Edit3, FileText, Star } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { StageFooter } from '@/components/stage-footer';
 import { StageNavigation } from '@/components/stage-navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,10 +15,9 @@ import { Textarea } from '@/components/ui/textarea';
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
 import { useHashRouter } from '@/lib/routing/hash-router';
 import { navigateToReport } from '@/lib/routing/navigation';
-import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
 import { useReportsStore } from '@/lib/stores/reports-store';
-import { useWorkspaceStore } from '@/lib/stores/workspace-store';
+import { useUnifiedActivityStore } from '@/lib/stores/unified-activity-store';
 import type {
   Card as BiasCard,
   CardPair,
@@ -335,20 +333,13 @@ function PairCard({
 
 export default function Stage5Client() {
   const { currentRoute } = useHashRouter();
-  const workspaceActivityId = useWorkspaceStore((s) => s.activityId);
-  const activityId = (currentRoute.activityId || workspaceActivityId) as string;
 
-  const { completeActivityStage } = useActivityStore();
+  const { currentActivity, setImplementationNote, completeStage, isHydrated } =
+    useUnifiedActivityStore();
+
+  const activityId = currentRoute.activityId || currentActivity?.id;
+
   const { biasCards, mitigationCards, loadCards } = useCardsStore();
-  const {
-    stageAssignments,
-    getBiasRiskAssignments,
-    cardPairs,
-    updateCardPair,
-    completeActivityStage: completeWorkspaceStage,
-    getCurrentActivity,
-    getImplementationNoteFromActivity,
-  } = useWorkspaceStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedPair, setSelectedPair] = useState<EnrichedCardPair | null>(
@@ -360,60 +351,54 @@ export default function Stage5Client() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [isClient, setIsClient] = useState(false);
 
-  // Activity-aware helper methods
-  const _getImplementationNote = (
-    biasId: string,
-    stage: LifecycleStage,
-    mitigationId: string
-  ) => {
-    return getImplementationNoteFromActivity(biasId, stage, mitigationId);
+  // Get enriched card pairs from current activity
+  const getEnrichedPairs = (): EnrichedCardPair[] => {
+    if (!currentActivity) return [];
+
+    const pairs: EnrichedCardPair[] = [];
+    const biases = currentActivity.getBiases();
+
+    Object.entries(biases).forEach(([biasId, bias]) => {
+      Object.entries(bias.mitigations).forEach(([stage, mitigationIds]) => {
+        mitigationIds.forEach((mitigationId) => {
+          const biasCard = biasCards.find((c) => c.id === biasId);
+          const mitigationCard = mitigationCards.find(
+            (c) => c.id === mitigationId
+          );
+
+          if (biasCard && mitigationCard) {
+            const implementationNote =
+              bias.implementationNotes[stage as LifecycleStage]?.[mitigationId];
+
+            pairs.push({
+              biasId,
+              mitigationId,
+              timestamp: new Date().toISOString(),
+              biasCard,
+              mitigationCard,
+              stage: stage as LifecycleStage,
+              riskCategory: bias.riskCategory || undefined,
+              originalRationale: bias.rationale[stage as LifecycleStage],
+              effectivenessRating: implementationNote?.effectivenessRating || 0,
+              annotation: implementationNote?.notes,
+            });
+          }
+        });
+      });
+    });
+
+    return pairs;
   };
 
-  const _isActivityReady = (): boolean => {
-    return getCurrentActivity() !== null;
-  };
-
-  // Load cards on mount and initialize workspace
+  // Load cards on mount
   useEffect(() => {
     setIsClient(true);
     loadCards();
-
-    // Initialize workspace if not ready
-    const initializeWorkspace = async () => {
-      try {
-        if (!_isActivityReady()) {
-          // Import stores dynamically to avoid circular dependencies
-          const { useActivityStore } = await import(
-            '@/lib/stores/activity-store'
-          );
-          const { useWorkspaceStore } = await import(
-            '@/lib/stores/workspace-store'
-          );
-
-          const activityStore = useActivityStore.getState();
-          const workspaceStore = useWorkspaceStore.getState();
-
-          const currentActivityData = activityStore.activities.find(
-            (a) => a.id === activityId
-          );
-
-          if (currentActivityData) {
-            await workspaceStore.initialize(currentActivityData.title);
-            workspaceStore.setActivityId(activityId);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to initialize workspace:', error);
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-
-    initializeWorkspace();
-  }, [loadCards, activityId]);
+    setIsInitializing(false);
+  }, [loadCards]);
 
   // Show loading state during hydration to prevent mismatch
-  if (!isClient || isInitializing) {
+  if (!isClient || isInitializing || !isHydrated) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -424,41 +409,8 @@ export default function Stage5Client() {
     );
   }
 
-  // Get bias risk assignments to enrich pairs
-  const biasRiskAssignments = getBiasRiskAssignments();
-
-  // Create enriched pairs with card data and additional info
-  const enrichedPairs: EnrichedCardPair[] = cardPairs
-    .map((pair) => {
-      const biasCard = biasCards.find((c) => c.id === pair.biasId);
-      const mitigationCard = mitigationCards.find(
-        (c) => c.id === pair.mitigationId
-      );
-
-      if (!(biasCard && mitigationCard)) {
-        return null;
-      }
-
-      // Find stage assignment for the bias
-      const stageAssignment = stageAssignments.find(
-        (a) => a.cardId === pair.biasId
-      );
-
-      // Find risk category for the bias
-      const riskAssignment = biasRiskAssignments.find(
-        (r) => r.cardId === pair.biasId
-      );
-
-      return {
-        ...pair,
-        biasCard,
-        mitigationCard,
-        stage: stageAssignment?.stage,
-        riskCategory: riskAssignment?.riskCategory,
-        originalRationale: stageAssignment?.annotation,
-      };
-    })
-    .filter(Boolean) as EnrichedCardPair[];
+  // Get enriched pairs from current activity
+  const enrichedPairs = getEnrichedPairs();
 
   // Filter pairs based on search term and toggles
   const filteredPairs = enrichedPairs.filter((pair) => {
@@ -499,29 +451,23 @@ export default function Stage5Client() {
   const isStageComplete = completionRate >= 0.5; // 50% completion (either rating or notes for each pair)
 
   const handleCompleteStage = async () => {
-    // Complete the activity
-    completeActivityStage(activityId, 5);
-    completeWorkspaceStage(5);
+    if (!(activityId && currentActivity)) return;
 
-    // Get activity data for report generation
-    const activity = useActivityStore.getState().getActivity(activityId);
-    if (!activity) {
-      window.location.href = '/activities';
-      return;
-    }
+    // Complete the activity
+    completeStage(5);
 
     // Generate report in the reports system
     const { generateReportFromWorkspace } = useReportsStore.getState();
     try {
       const reportId = await generateReportFromWorkspace(activityId, {
-        title: activity.title,
-        description: activity.description,
-        domain: activity.projectType || 'General',
+        title: currentActivity.name || '',
+        description: '',
+        domain: 'General',
         objectives: '',
         scope: '',
         status: 'testing' as const,
         timeline: {
-          startDate: activity.createdAt,
+          startDate: currentActivity.getState().startTime,
           endDate: new Date().toISOString(),
           milestones: [],
         },
@@ -553,8 +499,17 @@ export default function Stage5Client() {
     effectivenessRating?: number;
     annotation?: string;
   }) => {
-    if (selectedPair) {
-      updateCardPair(selectedPair.biasId, selectedPair.mitigationId, updates);
+    if (selectedPair && selectedPair.stage) {
+      setImplementationNote(
+        selectedPair.biasId,
+        selectedPair.stage,
+        selectedPair.mitigationId,
+        {
+          effectivenessRating: updates.effectivenessRating || 0,
+          notes: updates.annotation || '',
+          status: 'planned',
+        }
+      );
     }
   };
 
@@ -585,7 +540,7 @@ export default function Stage5Client() {
   );
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-screen flex-col">
       <StageNavigation
         actions={
           <div className="flex items-center gap-4">
@@ -621,7 +576,7 @@ export default function Stage5Client() {
             </div>
           </div>
         }
-        activityId={activityId}
+        activityId={activityId || ''}
         canComplete={isStageComplete}
         completionLabel="Complete Activity"
         currentStage={5}
@@ -730,13 +685,6 @@ export default function Stage5Client() {
       />
 
       {/* Footer Navigation */}
-      <StageFooter
-        activityId={activityId}
-        canComplete={isStageComplete}
-        completionLabel="Complete Activity"
-        currentStage={5}
-        onCompleteStage={handleCompleteStage}
-      />
     </div>
   );
 }

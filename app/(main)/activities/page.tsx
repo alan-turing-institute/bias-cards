@@ -56,6 +56,7 @@ import { navigateToActivity, navigateToReport } from '@/lib/routing/navigation';
 import { useActivityStore } from '@/lib/stores/activity-store';
 import { useOnboardingStore } from '@/lib/stores/onboarding-store';
 import { useReportsStore } from '@/lib/stores/reports-store';
+import { useUnifiedActivityStore } from '@/lib/stores/unified-activity-store';
 import { useWorkspaceStore } from '@/lib/stores/workspace-store';
 import type {
   ActivityStage,
@@ -309,7 +310,8 @@ function seedDemoWorkspaceIfNeeded(
     activity.isDemo &&
     (!wsActivityId ||
       wsActivityId !== activity.id ||
-      (stageAssignments.length === 0 && biasRiskAssignments.length === 0));
+      (stageAssignments.length === 0 &&
+        (biasRiskAssignments?.length || 0) === 0));
 
   // Only seed card pairs if there are no existing pairs for this activity
   // This allows manual Stage 4 edits to persist
@@ -338,8 +340,8 @@ function seedDemoWorkspaceIfNeeded(
   setWSActivityId(activity.id);
 }
 
-// Handle route to activity by syncing workspace and seeding demo data
-function handleActivityRoute(activityId?: string, stage?: number) {
+// Handle route to activity by loading it in the unified store
+async function handleActivityRoute(activityId?: string, stage?: number) {
   if (!activityId) {
     return;
   }
@@ -354,6 +356,70 @@ function handleActivityRoute(activityId?: string, stage?: number) {
     return;
   }
 
+  // Load activity in the unified store
+  const unifiedStore = useUnifiedActivityStore.getState();
+
+  // Initialize the store if not already done
+  if (!unifiedStore.isHydrated) {
+    await unifiedStore.initialize();
+  }
+
+  // Check if we need to load a different activity
+  if (
+    !unifiedStore.currentActivity ||
+    unifiedStore.currentActivity.id !== activityId
+  ) {
+    // First check if the activity exists in the unified store
+    const existingActivity = unifiedStore.activities.find(
+      (a) => a.id === activityId
+    );
+
+    if (existingActivity) {
+      // Load the existing activity with all its data
+      await unifiedStore.loadActivity(activityId);
+    } else {
+      // Create a new activity with the same ID as the activity store
+      // This ensures consistency between the two stores
+      const { BiasDeck } = await import('@/lib/cards/decks/bias-deck');
+      const { BiasActivity: BiasActivityClass } = await import(
+        '@/lib/activities/bias-activity'
+      );
+
+      const deck = await BiasDeck.getInstance();
+      const biasActivity = new BiasActivityClass(deck, {
+        id: activityId, // Use the same ID
+        name: activity.title,
+        description: activity.description,
+      });
+
+      // Set the activity directly in the store using setState
+      useUnifiedActivityStore.setState({
+        currentActivity: biasActivity,
+        currentActivityData: biasActivity.export(),
+        activities: [
+          ...unifiedStore.activities,
+          {
+            id: activityId,
+            name: activity.title,
+            description: activity.description,
+            lastModified: new Date().toISOString(),
+            currentStage: 1,
+            completedStages: [],
+            biasCount: 0,
+            mitigationCount: 0,
+          },
+        ],
+      });
+      unifiedStore.saveCurrentActivity();
+    }
+  }
+
+  // Set the stage if provided
+  if (stage) {
+    unifiedStore.setCurrentStage(stage);
+  }
+
+  // Still seed demo workspace for backwards compatibility
   const { setActivityId, updateWorkspaceName } = useWorkspaceStore.getState();
   setActivityId(activityId);
   updateWorkspaceName(activity.title);
@@ -405,6 +471,18 @@ function ActivityCard({
 }) {
   const _router = useRouter();
   const isCompleted = activity.status === 'completed';
+
+  // Get progress from unified activity store
+  const { activities: unifiedActivities } = useUnifiedActivityStore();
+  const unifiedActivity = unifiedActivities.find((a) => a.id === activity.id);
+
+  // Calculate progress from unified store if available, fallback to old store
+  const completedStages =
+    unifiedActivity?.completedStages?.length ||
+    activity.progress?.completed ||
+    0;
+  const totalStages = 5;
+  const progressPercentage = (completedStages / totalStages) * 100;
 
   return (
     <Card
@@ -463,16 +541,14 @@ function ActivityCard({
               <span>
                 {isCompleted
                   ? 'Complete'
-                  : `${activity.progress?.completed || 0}/${activity.progress?.total || 5} stages`}
+                  : `${completedStages}/${totalStages} stages`}
               </span>
             </div>
             <div className="h-2 w-full rounded-full bg-gray-200">
               <div
                 className={`h-2 rounded-full ${isCompleted ? 'bg-green-500' : 'bg-amber-500'}`}
                 style={{
-                  width: isCompleted
-                    ? '100%'
-                    : `${((activity.progress?.completed || 0) / (activity.progress?.total || 5)) * 100}%`,
+                  width: isCompleted ? '100%' : `${progressPercentage}%`,
                 }}
               />
             </div>
@@ -573,8 +649,10 @@ function DashboardContent() {
   const createActivity = useActivityStore((state) => state.createActivity);
   const updateActivity = useActivityStore((state) => state.updateActivity);
   const deleteActivity = useActivityStore((state) => state.deleteActivity);
-  const exportActivity = useActivityStore((state) => state.exportActivity);
-  const importActivity = useActivityStore((state) => state.importActivity);
+  // const exportActivity = useActivityStore((state) => state.exportActivity);
+  const importActivity = useUnifiedActivityStore(
+    (state) => state.importActivity
+  );
   const workspaceStore = useWorkspaceStore();
   const reports = useReportsStore((state) => state.reports);
 
@@ -617,6 +695,7 @@ function DashboardContent() {
       return;
     }
 
+    // Create activity in the activity store (for dashboard listing)
     const activityId = createActivity({
       title: activityForm.title.trim(),
       description: activityForm.description.trim(),
@@ -624,9 +703,12 @@ function DashboardContent() {
       progress: { completed: 0, total: 5 },
     });
 
-    // Initialize workspace with BiasActivity
-    await workspaceStore.initialize(activityForm.title.trim());
-    workspaceStore.setActivityId(activityId);
+    // Create activity in the unified store (for actual functionality)
+    const unifiedStore = useUnifiedActivityStore.getState();
+    await unifiedStore.createActivity(
+      activityForm.title.trim(),
+      activityForm.description.trim()
+    );
 
     // Reset form
     setActivityForm({ title: '', description: '', projectType: '' });
@@ -657,7 +739,8 @@ function DashboardContent() {
   };
 
   const handleExportActivity = (id: string) => {
-    exportActivity(id, 'json');
+    // Use unified activity store export
+    useUnifiedActivityStore.getState().exportActivity(id);
   };
 
   const handleImportActivity = async (

@@ -3,7 +3,6 @@
 import { ChevronDown, ChevronUp, FileText, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { MitigationCardList } from '@/components/cards/mitigation-card-list';
-import { StageFooter } from '@/components/stage-footer';
 import { StageNavigation } from '@/components/stage-navigation';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -21,9 +20,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
 import { useHashRouter } from '@/lib/routing/hash-router';
 import { navigateToActivity } from '@/lib/routing/navigation';
-import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
-import { useWorkspaceStore } from '@/lib/stores/workspace-store';
+import { useUnifiedActivityStore } from '@/lib/stores/unified-activity-store';
 import type {
   Card as BiasCard,
   CardPair,
@@ -61,7 +59,7 @@ interface AssignmentCardProps {
   assignment: StageAssignmentWithCard;
   viewMode: 'lifecycle' | 'risk';
   showDescriptions: boolean;
-  pairsForBias: CardPair[];
+  pairsForBias: (CardPair & { stage: LifecycleStage })[];
   mitigationCards: MitigationCard[];
   onSelectMitigations: (biasId: string, mitigationIds: string[]) => void;
   onRemovePair: (biasId: string, mitigationId: string) => void;
@@ -181,7 +179,7 @@ function SelectedMitigations({
   onRemovePair,
   mitigationCards,
 }: {
-  existingPairs: CardPair[];
+  existingPairs: (CardPair & { stage: LifecycleStage })[];
   onRemovePair: (mitigationId: string) => void;
   mitigationCards: MitigationCard[];
 }) {
@@ -206,10 +204,13 @@ function SelectedMitigations({
         }
 
         return (
-          <div className="relative" key={pair.mitigationId}>
+          <div
+            className="relative"
+            key={`${pair.biasId}-${pair.mitigationId}-${pair.stage}`}
+          >
             <MitigationCardList
               card={mitigationCard}
-              cardNumber={pair.mitigationId.padStart(2, '0')}
+              cardNumber={mitigationCard.displayNumber || '00'}
               showCategory={false}
             />
             <button
@@ -232,22 +233,17 @@ function SelectedMitigations({
 export default function Stage4Client() {
   const { currentRoute } = useHashRouter();
 
-  const workspaceActivityId = useWorkspaceStore((s) => s.activityId);
-  const activityId = (currentRoute.activityId || workspaceActivityId) as string;
-
-  const { completeActivityStage } = useActivityStore();
-  const { biasCards, mitigationCards, loadCards } = useCardsStore();
   const {
-    stageAssignments,
-    getBiasRiskAssignments,
-    cardPairs,
-    createCardPair,
-    removeCardPair,
-    completeActivityStage: completeWorkspaceStage,
-    getCurrentActivity,
-    getCurrentDeck,
-    getMitigationsFromActivity,
-  } = useWorkspaceStore();
+    currentActivity,
+    addMitigation,
+    removeMitigation,
+    completeStage,
+    isHydrated,
+  } = useUnifiedActivityStore();
+
+  const activityId = currentRoute.activityId || currentActivity?.id;
+
+  const { biasCards, mitigationCards, loadCards } = useCardsStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [showOnlyNeedingMitigation, setShowOnlyNeedingMitigation] =
@@ -256,76 +252,66 @@ export default function Stage4Client() {
   const [isInitializing, setIsInitializing] = useState(true);
   const [isClient, setIsClient] = useState(false);
 
-  // Activity-aware helper methods
-  const _getMitigations = (biasId: string, stage: LifecycleStage): string[] => {
-    return getMitigationsFromActivity(biasId, stage);
+  // Get stage assignments from current activity
+  const getStageAssignments = (): StageAssignmentWithCard[] => {
+    if (!currentActivity) return [];
+
+    const assignments: StageAssignmentWithCard[] = [];
+    const biases = currentActivity.getBiases();
+
+    Object.entries(biases).forEach(([biasId, bias]) => {
+      bias.lifecycleAssignments.forEach((stage) => {
+        const card = biasCards.find((c) => c.id === biasId);
+        if (card) {
+          assignments.push({
+            id: `${biasId}-${stage}`,
+            cardId: biasId,
+            stage,
+            annotation: bias.rationale[stage],
+            timestamp: new Date().toISOString(),
+            card,
+            riskCategory: bias.riskCategory || undefined,
+          });
+        }
+      });
+    });
+
+    return assignments;
   };
 
-  const _isActivityReady = (): boolean => {
-    return getCurrentActivity() !== null && getCurrentDeck() !== null;
+  // Get card pairs (bias-mitigation mappings) from current activity
+  const getCardPairs = (): (CardPair & { stage: LifecycleStage })[] => {
+    if (!currentActivity) return [];
+
+    const pairs: (CardPair & { stage: LifecycleStage })[] = [];
+    const biases = currentActivity.getBiases();
+
+    Object.entries(biases).forEach(([biasId, bias]) => {
+      Object.entries(bias.mitigations).forEach(([stage, mitigationIds]) => {
+        mitigationIds.forEach((mitigationId) => {
+          pairs.push({
+            biasId,
+            mitigationId,
+            stage: stage as LifecycleStage,
+            timestamp: new Date().toISOString(),
+          });
+        });
+      });
+    });
+
+    return pairs;
   };
 
-  // Load cards on mount and initialize workspace
+  // Load cards on mount
   useEffect(() => {
     setIsClient(true);
     loadCards();
+    setIsInitializing(false);
+  }, [loadCards]);
 
-    // Initialize workspace if not ready
-    const initializeWorkspace = async () => {
-      try {
-        if (!_isActivityReady()) {
-          // Import stores dynamically to avoid circular dependencies
-          const { useActivityStore } = await import(
-            '@/lib/stores/activity-store'
-          );
-          const { useWorkspaceStore } = await import(
-            '@/lib/stores/workspace-store'
-          );
-
-          const activityStore = useActivityStore.getState();
-          const workspaceStore = useWorkspaceStore.getState();
-
-          const currentActivityData = activityStore.activities.find(
-            (a) => a.id === activityId
-          );
-
-          if (currentActivityData) {
-            await workspaceStore.initialize(currentActivityData.title);
-            workspaceStore.setActivityId(activityId);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to initialize workspace:', error);
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-
-    initializeWorkspace();
-  }, [loadCards, activityId]);
-
-  // Get bias risk assignments to enrich with risk categories
-  const biasRiskAssignments = getBiasRiskAssignments();
-
-  // Create enriched assignments with card data and risk categories
-  const enrichedAssignments: StageAssignmentWithCard[] = stageAssignments
-    .map((assignment) => {
-      const card = biasCards.find((c) => c.id === assignment.cardId);
-      const riskAssignment = biasRiskAssignments.find(
-        (r) => r.cardId === assignment.cardId
-      );
-
-      if (!card) {
-        return null;
-      }
-
-      return {
-        ...assignment,
-        card,
-        riskCategory: riskAssignment?.riskCategory,
-      };
-    })
-    .filter(Boolean) as StageAssignmentWithCard[];
+  // Get enriched assignments from current activity
+  const enrichedAssignments = getStageAssignments();
+  const cardPairs = getCardPairs();
 
   // Filter assignments based on search term and mitigation filter
   const filteredAssignments = enrichedAssignments.filter((assignment) => {
@@ -385,39 +371,51 @@ export default function Stage4Client() {
   const isStageComplete = completionRate >= 0.6; // 60% of assignments need mitigation
 
   const handleCompleteStage = () => {
-    completeActivityStage(activityId, 4);
-    completeWorkspaceStage(4);
-    navigateToActivity(activityId, 5);
+    if (activityId) {
+      completeStage(4);
+      navigateToActivity(activityId, 5);
+    }
   };
 
   // Get pairs for a specific bias
-  const getPairsForBias = (biasId: string): CardPair[] => {
+  const getPairsForBias = (
+    biasId: string
+  ): (CardPair & { stage: LifecycleStage })[] => {
     return cardPairs.filter((p) => p.biasId === biasId);
   };
 
   // Handle selecting mitigations for a bias card
   const handleSelectMitigations = (biasId: string, mitigationIds: string[]) => {
-    // Get current pairs for this bias
-    const currentPairs = cardPairs.filter((p) => p.biasId === biasId);
-    const currentMitigationIds = currentPairs.map((p) => p.mitigationId);
+    if (!currentActivity) return;
 
-    // Remove pairs that are no longer selected
-    for (const pair of currentPairs) {
-      if (!mitigationIds.includes(pair.mitigationId)) {
-        removeCardPair(biasId, pair.mitigationId);
-      }
-    }
+    // Get the bias object
+    const bias = currentActivity.getBias(biasId);
+    if (!bias) return;
 
-    // Add new pairs
-    for (const mitigationId of mitigationIds) {
-      if (!currentMitigationIds.includes(mitigationId)) {
-        createCardPair(biasId, mitigationId);
-      }
-    }
+    // Get the lifecycle stage(s) for this bias
+    const stages = bias.lifecycleAssignments;
+
+    // For each stage, update the mitigations
+    stages.forEach((stage) => {
+      // Remove all existing mitigations for this stage
+      const currentMitigations = bias.mitigations[stage] || [];
+      currentMitigations.forEach((mitigationId) => {
+        if (!mitigationIds.includes(mitigationId)) {
+          removeMitigation(biasId, stage, mitigationId);
+        }
+      });
+
+      // Add new mitigations
+      mitigationIds.forEach((mitigationId) => {
+        if (!currentMitigations.includes(mitigationId)) {
+          addMitigation(biasId, stage, mitigationId);
+        }
+      });
+    });
   };
 
   // Show loading state during hydration to prevent mismatch
-  if (!isClient || isInitializing) {
+  if (!isClient || isInitializing || !isHydrated) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -429,7 +427,7 @@ export default function Stage4Client() {
   }
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-screen flex-col">
       <StageNavigation
         actions={
           <div className="flex items-center gap-4">
@@ -471,7 +469,7 @@ export default function Stage4Client() {
             </div>
           </div>
         }
-        activityId={activityId}
+        activityId={activityId || ''}
         canComplete={isStageComplete}
         completionLabel="Complete Stage 4"
         currentStage={4}
@@ -524,7 +522,15 @@ export default function Stage4Client() {
                               assignment={assignment}
                               key={assignment.id}
                               mitigationCards={mitigationCards}
-                              onRemovePair={removeCardPair}
+                              onRemovePair={(mitigationId) => {
+                                if (assignment.stage) {
+                                  removeMitigation(
+                                    assignment.cardId,
+                                    assignment.stage,
+                                    mitigationId
+                                  );
+                                }
+                              }}
                               onSelectMitigations={handleSelectMitigations}
                               pairsForBias={getPairsForBias(assignment.cardId)}
                               showDescriptions={showDescriptions}
@@ -560,7 +566,15 @@ export default function Stage4Client() {
                               assignment={assignment}
                               key={assignment.id}
                               mitigationCards={mitigationCards}
-                              onRemovePair={removeCardPair}
+                              onRemovePair={(mitigationId) => {
+                                if (assignment.stage) {
+                                  removeMitigation(
+                                    assignment.cardId,
+                                    assignment.stage,
+                                    mitigationId
+                                  );
+                                }
+                              }}
                               onSelectMitigations={handleSelectMitigations}
                               pairsForBias={getPairsForBias(assignment.cardId)}
                               showDescriptions={showDescriptions}
@@ -579,13 +593,6 @@ export default function Stage4Client() {
       </div>
 
       {/* Footer Navigation */}
-      <StageFooter
-        activityId={activityId}
-        canComplete={isStageComplete}
-        completionLabel="Complete Stage 4"
-        currentStage={4}
-        onCompleteStage={handleCompleteStage}
-      />
     </div>
   );
 }

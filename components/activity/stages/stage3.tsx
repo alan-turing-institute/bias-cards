@@ -2,7 +2,6 @@
 
 import { Edit3, FileText } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import { StageFooter } from '@/components/stage-footer';
 import { StageNavigation } from '@/components/stage-navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,9 +15,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
 import { useHashRouter } from '@/lib/routing/hash-router';
 import { navigateToActivity } from '@/lib/routing/navigation';
-import { useActivityStore } from '@/lib/stores/activity-store';
 import { useCardsStore } from '@/lib/stores/cards-store';
-import { useWorkspaceStore } from '@/lib/stores/workspace-store';
+import { useUnifiedActivityStore } from '@/lib/stores/unified-activity-store';
 import type { Card as BiasCard, LifecycleStage } from '@/lib/types';
 import { cn } from '@/lib/utils';
 
@@ -129,19 +127,13 @@ const AssignmentCard = ({
 
 export default function Stage3Client() {
   const { currentRoute } = useHashRouter();
-  const workspaceActivityId = useWorkspaceStore((s) => s.activityId);
-  const activityId = (currentRoute.activityId || workspaceActivityId) as string;
 
-  const { completeActivityStage } = useActivityStore();
+  const { currentActivity, setRationale, completeStage, isHydrated } =
+    useUnifiedActivityStore();
+
+  const activityId = currentRoute.activityId || currentActivity?.id;
+
   const { biasCards, loadCards } = useCardsStore();
-  const {
-    stageAssignments,
-    updateStageAssignment,
-    getBiasRiskAssignments,
-    completeActivityStage: completeWorkspaceStage,
-    getCurrentActivity,
-    getRationaleFromActivity,
-  } = useWorkspaceStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [_currentTab, setCurrentTab] = useState<'lifecycle' | 'risk'>(
@@ -157,55 +149,38 @@ export default function Stage3Client() {
   const [showDescriptions, setShowDescriptions] = useState(true);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Activity-aware helper methods
-  const _getRationale = (
-    biasId: string,
-    stage: LifecycleStage
-  ): string | null => {
-    return getRationaleFromActivity(biasId, stage);
+  // Get stage assignments from current activity
+  const getStageAssignments = (): StageAssignmentWithCard[] => {
+    if (!currentActivity) return [];
+
+    const assignments: StageAssignmentWithCard[] = [];
+    const biases = currentActivity.getBiases();
+
+    Object.entries(biases).forEach(([biasId, bias]) => {
+      bias.lifecycleAssignments.forEach((stage) => {
+        const card = biasCards.find((c) => c.id === biasId);
+        if (card) {
+          assignments.push({
+            id: `${biasId}-${stage}`,
+            cardId: biasId,
+            stage,
+            annotation: bias.rationale[stage],
+            timestamp: new Date().toISOString(),
+            card,
+            riskCategory: bias.riskCategory || undefined,
+          });
+        }
+      });
+    });
+
+    return assignments;
   };
 
-  const _isActivityReady = (): boolean => {
-    return getCurrentActivity() !== null;
-  };
-
-  // Load cards on mount and initialize workspace
+  // Load cards on mount
   useEffect(() => {
     loadCards();
-
-    // Initialize workspace if not ready
-    const initializeWorkspace = async () => {
-      try {
-        if (!_isActivityReady()) {
-          // Import stores dynamically to avoid circular dependencies
-          const { useActivityStore } = await import(
-            '@/lib/stores/activity-store'
-          );
-          const { useWorkspaceStore } = await import(
-            '@/lib/stores/workspace-store'
-          );
-
-          const activityStore = useActivityStore.getState();
-          const workspaceStore = useWorkspaceStore.getState();
-
-          const currentActivityData = activityStore.activities.find(
-            (a) => a.id === activityId
-          );
-
-          if (currentActivityData) {
-            await workspaceStore.initialize(currentActivityData.title);
-            workspaceStore.setActivityId(activityId);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to initialize workspace:', error);
-      } finally {
-        setIsInitializing(false);
-      }
-    };
-
-    initializeWorkspace();
-  }, [loadCards, activityId]);
+    setIsInitializing(false);
+  }, [loadCards]);
 
   // Check client-side rendering
   const [isClient, setIsClient] = useState(false);
@@ -214,7 +189,7 @@ export default function Stage3Client() {
   }, []);
 
   // Show loading state during hydration to prevent mismatch
-  if (!isClient || isInitializing) {
+  if (!isClient || isInitializing || !isHydrated) {
     return (
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
@@ -225,28 +200,8 @@ export default function Stage3Client() {
     );
   }
 
-  // Get bias risk assignments to enrich with risk categories
-  const biasRiskAssignments = getBiasRiskAssignments();
-
-  // Create enriched assignments with card data and risk categories
-  const enrichedAssignments: StageAssignmentWithCard[] = stageAssignments
-    .map((assignment) => {
-      const card = biasCards.find((c) => c.id === assignment.cardId);
-      const riskAssignment = biasRiskAssignments.find(
-        (r) => r.cardId === assignment.cardId
-      );
-
-      if (!card) {
-        return null;
-      }
-
-      return {
-        ...assignment,
-        card,
-        riskCategory: riskAssignment?.riskCategory,
-      };
-    })
-    .filter(Boolean) as StageAssignmentWithCard[];
+  // Get enriched assignments from current activity
+  const enrichedAssignments = getStageAssignments();
 
   // Filter assignments based on search term and rationale filter
   const filteredAssignments = enrichedAssignments.filter((assignment) => {
@@ -304,9 +259,10 @@ export default function Stage3Client() {
   const isStageComplete = completionRate >= 0.6; // 60% of assignments need rationale
 
   const handleCompleteStage = () => {
-    completeActivityStage(activityId, 3);
-    completeWorkspaceStage(3);
-    navigateToActivity(activityId, 4);
+    if (activityId) {
+      completeStage(3);
+      navigateToActivity(activityId, 4);
+    }
   };
 
   const handleStartEdit = (assignment: StageAssignmentWithCard) => {
@@ -315,16 +271,18 @@ export default function Stage3Client() {
   };
 
   const handleSaveRationale = (rationale: string) => {
-    if (editingAssignment) {
-      updateStageAssignment(editingAssignment.id, {
-        annotation: rationale,
-      });
+    if (editingAssignment && currentActivity) {
+      setRationale(
+        editingAssignment.cardId,
+        editingAssignment.stage,
+        rationale
+      );
     }
     setEditingAssignment(null);
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex min-h-screen flex-col">
       <StageNavigation
         actions={
           <div className="flex items-center gap-4">
@@ -366,7 +324,7 @@ export default function Stage3Client() {
             </div>
           </div>
         }
-        activityId={activityId}
+        activityId={activityId || ''}
         canComplete={isStageComplete}
         completionLabel="Complete Stage 3"
         currentStage={3}
@@ -486,15 +444,6 @@ export default function Stage3Client() {
             ? LIFECYCLE_STAGES[editingAssignment.stage].name
             : ''
         }
-      />
-
-      {/* Footer Navigation */}
-      <StageFooter
-        activityId={activityId}
-        canComplete={isStageComplete}
-        completionLabel="Complete Stage 3"
-        currentStage={3}
-        onCompleteStage={handleCompleteStage}
       />
     </div>
   );

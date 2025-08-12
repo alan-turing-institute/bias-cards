@@ -1,6 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
+import { ActivityFooter } from '@/components/activity-footer';
 import { AppSidebar } from '@/components/app-sidebar';
 import { MobileNav } from '@/components/mobile-nav';
 import { ErrorBoundary } from '@/components/ui/error-boundary';
@@ -18,7 +19,10 @@ export default function MainLayout({ children }: { children: ReactNode }) {
       <ToastProvider>
         <SidebarProvider defaultOpen={!isMobile}>
           <AppSidebar />
-          <SidebarInset className="pb-16 md:pb-0">{children}</SidebarInset>
+          <SidebarInset className="relative">
+            <div className="pb-16 md:pb-20">{children}</div>
+            <ActivityFooter />
+          </SidebarInset>
           <MobileNav />
           <WelcomeDialog />
           <OnboardingOverlay />

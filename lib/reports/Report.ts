@@ -28,6 +28,8 @@ export interface ReportMetadata {
   format: string;
   generatedBy: string;
   exportFormats: string[];
+  isInterim?: boolean;
+  maxStage?: number;
 }
 
 export interface ReportMetrics {

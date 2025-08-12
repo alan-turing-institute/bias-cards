@@ -199,10 +199,17 @@ function migrateCompletionStatus(
   workspaceData: Partial<WorkspaceState>,
   state: { completedStages: number[]; currentStage: number }
 ): void {
-  if (workspaceData.completedActivityStages) {
-    state.completedStages = workspaceData.completedActivityStages;
-    state.currentStage =
-      Math.max(...workspaceData.completedActivityStages, 0) + 1;
+  // Legacy completion tracking has been removed - use unified activity store instead
+  if (workspaceData.completedStages) {
+    // Convert string stages to numbers for legacy compatibility
+    state.completedStages = workspaceData.completedStages
+      .map((stage) =>
+        typeof stage === 'string'
+          ? Number.parseInt(stage.replace('stage-', ''), 10)
+          : stage
+      )
+      .filter((stage) => !isNaN(stage));
+    state.currentStage = Math.max(...state.completedStages, 0) + 1;
   }
 }
 

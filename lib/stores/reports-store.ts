@@ -146,7 +146,7 @@ function processBiasIdentifications(
 ): BiasIdentification[] {
   const biasIdentification: BiasIdentification[] = [];
 
-  for (const assignment of workspaceState.stageAssignments) {
+  for (const assignment of workspaceState.stageAssignments || []) {
     const biasCard = getCardById(assignment.cardId);
     if (!biasCard) {
       continue;
@@ -187,7 +187,7 @@ function processMitigationStrategies(
     MitigationStrategy['mitigations']
   >();
 
-  for (const pair of workspaceState.cardPairs) {
+  for (const pair of workspaceState.cardPairs || []) {
     const mitigationCard = getCardById(pair.mitigationId);
     if (!mitigationCard) {
       continue;

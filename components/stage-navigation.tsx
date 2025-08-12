@@ -7,6 +7,7 @@ import {
   ChevronDown,
   ChevronUp,
   Circle,
+  Download,
   Settings2,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -27,8 +28,8 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { useHashRouter } from '@/lib/routing/hash-router';
 import { navigateToActivity } from '@/lib/routing/navigation';
-import { useActivityStore } from '@/lib/stores/activity-store';
-import { useWorkspaceStore } from '@/lib/stores/workspace-store';
+import { useUnifiedActivityStore } from '@/lib/stores/unified-activity-store';
+// import { useWorkspaceStore } from '@/lib/stores/workspace-store';
 import { cn } from '@/lib/utils';
 
 interface StageNavigationProps {
@@ -58,26 +59,26 @@ const STAGE_NAMES = {
 function StagePills({
   currentStage,
   completedStages,
-  hasHydrated,
+  isHydrated,
   resolvedActivityId,
   canAdvanceToStage,
   onNavigate,
 }: {
   currentStage: number;
   completedStages: number;
-  hasHydrated: boolean;
+  isHydrated: boolean;
   resolvedActivityId: string;
-  canAdvanceToStage: (id: string, stage: number) => boolean;
+  canAdvanceToStage: (stage: number) => boolean;
   onNavigate: (stage: number) => void;
 }) {
   const computeCanAccess = (stage: number): boolean => {
-    if (!hasHydrated) {
+    if (!isHydrated) {
       return stage <= currentStage;
     }
     if (!resolvedActivityId) {
       return false;
     }
-    return canAdvanceToStage(resolvedActivityId, stage);
+    return canAdvanceToStage(stage);
   };
 
   return (
@@ -208,71 +209,36 @@ function StageControls({
           <p className="hidden text-base text-muted-foreground md:block">
             {instructions}
           </p>
-
-          {/* Progress indicator if provided */}
-          {progress && (
-            <div className="mt-3">
-              <div className="max-w-sm">
-                <div className="mb-2 flex items-center justify-between text-sm">
-                  <span className="font-medium text-muted-foreground text-xs md:text-sm">
-                    {progress.label || 'Progress'}
-                  </span>
-                  <span className="font-medium text-xs md:text-sm">
-                    {Math.round(progressPercentage)}%
-                  </span>
-                </div>
-                <Progress className="h-2" value={progressPercentage} />
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Navigation buttons - Desktop */}
-        <div className="hidden items-center gap-2 md:flex">
-          {showPrev && (
-            <Button onClick={onPrevious} size="sm" variant="outline">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Previous
-            </Button>
-          )}
-
-          {/* Complete stage button */}
-          {onCompleteStage && (
-            <Button
-              className={cn(
-                canComplete && 'bg-green-600 text-white hover:bg-green-700'
-              )}
-              disabled={!canComplete}
-              onClick={onCompleteStage}
-              size="sm"
-            >
-              {currentStage < 5 ? (
-                <>
-                  {completionLabel}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </>
-              ) : (
-                completionLabel
-              )}
-            </Button>
-          )}
-
-          {/* Next stage button (only if no complete handler) */}
-          {!onCompleteStage && showNext && (
-            <Button onClick={onNext} size="sm">
-              Next Stage
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          )}
-        </div>
+        {/* Desktop navigation buttons removed - moved to sticky footer */}
       </div>
 
       {/* Action Controls Section */}
-      {actions && (
+      {(actions || progress) && (
         <>
           {/* Desktop Actions */}
           <div className="hidden rounded-lg border bg-gray-50 p-4 md:block">
-            {actions}
+            <div className="flex items-center justify-between">
+              {/* Progress indicator on the left */}
+              {progress && (
+                <div className="max-w-sm flex-1">
+                  <div className="flex items-center gap-4">
+                    <span className="font-medium text-muted-foreground text-sm">
+                      {progress.label || 'Progress'}
+                    </span>
+                    <div className="flex-1">
+                      <Progress className="h-2" value={progressPercentage} />
+                    </div>
+                    <span className="font-medium text-sm">
+                      {Math.round(progressPercentage)}%
+                    </span>
+                  </div>
+                </div>
+              )}
+              {/* Actions on the right */}
+              {actions && <div className="flex-shrink-0">{actions}</div>}
+            </div>
           </div>
 
           {/* Mobile Actions - Dropdown Menu */}
@@ -290,7 +256,22 @@ function StageControls({
               >
                 <DropdownMenuLabel>Stage Options</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                <div className="p-2">{actions}</div>
+                <div className="p-2">
+                  {progress && (
+                    <div className="mb-4">
+                      <div className="mb-2 flex items-center justify-between text-sm">
+                        <span className="font-medium text-muted-foreground">
+                          {progress.label || 'Progress'}
+                        </span>
+                        <span className="font-medium">
+                          {Math.round(progressPercentage)}%
+                        </span>
+                      </div>
+                      <Progress className="h-2" value={progressPercentage} />
+                    </div>
+                  )}
+                  {actions}
+                </div>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -310,6 +291,35 @@ function StageControls({
             Previous
           </Button>
         )}
+
+        {/* Export button for mobile */}
+        <Button
+          onClick={() => {
+            // Generate interim report
+            const { currentActivity } = useUnifiedActivityStore.getState();
+            const activity = currentActivity;
+            if (activity) {
+              // Import BiasReport dynamically
+              import('@/lib/reports/bias-report').then(({ BiasReport }) => {
+                const report = new BiasReport(activity);
+                const markdown = report.exportToMarkdown(true);
+                const blob = new Blob([markdown], { type: 'text/markdown' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `interim-report-stage-${currentStage}.md`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+              });
+            }
+          }}
+          size="sm"
+          variant="outline"
+        >
+          <Download className="h-4 w-4" />
+        </Button>
 
         {/* Complete stage button */}
         {onCompleteStage && (
@@ -357,17 +367,18 @@ export function StageNavigation({
   completionLabel = 'Complete Stage',
 }: StageNavigationProps) {
   // Subscribe to the store and get needed functions
-  const { activities, canAdvanceToStage, hasHydrated } = useActivityStore();
+  const { activities, canAdvanceToStage, isHydrated } =
+    useUnifiedActivityStore();
   const { currentRoute } = useHashRouter();
-  const workspaceActivityId = useWorkspaceStore((s) => s.activityId);
 
-  // Resolve activityId from props -> hash -> workspace store
-  const resolvedActivityId =
-    activityId || currentRoute.activityId || workspaceActivityId || '';
+  // Resolve activityId from props -> hash
+  const resolvedActivityId = activityId || currentRoute.activityId || '';
 
   // Find the activity from the activities array
   const activity = activities.find((a) => a.id === resolvedActivityId);
-  const completedStages = activity?.progress.completed || 0;
+  const completedStagesArray = activity?.completedStages || [];
+  const highestCompletedStage =
+    completedStagesArray.length > 0 ? Math.max(...completedStagesArray) : 0;
 
   // Debug logging removed
 
@@ -375,7 +386,7 @@ export function StageNavigation({
     if (!resolvedActivityId) {
       return;
     }
-    if (canAdvanceToStage(resolvedActivityId, targetStage)) {
+    if (canAdvanceToStage(targetStage)) {
       navigateToActivity(resolvedActivityId, targetStage);
     }
   };
@@ -391,8 +402,7 @@ export function StageNavigation({
     if (!resolvedActivityId) {
       return;
     }
-    const canNavigate =
-      !hasHydrated || canAdvanceToStage(resolvedActivityId, currentStage + 1);
+    const canNavigate = !isHydrated || canAdvanceToStage(currentStage + 1);
     if (currentStage < 5 && canNavigate) {
       handleStageNavigation(currentStage + 1);
     }
@@ -402,8 +412,16 @@ export function StageNavigation({
     if (progress) {
       return progress.total > 0 ? (progress.current / progress.total) * 100 : 0;
     }
-    return (completedStages / 5) * 100;
+    return (highestCompletedStage / 5) * 100;
   })();
+
+  // Calculate showPrev and showNext for the sticky footer
+  const showPrev = currentStage > 1;
+  const showNext =
+    !onCompleteStage &&
+    currentStage < 5 &&
+    (!isHydrated ||
+      (!!resolvedActivityId && canAdvanceToStage(currentStage + 1)));
 
   return (
     <div className="border-b bg-background">
@@ -411,9 +429,9 @@ export function StageNavigation({
       <div className="border-b">
         <StagePills
           canAdvanceToStage={canAdvanceToStage}
-          completedStages={completedStages}
+          completedStages={highestCompletedStage}
           currentStage={currentStage}
-          hasHydrated={hasHydrated}
+          isHydrated={isHydrated}
           onNavigate={handleStageNavigation}
           resolvedActivityId={resolvedActivityId}
         />
@@ -431,14 +449,8 @@ export function StageNavigation({
         onPrevious={handlePreviousStage}
         progress={progress}
         progressPercentage={progressPercentage}
-        showNext={
-          !onCompleteStage &&
-          currentStage < 5 &&
-          (!hasHydrated ||
-            (!!resolvedActivityId &&
-              canAdvanceToStage(resolvedActivityId, currentStage + 1)))
-        }
-        showPrev={currentStage > 1}
+        showNext={showNext}
+        showPrev={showPrev}
         title={title}
       />
     </div>

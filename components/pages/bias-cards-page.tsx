@@ -139,16 +139,22 @@ export function BiasCardsPage({
         </div>
 
         <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4">
-          {filteredCards.map((card) => (
-            <BiasCardCompact
-              card={card}
-              cardNumber={
-                card.displayNumber || String(card.id).padStart(2, '0')
-              }
-              key={card.id}
-              onClick={() => handleCardClick(card)}
-            />
-          ))}
+          {filteredCards
+            .sort(
+              (a, b) =>
+                Number.parseInt(a.displayNumber || '0') -
+                Number.parseInt(b.displayNumber || '0')
+            )
+            .map((card) => (
+              <BiasCardCompact
+                card={card}
+                cardNumber={
+                  card.displayNumber || String(card.id).padStart(2, '0')
+                }
+                key={card.id}
+                onClick={() => handleCardClick(card)}
+              />
+            ))}
         </div>
 
         <CardModalRedesigned

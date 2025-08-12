@@ -13,12 +13,8 @@ import type {
   BiasRiskCategory,
   CardPair,
   LifecycleStage,
-  Milestone,
   MitigationCard,
   StageAssignment,
-  WorkspaceAction,
-  WorkspaceHistory,
-  WorkspaceProgress,
   WorkspaceState,
 } from '@/lib/types';
 import type { BiasEntry } from '@/lib/types/bias-activity';
@@ -169,7 +165,44 @@ interface WorkspaceStoreState extends WorkspaceState {
   ) => import('@/lib/types/bias-activity').ImplementationNote | null;
 }
 
-const createInitialMilestones = (): Milestone[] => [
+// Simplified interfaces for legacy compatibility
+interface SimpleMilestone {
+  id: string;
+  name: string;
+  description: string;
+  achieved: boolean;
+}
+
+// Simple action interface for workspace history
+interface WorkspaceAction {
+  type: string;
+  description?: string;
+  payload?: any;
+  data?: any;
+  timestamp: string;
+  inverse?: WorkspaceAction;
+}
+
+// Simple history interface
+interface WorkspaceHistory {
+  actions: WorkspaceAction[];
+  currentIndex: number;
+  maxSize: number;
+  undoStack: WorkspaceAction[];
+  redoStack: WorkspaceAction[];
+}
+
+// Simple progress interface
+interface WorkspaceProgress {
+  totalCards: number;
+  assignedCards: number;
+  pairedCards: number;
+  completionPercentage: number;
+  timeSpent: number;
+  milestones: SimpleMilestone[];
+}
+
+const createInitialMilestones = (): SimpleMilestone[] => [
   {
     id: 'first-card-assigned',
     name: 'First Card Assigned',
@@ -211,9 +244,11 @@ const generateAssignmentId = (): string => {
 };
 
 const createInitialHistory = (): WorkspaceHistory => ({
+  actions: [],
+  currentIndex: 0,
+  maxSize: 50,
   undoStack: [],
   redoStack: [],
-  maxHistorySize: 50,
 });
 
 const createInitialState = (): WorkspaceState => ({
@@ -223,7 +258,6 @@ const createInitialState = (): WorkspaceState => ({
   createdAt: new Date().toISOString(),
   lastModified: new Date().toISOString(),
   currentStage: 1,
-  completedActivityStages: [],
   biasRiskAssignments: [],
   stageAssignments: [],
   cardPairs: [],
@@ -251,7 +285,7 @@ const addActionToHistory = (
   const newUndoStack = [...history.undoStack, action];
 
   // Limit history size
-  if (newUndoStack.length > history.maxHistorySize) {
+  if (newUndoStack.length > history.maxSize) {
     newUndoStack.shift();
   }
 
@@ -334,7 +368,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
           const { currentActivity, customAnnotations } = get();
           return createStageAssignmentsFromActivity(
             currentActivity,
-            customAnnotations
+            customAnnotations || {}
           );
         },
 
@@ -352,23 +386,16 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
         },
 
         completeActivityStage: (stage) => {
-          set((state) => {
-            if (state.completedActivityStages.includes(stage)) {
-              return state;
-            }
-
-            return {
-              completedActivityStages: [
-                ...state.completedActivityStages,
-                stage,
-              ],
-              lastModified: new Date().toISOString(),
-            };
-          });
+          // Legacy function - now handled by unified activity store
+          set((state) => ({
+            ...state,
+            lastModified: new Date().toISOString(),
+          }));
         },
 
         isActivityStageComplete: (stage) => {
-          return get().completedActivityStages.includes(stage);
+          // Legacy function - now handled by unified activity store
+          return false;
         },
 
         // Bias risk assignment (Stage 1)
@@ -920,13 +947,15 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
         // Card selection
         selectCard: (cardId) => {
           set((state) => ({
-            selectedCardIds: [...new Set([...state.selectedCardIds, cardId])],
+            selectedCardIds: [
+              ...new Set([...(state.selectedCardIds || []), cardId]),
+            ],
           }));
         },
 
         deselectCard: (cardId) => {
           set((state) => ({
-            selectedCardIds: state.selectedCardIds.filter(
+            selectedCardIds: (state.selectedCardIds || []).filter(
               (id) => id !== cardId
             ),
           }));
@@ -946,7 +975,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
         },
 
         isCardSelected: (cardId) => {
-          return get().selectedCardIds.includes(cardId);
+          return (get().selectedCardIds || []).includes(cardId);
         },
 
         // Annotations
@@ -962,7 +991,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
 
         removeCardAnnotation: (cardId) => {
           set((state) => {
-            const { [cardId]: _, ...rest } = state.customAnnotations;
+            const { [cardId]: _, ...rest } = state.customAnnotations || {};
             return {
               customAnnotations: rest,
               lastModified: new Date().toISOString(),
@@ -971,18 +1000,18 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
         },
 
         getCardAnnotation: (cardId) => {
-          return get().customAnnotations[cardId];
+          return (get().customAnnotations || {})[cardId];
         },
 
         // Progress tracking
         markStageComplete: (stage) => {
           set((state) => {
-            if (state.completedStages.includes(stage)) {
+            if ((state.completedStages || []).includes(stage)) {
               return state;
             }
 
             return {
-              completedStages: [...state.completedStages, stage],
+              completedStages: [...(state.completedStages || []), stage],
               lastModified: new Date().toISOString(),
             };
           });
@@ -990,13 +1019,15 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
 
         unmarkStageComplete: (stage) => {
           set((state) => ({
-            completedStages: state.completedStages.filter((s) => s !== stage),
+            completedStages: (state.completedStages || []).filter(
+              (s) => s !== stage
+            ),
             lastModified: new Date().toISOString(),
           }));
         },
 
         isStageComplete: (stage) => {
-          return get().completedStages.includes(stage);
+          return (get().completedStages || []).includes(stage);
         },
 
         // Workspace management
@@ -1048,7 +1079,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
               );
 
               // Also ensure biasRiskAssignments are populated in the activity
-              const biasRiskAssignments = get().biasRiskAssignments;
+              const biasRiskAssignments = get().biasRiskAssignments || [];
               if (biasRiskAssignments.length > 0) {
                 console.log(
                   'Syncing biasRiskAssignments to BiasActivity',
@@ -1133,7 +1164,6 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
             createdAt: activityData.createdAt,
             lastModified: activityData.updatedAt,
             currentStage: state.currentStage,
-            completedActivityStages: state.completedActivityStages,
             // Convert activity data to workspace format for compatibility
             biasRiskAssignments: state.getBiasRiskAssignments(),
             stageAssignments: Object.entries(activityData.biases).flatMap(
@@ -1142,7 +1172,7 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
                   id: generateAssignmentId(),
                   cardId: biasId,
                   stage,
-                  annotation: state.customAnnotations[biasId],
+                  annotation: (state.customAnnotations || {})[biasId],
                   timestamp: bias.riskAssignedAt || new Date().toISOString(),
                 }))
             ),
@@ -1208,8 +1238,6 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
               name: workspaceData.name,
               createdAt: workspaceData.createdAt || now,
               currentStage: workspaceData.currentStage || 1,
-              completedActivityStages:
-                workspaceData.completedActivityStages || [],
               biasRiskAssignments:
                 workspaceData.biasRiskAssignments?.map((assignment) => ({
                   ...assignment,
@@ -1686,7 +1714,6 @@ export const useWorkspaceStore = create<WorkspaceStoreState>()(
           createdAt: state.createdAt,
           lastModified: state.lastModified,
           currentStage: state.currentStage,
-          completedActivityStages: state.completedActivityStages,
           biasRiskAssignments: state.biasRiskAssignments,
           selectedCardIds: state.selectedCardIds,
           customAnnotations: state.customAnnotations,

@@ -180,6 +180,10 @@ export class BiasActivity extends Activity {
     return { ...this.state.biases };
   }
 
+  getDeck(): BiasDeck {
+    return this.deck;
+  }
+
   private createBiasEntry(biasId: string): BiasEntry {
     const card = this.deck.getCard(biasId);
     return {

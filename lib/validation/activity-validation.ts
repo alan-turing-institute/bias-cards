@@ -48,8 +48,8 @@ export function validateActivityCompletion(
   const missingRequirements: string[] = [];
 
   // Gate 1: Minimum bias cards assigned
-  const biasAssignments = workspace.stageAssignments.filter((assignment) =>
-    biasCards.some((card) => card.id === assignment.cardId)
+  const biasAssignments = (workspace.stageAssignments || []).filter(
+    (assignment) => biasCards.some((card) => card.id === assignment.cardId)
   );
   const biasCardCount = biasAssignments.length;
   const minBiasCardsPassed =
@@ -71,7 +71,7 @@ export function validateActivityCompletion(
   }
 
   // Gate 2: Minimum bias-mitigation pairs
-  const pairCount = workspace.cardPairs.length;
+  const pairCount = (workspace.cardPairs || []).length;
   const minPairsPassed =
     pairCount >= COMPLETION_REQUIREMENTS.MIN_MITIGATION_PAIRS;
 
@@ -91,7 +91,9 @@ export function validateActivityCompletion(
   }
 
   // Gate 3: Critical stages populated
-  const usedStages = new Set(workspace.stageAssignments.map((a) => a.stage));
+  const usedStages = new Set(
+    (workspace.stageAssignments || []).map((a) => a.stage)
+  );
   const criticalStagesUsed = CRITICAL_STAGES.filter((stage) =>
     usedStages.has(stage)
   );
@@ -141,10 +143,10 @@ export function validateActivityCompletion(
   const commentCount = workspace.customAnnotations
     ? Object.keys(workspace.customAnnotations).length
     : 0;
-  const assignmentComments = workspace.stageAssignments.filter((a) =>
+  const assignmentComments = (workspace.stageAssignments || []).filter((a) =>
     a.annotation?.trim()
   ).length;
-  const pairComments = workspace.cardPairs.filter((p) =>
+  const pairComments = (workspace.cardPairs || []).filter((p) =>
     p.annotation?.trim()
   ).length;
   const totalComments = commentCount + assignmentComments + pairComments;

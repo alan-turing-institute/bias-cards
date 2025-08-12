@@ -164,7 +164,7 @@ class BrowserStorageManager implements StorageManager {
       activityProgress:
         workspace.activityProgress || this.getDefaultActivityProgress(),
       currentStage: workspace.currentStage || 1,
-      completedActivityStages: workspace.completedActivityStages || [],
+      // completedActivityStages: workspace.completedActivityStages || [],
       biasRiskAssignments: workspace.biasRiskAssignments || [],
     };
   }
@@ -231,7 +231,9 @@ class BrowserStorageManager implements StorageManager {
   enableAutoSave(workspace: WorkspaceState, intervalSeconds: number): number {
     return window.setInterval(async () => {
       try {
-        await this.saveSession(workspace.sessionId, workspace);
+        if (workspace.sessionId) {
+          await this.saveSession(workspace.sessionId, workspace);
+        }
       } catch (_error) {
         // Handle error silently
       }
@@ -250,7 +252,9 @@ export const storageManager: StorageManager = new BrowserStorageManager();
 export async function saveWorkspaceToLocalStorage(
   workspace: WorkspaceState
 ): Promise<void> {
-  await storageManager.saveSession(workspace.sessionId, workspace);
+  if (workspace.sessionId) {
+    await storageManager.saveSession(workspace.sessionId, workspace);
+  }
 }
 
 export async function loadWorkspaceFromLocalStorage(

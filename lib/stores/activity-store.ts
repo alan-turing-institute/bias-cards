@@ -4,7 +4,7 @@ import { DEMO_ACTIVITIES } from '@/lib/data/demo-content';
 import type { Activity, Report } from '@/lib/types/activity';
 import type { ActivityStage } from '@/lib/types/cards';
 import {
-  type ImportData,
+  type ActivityImportData,
   validateImportData,
   validateImportFile,
 } from '@/lib/types/import';
@@ -412,90 +412,23 @@ export const useActivityStore = create<ActivityStore>()(
           }
 
           // Use FormatConverter for progressive migration
-          const { FormatConverter } = await import(
-            '@/lib/utils/format-converter'
-          );
+          // const { FormatConverter } = await import(
+          //   '@/lib/utils/format-converter'
+          // );
           const { BiasDeck } = await import('@/lib/cards/decks/bias-deck');
-          const { detectDataVersion } = await import('@/lib/types/migration');
+          // const { detectDataVersion } = await import('@/lib/types/migration');
 
           const deck = await BiasDeck.getInstance();
-          const converter = new FormatConverter();
-          const version = detectDataVersion(importData.data);
+          // const converter = new FormatConverter();
+          // const version = detectDataVersion(importData.data);
 
-          // If it's v2.0 or needs migration
-          if (version === '2.0' || version === '1.5' || version === '1.0') {
-            const biasActivity = await converter.migrate(importData.data, deck);
-            const activityData = biasActivity.export();
-
-            // Create activity record for the store
-            const newActivityId = generateActivityId();
-            const importedActivity = createImportedActivity(
-              {
-                id: newActivityId,
-                title: activityData.name,
-                description: activityData.description || '',
-                projectType: 'imported',
-                status: 'draft',
-                currentStage: activityData.state.currentStage,
-                createdAt: activityData.createdAt,
-                updatedAt: activityData.updatedAt,
-                lastModified: activityData.updatedAt,
-                progress: { completed: 0, total: 5 },
-              } as Activity,
-              newActivityId,
-              true
-            );
-
-            set((state) => ({
-              activities: [...state.activities, importedActivity],
-            }));
-
-            // Import the activity data into workspace
-            const workspaceResult = importWorkspaceData(
-              { activityData },
-              newActivityId
-            );
-
-            return buildSuccessMessage(
-              activityData.name,
-              validation.warnings,
-              newActivityId,
-              workspaceResult.success
-            );
-          }
-
-          // Fall back to legacy import for unknown formats
-          const { activity, workspace } = importData.data as ImportData;
-          const newActivityId = generateActivityId();
-          const importedActivity = createImportedActivity(
-            activity,
-            newActivityId,
-            !!workspace
-          );
-
-          set((state) => ({
-            activities: [...state.activities, importedActivity],
-          }));
-
-          if (workspace) {
-            const workspaceResult = importWorkspaceData(
-              workspace,
-              newActivityId
-            );
-            return buildSuccessMessage(
-              activity.title,
-              validation.warnings,
-              newActivityId,
-              workspaceResult.success
-            );
-          }
-
-          return buildSuccessMessage(
-            activity.title,
-            validation.warnings,
-            newActivityId,
-            false
-          );
+          // Import functionality temporarily disabled during refactor
+          // TODO: Re-implement import using unified activity store
+          return {
+            success: false,
+            message:
+              'Import functionality temporarily disabled during refactor',
+          };
         } catch (_error) {
           return {
             success: false,

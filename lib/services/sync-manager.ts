@@ -67,7 +67,7 @@ class SyncManager {
         lastModified: workspaceStore.lastModified,
         activityId: workspaceStore.activityId,
         currentStage: workspaceStore.currentStage,
-        completedActivityStages: workspaceStore.completedActivityStages,
+        // completedActivityStages: workspaceStore.completedActivityStages,
         biasRiskAssignments: workspaceStore.biasRiskAssignments,
         stageAssignments: workspaceStore.stageAssignments,
         cardPairs: workspaceStore.cardPairs,

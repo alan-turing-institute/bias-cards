@@ -1,7 +1,12 @@
 import html2canvas from 'html2canvas';
 import { jsPDF } from 'jspdf';
 import { LIFECYCLE_STAGES } from '@/lib/data/lifecycle-constants';
-import type { Card, StageAssignment, WorkspaceState } from '@/lib/types';
+import type {
+  Card,
+  CardPair,
+  StageAssignment,
+  WorkspaceState,
+} from '@/lib/types';
 
 export interface ReportConfig {
   includeExecutiveSummary: boolean;
@@ -106,9 +111,9 @@ export class BiasCardReportGenerator {
         hour: '2-digit',
         minute: '2-digit',
       })}`,
-      `Session ID: ${workspace.sessionId.split('-')[1]}`,
-      `Cards Assigned: ${workspace.stageAssignments.length}`,
-      `Mitigation Pairs: ${workspace.cardPairs.length}`,
+      `Session ID: ${workspace.sessionId?.split('-')[1] || 'N/A'}`,
+      `Cards Assigned: ${workspace.stageAssignments || []?.length || 0}`,
+      `Mitigation Pairs: ${workspace.cardPairs || []?.length || 0}`,
     ];
 
     if (config.authorName) {
@@ -131,15 +136,16 @@ export class BiasCardReportGenerator {
   ): void {
     this.addSectionHeader('Executive Summary');
 
-    const stageCount = new Set(workspace.stageAssignments.map((a) => a.stage))
-      .size;
-    const biasCount = workspace.stageAssignments.filter((a) =>
+    const stageCount = new Set(
+      (workspace.stageAssignments || []).map((a) => a.stage)
+    ).size;
+    const biasCount = (workspace.stageAssignments || []).filter((a) =>
       biasCards.some((b) => b.id === a.cardId)
     ).length;
-    const mitigationCount = workspace.stageAssignments.filter((a) =>
+    const mitigationCount = (workspace.stageAssignments || []).filter((a) =>
       mitigationCards.some((m) => m.id === a.cardId)
     ).length;
-    const pairCount = workspace.cardPairs.length;
+    const pairCount = (workspace.cardPairs || []).length;
 
     const summary = [
       `This analysis examined ${biasCount} potential biases across ${stageCount} stages of the machine learning lifecycle.`,
@@ -225,7 +231,7 @@ export class BiasCardReportGenerator {
     this.addSectionHeader('Lifecycle Stage Analysis');
 
     // Group assignments by stage
-    const stageGroups = workspace.stageAssignments.reduce(
+    const stageGroups = (workspace.stageAssignments || []).reduce(
       (groups, assignment) => {
         if (!groups[assignment.stage]) {
           groups[assignment.stage] = [];
@@ -236,7 +242,10 @@ export class BiasCardReportGenerator {
       {} as Record<string, StageAssignment[]>
     );
 
-    for (const [stage, assignments] of Object.entries(stageGroups)) {
+    for (const [stage, assignments] of Object.entries(stageGroups) as [
+      string,
+      StageAssignment[],
+    ][]) {
       const stageInfo =
         LIFECYCLE_STAGES[stage as keyof typeof LIFECYCLE_STAGES];
       if (!stageInfo) {
@@ -262,7 +271,7 @@ export class BiasCardReportGenerator {
   ): void {
     this.addSectionHeader('Mitigation Strategies');
 
-    if (workspace.cardPairs.length === 0) {
+    if (workspace.cardPairs || [].length === 0) {
       this.pdf.setFontSize(10);
       this.pdf.setTextColor(100, 100, 100);
       this.pdf.text(
@@ -274,7 +283,7 @@ export class BiasCardReportGenerator {
       return;
     }
 
-    workspace.cardPairs.forEach((pair, index) => {
+    (workspace.cardPairs || ([] as CardPair[])).forEach((pair, index) => {
       this.checkPageBreak(25);
 
       const biasCard = biasCards.find((b) => b.id === pair.biasId);

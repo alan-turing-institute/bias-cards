@@ -7,193 +7,119 @@ import { cn } from '@/lib/utils';
 interface ProjectLifecycleProps {
   onStageClick?: (stage: LifecycleStage) => void;
   selectedStage?: LifecycleStage;
-  stageCounts?: Record<LifecycleStage, number>;
   className?: string;
+  stageCounts?: Record<LifecycleStage, number>;
+}
+
+// Color constants
+const COLORS = {
+  DEFAULT_FILL: '#bfcad8',
+  ACTIVE_FILL: '#fde68a',
+  ACTIVE_STROKE: '#f59e0b',
+} as const;
+
+// Define the stage configuration once
+const STAGE_MAPPINGS: {
+  inkscapeLabel: string;
+  stage: LifecycleStage;
+}[] = [
+  { inkscapeLabel: 'stage-1', stage: 'project-planning' },
+  { inkscapeLabel: 'stage-2', stage: 'problem-formulation' },
+  { inkscapeLabel: 'stage-3', stage: 'data-extraction-procurement' },
+  { inkscapeLabel: 'stage-4', stage: 'data-analysis' },
+  {
+    inkscapeLabel: 'stage-5',
+    stage: 'preprocessing-feature-engineering',
+  },
+  { inkscapeLabel: 'stage-6', stage: 'model-selection-training' },
+  { inkscapeLabel: 'stage-7', stage: 'model-testing-validation' },
+  { inkscapeLabel: 'stage-8', stage: 'model-reporting' },
+  { inkscapeLabel: 'stage-9', stage: 'system-implementation' },
+  { inkscapeLabel: 'stage-10', stage: 'user-training' },
+  { inkscapeLabel: 'stage-11', stage: 'system-use-monitoring' },
+  { inkscapeLabel: 'stage-12', stage: 'model-updating-deprovisioning' },
+];
+
+// Helper function to find stage element with namespace handling
+function findStageElement(
+  svgElement: SVGElement,
+  inkscapeLabel: string
+): SVGPathElement | null {
+  // Try namespace selector first
+  let element = svgElement.querySelector(
+    `[*|label="${inkscapeLabel}"]`
+  ) as SVGPathElement;
+
+  // Fallback to checking all path elements
+  if (!element) {
+    element = Array.from(svgElement.querySelectorAll('path')).find(
+      (el) => el.getAttribute('inkscape:label') === inkscapeLabel
+    ) as SVGPathElement;
+  }
+
+  return element || null;
 }
 
 export function ProjectLifecycle({
   onStageClick,
   selectedStage,
-  stageCounts = {} as Record<LifecycleStage, number>,
   className,
 }: ProjectLifecycleProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  // Removed hoveredStage state as it's not currently used
   const [isLoaded, setIsLoaded] = useState(false);
 
   const addInteractiveRegions = useCallback(
     (svg: SVGElement) => {
-      // Debug: Check if namespaces are preserved for future use
-
-      // Step 1: Make the entire text layer non-interactive
+      // Make the text layer non-interactive
       const textLayer = svg.querySelector('#g15');
       if (textLayer) {
         (textLayer as SVGElement).style.pointerEvents = 'none';
       }
 
-      // Step 2: Define the stage configuration
-      const stages: {
-        inkscapeId: string;
-        stage: LifecycleStage;
-        boundingBox: { x: number; y: number; width: number; height: number };
-      }[] = [
-        {
-          inkscapeId: 'rect1',
-          stage: 'project-planning',
-          boundingBox: { x: 32, y: 68, width: 155, height: 75 },
-        },
-        {
-          inkscapeId: 'rect2',
-          stage: 'problem-formulation',
-          boundingBox: { x: 32, y: 182, width: 155, height: 75 },
-        },
-        {
-          inkscapeId: 'rect3',
-          stage: 'data-extraction-procurement',
-          boundingBox: { x: 221, y: 68, width: 155, height: 75 },
-        },
-        {
-          inkscapeId: 'rect4',
-          stage: 'data-analysis',
-          boundingBox: { x: 221, y: 182, width: 155, height: 75 },
-        },
-        {
-          inkscapeId: 'rect5',
-          stage: 'preprocessing-feature-engineering',
-          boundingBox: { x: 409, y: 68, width: 155, height: 75 },
-        },
-        {
-          inkscapeId: 'rect6',
-          stage: 'model-selection-training',
-          boundingBox: { x: 409, y: 182, width: 155, height: 75 },
-        },
-        {
-          inkscapeId: 'rect7',
-          stage: 'model-testing-validation',
-          boundingBox: { x: 598, y: 68, width: 155, height: 75 },
-        },
-        {
-          inkscapeId: 'rect8',
-          stage: 'model-reporting',
-          boundingBox: { x: 598, y: 182, width: 155, height: 75 },
-        },
-        {
-          inkscapeId: 'rect9',
-          stage: 'system-implementation',
-          boundingBox: { x: 786, y: 68, width: 155, height: 75 },
-        },
-        {
-          inkscapeId: 'rect10',
-          stage: 'user-training',
-          boundingBox: { x: 786, y: 182, width: 155, height: 75 },
-        },
-        {
-          inkscapeId: 'rect11',
-          stage: 'system-use-monitoring',
-          boundingBox: { x: 975, y: 68, width: 155, height: 75 },
-        },
-        {
-          inkscapeId: 'rect12',
-          stage: 'model-updating-deprovisioning',
-          boundingBox: { x: 975, y: 182, width: 155, height: 75 },
-        },
-      ];
+      // Add interactivity to stage elements
+      for (const { inkscapeLabel, stage } of STAGE_MAPPINGS) {
+        const stageElement = findStageElement(svg, inkscapeLabel);
 
-      // Step 3: Add interactive overlays and count badges
-      for (const { stage, boundingBox } of stages) {
-        const rect = document.createElementNS(
-          'http://www.w3.org/2000/svg',
-          'rect'
-        );
-        rect.setAttribute('x', boundingBox.x.toString());
-        rect.setAttribute('y', boundingBox.y.toString());
-        rect.setAttribute('width', boundingBox.width.toString());
-        rect.setAttribute('height', boundingBox.height.toString());
-        rect.setAttribute('fill', 'transparent');
-        rect.setAttribute('data-overlay', 'true');
-        rect.setAttribute('data-stage', stage);
-        rect.style.cursor = 'pointer';
-        rect.setAttribute('class', 'hover:fill-amber-500/10 transition-all');
-
-        // Apply selected state if this stage is selected
-        if (selectedStage === stage) {
-          rect.setAttribute('fill', 'rgba(251, 191, 36, 0.2)');
-          rect.setAttribute('stroke', 'rgb(251, 191, 36)');
-          rect.setAttribute('stroke-width', '2');
+        if (!stageElement) {
+          continue;
         }
 
+        // Make the stage element interactive
+        stageElement.style.cursor = 'pointer';
+        stageElement.setAttribute('data-stage', stage);
+
         // Add click handler
-        rect.addEventListener('click', () => {
+        stageElement.addEventListener('click', () => {
           if (onStageClick) {
             onStageClick(stage);
           }
         });
 
         // Add hover handlers
-        rect.addEventListener('mouseenter', () => {
-          if (selectedStage !== stage) {
-            rect.setAttribute('fill', 'rgba(251, 191, 36, 0.1)');
+        stageElement.addEventListener('mouseenter', function () {
+          // Check if this element is currently selected by checking its current fill
+          if (
+            this.style.fill !== COLORS.ACTIVE_FILL ||
+            this.style.stroke !== COLORS.ACTIVE_STROKE
+          ) {
+            this.style.fill = COLORS.ACTIVE_FILL;
           }
         });
 
-        rect.addEventListener('mouseleave', () => {
-          if (selectedStage !== stage) {
-            rect.setAttribute('fill', 'transparent');
+        stageElement.addEventListener('mouseleave', function () {
+          // Only revert if not selected (check by stroke presence)
+          if (this.style.stroke !== COLORS.ACTIVE_STROKE) {
+            this.style.fill = COLORS.DEFAULT_FILL;
           }
         });
-
-        svg.appendChild(rect);
-
-        // Add count badge if there are cards assigned
-        const count = stageCounts[stage] || 0;
-        if (count > 0) {
-          const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-          g.setAttribute('data-badge', 'true');
-          g.setAttribute('data-stage', stage);
-
-          // Badge background
-          const circle = document.createElementNS(
-            'http://www.w3.org/2000/svg',
-            'circle'
-          );
-          circle.setAttribute(
-            'cx',
-            (boundingBox.x + boundingBox.width - 15).toString()
-          );
-          circle.setAttribute('cy', (boundingBox.y + 15).toString());
-          circle.setAttribute('r', '12');
-          circle.setAttribute('fill', '#dc2626');
-          circle.setAttribute('stroke', 'white');
-          circle.setAttribute('stroke-width', '2');
-
-          // Badge text
-          const text = document.createElementNS(
-            'http://www.w3.org/2000/svg',
-            'text'
-          );
-          text.setAttribute(
-            'x',
-            (boundingBox.x + boundingBox.width - 15).toString()
-          );
-          text.setAttribute('y', (boundingBox.y + 20).toString());
-          text.setAttribute('text-anchor', 'middle');
-          text.setAttribute('fill', 'white');
-          text.setAttribute('font-size', '12');
-          text.setAttribute('font-weight', 'bold');
-          text.style.pointerEvents = 'none';
-          text.textContent = count.toString();
-
-          g.appendChild(circle);
-          g.appendChild(text);
-          svg.appendChild(g);
-        }
       }
     },
-    [onStageClick, selectedStage, stageCounts]
+    [onStageClick] // Removed selectedStage dependency
   );
 
+  // Load and display the SVG
   useEffect(() => {
-    fetch('/project-lifecycle-updated.svg')
+    fetch('/project-lifecycle.svg')
       .then((res) => res.text())
       .then((svgText) => {
         if (containerRef.current) {
@@ -208,7 +134,7 @@ export function ProjectLifecycle({
             return;
           }
 
-          // Clear container and append the SVG element
+          // Clear container and append the SVG
           containerRef.current.innerHTML = '';
           const importedSvg = document.importNode(
             svgElement,
@@ -216,50 +142,31 @@ export function ProjectLifecycle({
           ) as unknown as SVGElement;
           containerRef.current.appendChild(importedSvg);
 
-          // Use setTimeout to ensure DOM is updated
+          // Use setTimeout to ensure DOM is ready
           setTimeout(() => {
             const svg = containerRef.current?.querySelector('svg');
             if (svg) {
-              // Set SVG to scale properly within viewport
+              // Set SVG to scale properly
               svg.setAttribute('width', '100%');
               svg.setAttribute('height', '100%');
               svg.style.maxWidth = '100%';
-              svg.style.maxHeight = 'calc(100vh - 200px)'; // Account for header and padding
+              svg.style.maxHeight = 'calc(100vh - 200px)';
               svg.style.height = '100%';
               svg.style.objectFit = 'contain';
 
               // Add interactive regions
               addInteractiveRegions(svg);
               setIsLoaded(true);
-            } else {
-              // SVG not ready, will retry on next load
             }
           }, 100);
-        } else {
-          // Container ref not available, skip initialization
         }
       })
-      .catch((_error) => {
+      .catch(() => {
         // Handle SVG loading error silently
       });
   }, [addInteractiveRegions]);
 
-  // Helper to clear existing interactive elements
-  const clearInteractiveElements = useCallback((svg: SVGSVGElement) => {
-    const existingBadges = svg.querySelectorAll('g[data-badge="true"]');
-    for (const badge of existingBadges) {
-      badge.remove();
-    }
-
-    const existingOverlays = svg.querySelectorAll('rect[data-overlay="true"]');
-    for (const overlay of existingOverlays) {
-      overlay.remove();
-    }
-
-    return existingOverlays.length > 0;
-  }, []);
-
-  // Re-apply interactivity when selection or counts change (but not on initial load)
+  // Update colors when selection changes
   useEffect(() => {
     if (!(isLoaded && containerRef.current)) {
       return;
@@ -270,12 +177,22 @@ export function ProjectLifecycle({
       return;
     }
 
-    // Only clear and re-apply if overlays already exist (not initial load)
-    const hadOverlays = clearInteractiveElements(svg);
-    if (hadOverlays) {
-      addInteractiveRegions(svg);
+    // Update colors based on selection
+    for (const { inkscapeLabel, stage } of STAGE_MAPPINGS) {
+      const stageElement = findStageElement(svg, inkscapeLabel);
+
+      if (stageElement) {
+        if (selectedStage === stage) {
+          stageElement.style.fill = COLORS.ACTIVE_FILL;
+          stageElement.style.stroke = COLORS.ACTIVE_STROKE;
+          stageElement.style.strokeWidth = '2';
+        } else {
+          stageElement.style.fill = COLORS.DEFAULT_FILL;
+          stageElement.style.stroke = 'none';
+        }
+      }
     }
-  }, [isLoaded, addInteractiveRegions, clearInteractiveElements]);
+  }, [selectedStage, isLoaded]);
 
   return (
     <div className={cn('relative h-full w-full', className)}>

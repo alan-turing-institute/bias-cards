@@ -68,32 +68,31 @@ function getJSONContent(report: Report, config: ReportExportConfig): string {
 }
 
 /**
- * Export to PDF using existing report generator
+ * Export to PDF using BiasReport
  */
 async function exportPDF(
-  _report: Report,
+  report: Report,
   config: ReportExportConfig,
   filename: string
 ): Promise<void> {
   const workspaceState = useWorkspaceStore.getState();
-  const reportData = {
-    workspace: workspaceState,
-    biasCards: [], // These would need to be loaded from the report data
-    mitigationCards: [], // These would need to be loaded from the report data
-    config: {
-      includeExecutiveSummary: config.sections.executiveSummary,
-      includeStageAnalysis: config.sections.biasIdentification,
-      includeMitigationStrategies: config.sections.mitigationStrategies,
-      includeAnnotations: config.sections.comments,
-      includeRecommendations: config.sections.appendices,
-      includeVisualization: false,
-      authorName: '',
-      projectName: '',
-    },
-  };
 
-  // This would integrate with the existing PDF generation
-  const pdfContent = await generateBiasReport(reportData);
+  // Get the current BiasActivity from workspace
+  const currentActivity = workspaceState.getCurrentActivity();
+  if (!currentActivity) {
+    throw new Error('No active bias activity found');
+  }
+
+  // Import BiasReport dynamically to avoid circular dependencies
+  const { BiasReport } = await import('@/lib/reports/bias-report');
+
+  // Create BiasReport instance
+  const biasReport = new BiasReport(currentActivity);
+
+  // Generate PDF content
+  const pdfContent = await biasReport.exportToPDF();
+
+  // Save the file
   saveAs(new Blob([pdfContent]), filename);
 }
 
@@ -112,12 +111,33 @@ async function exportDocx(
 /**
  * Export to Markdown format
  */
-function exportMarkdown(
+async function exportMarkdown(
   report: Report,
   config: ReportExportConfig,
   filename: string
-): void {
-  const content = getMarkdownContent(report, config);
+): Promise<void> {
+  const workspaceState = useWorkspaceStore.getState();
+
+  // Get the current BiasActivity from workspace
+  const currentActivity = workspaceState.getCurrentActivity();
+  if (!currentActivity) {
+    // Fallback to old method if no activity
+    const content = getMarkdownContent(report, config);
+    const blob = new Blob([content], { type: 'text/markdown' });
+    saveAs(blob, filename);
+    return;
+  }
+
+  // Import BiasReport dynamically to avoid circular dependencies
+  const { BiasReport } = await import('@/lib/reports/bias-report');
+
+  // Create BiasReport instance
+  const biasReport = new BiasReport(currentActivity);
+
+  // Generate markdown content with interim flag if activity not complete
+  const isInterim = currentActivity.getCurrentStage() < 5;
+  const content = biasReport.exportToMarkdown(isInterim);
+
   const blob = new Blob([content], { type: 'text/markdown' });
   saveAs(blob, filename);
 }
@@ -125,12 +145,41 @@ function exportMarkdown(
 /**
  * Export to JSON format
  */
-function exportJSON(
+async function exportJSON(
   report: Report,
   config: ReportExportConfig,
   filename: string
-): void {
-  const content = getJSONContent(report, config);
+): Promise<void> {
+  const workspaceState = useWorkspaceStore.getState();
+
+  // Get the current BiasActivity from workspace
+  const currentActivity = workspaceState.getCurrentActivity();
+  if (!currentActivity) {
+    // Fallback to old method if no activity
+    const content = getJSONContent(report, config);
+    const blob = new Blob([content], { type: 'application/json' });
+    saveAs(blob, filename);
+    return;
+  }
+
+  // Import BiasReport dynamically to avoid circular dependencies
+  const { BiasReport } = await import('@/lib/reports/bias-report');
+
+  // Create BiasReport instance
+  const biasReport = new BiasReport(currentActivity);
+
+  // Generate JSON content
+  const jsonData = biasReport.exportToJSON();
+  const content = JSON.stringify(
+    {
+      report: jsonData,
+      exportConfig: config,
+      exportDate: new Date().toISOString(),
+    },
+    null,
+    2
+  );
+
   const blob = new Blob([content], { type: 'application/json' });
   saveAs(blob, filename);
 }
@@ -152,10 +201,10 @@ export async function exportReport(
       await exportDocx(report, config, filename);
       break;
     case 'markdown':
-      exportMarkdown(report, config, filename);
+      await exportMarkdown(report, config, filename);
       break;
     case 'json':
-      exportJSON(report, config, filename);
+      await exportJSON(report, config, filename);
       break;
     default:
       throw new Error(`Unsupported export format: ${config.format}`);
